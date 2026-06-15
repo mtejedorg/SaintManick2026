@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/hud/input_overlay.gd" id="1_xxx"]
+
+[node name="InputOverlay" type="CanvasLayer"]
+script = ExtResource("1_xxx")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 200.0
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "CONTROLS"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="JumpLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "JUMP (Space)"
+
+[node name="DashLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "DASH (Shift)"
+
+[node name="RollLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "ROLL (Ctrl)"
+
+[node name="AttackLLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "LIGHT ATTACK (J)"
+
+[node name="AttackHLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "HEAVY ATTACK (K)"

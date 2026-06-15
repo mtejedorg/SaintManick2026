@@ -1,0 +1,86 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://characters/player/drone_camera.gd" id="1_xxx"]
+[ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="2_xxx"]
+[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="3_xxx"]
+[ext_resource type="PackedScene" path="res://characters/enemies/runner/runner.tscn" id="4_xxx"]
+
+[sub_resource type="Curve3D" id="Curve3D_factory"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -40, 0, 0, -10, 0, 0, 10, 0, 0, 30, 0, 0, 0, 0, 10, 0, 0, -10, 50, 0, -20),
+"tilts": PackedFloat32Array(0, 0, 0)
+}
+point_count = 3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.2, 0.2, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_road"]
+albedo_color = Color(0.8, 0.8, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_building"]
+albedo_color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="TestFactory" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.5, 0, 0.5, 0.866025, 0, 0, 0, 1, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Floor" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+use_collision = true
+size = Vector3(120, 1, 60)
+material = SubResource("StandardMaterial3D_floor")
+
+[node name="Buildings" type="Node3D" parent="."]
+
+[node name="Building1" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 10, -15)
+size = Vector3(10, 20, 10)
+material = SubResource("StandardMaterial3D_building")
+
+[node name="Building2" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 15, -20)
+size = Vector3(15, 30, 10)
+material = SubResource("StandardMaterial3D_building")
+
+[node name="Building3" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 25, -35)
+size = Vector3(20, 50, 15)
+material = SubResource("StandardMaterial3D_building")
+
+[node name="WalkablePath" type="Path3D" parent="."]
+curve = SubResource("Curve3D_factory")
+
+[node name="PathVisualizer" type="CSGPolygon3D" parent="WalkablePath"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+polygon = PackedVector2Array(-0.5, 0, -0.5, 0.1, 0.5, 0.1, 0.5, 0)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 1.0
+path_simplify_angle = 0.0
+path_rotation = 2
+path_local = false
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+material = SubResource("StandardMaterial3D_road")
+
+[node name="Player" parent="." node_paths=PackedStringArray("current_path") instance=ExtResource("2_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+current_path = NodePath("../WalkablePath")
+
+[node name="Runner1" parent="." instance=ExtResource("4_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.5, 0)
+
+[node name="Runner2" parent="." instance=ExtResource("4_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 1.5, 0)
+
+[node name="DroneCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 10)
+script = ExtResource("1_xxx")
+target = NodePath("../Player")
+
+[node name="InputOverlay" parent="." instance=ExtResource("3_xxx")]

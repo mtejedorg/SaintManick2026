@@ -1,0 +1,61 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://characters/player/player.gd" id="1_xxx"]
+[ext_resource type="Script" path="res://_core/state_machine/state_machine.gd" id="2_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_idle.gd" id="3_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_run.gd" id="4_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_airborne.gd" id="5_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_dash.gd" id="6_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_roll.gd" id="7_xxx"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_attack.gd" id="8_xxx"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="9_xxx"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xxx"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_xxx"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_katana"]
+size = Vector3(2.5, 1.5, 1.5)
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_xxx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_xxx")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_xxx")
+
+[node name="KatanaHitbox" type="Area3D" parent="MeshInstance3D"]
+script = ExtResource("9_xxx")
+damage = 15
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/KatanaHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 0, 0)
+shape = SubResource("BoxShape3D_katana")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("2_xxx")
+initial_state = NodePath("StateIdle")
+
+[node name="StateIdle" type="Node" parent="StateMachine"]
+script = ExtResource("3_xxx")
+
+[node name="StateRun" type="Node" parent="StateMachine"]
+script = ExtResource("4_xxx")
+
+[node name="StateAirborne" type="Node" parent="StateMachine"]
+script = ExtResource("5_xxx")
+
+[node name="StateDash" type="Node" parent="StateMachine"]
+script = ExtResource("6_xxx")
+
+[node name="StateRoll" type="Node" parent="StateMachine"]
+script = ExtResource("7_xxx")
+
+[node name="StateAttack" type="Node" parent="StateMachine"]
+script = ExtResource("8_xxx")

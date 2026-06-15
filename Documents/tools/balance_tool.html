@@ -1,0 +1,274 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Saint Manick — Balance Simulator</title>
+<style>
+  :root{
+    --bg:#0b0d14; --panel:#141826; --line:#283047; --txt:#d6dcec; --dim:#8893ad;
+    --neon:#ff2bd6; --cyan:#22e3ff; --good:#39ff88; --warn:#ffd23f; --bad:#ff4b6b;
+    --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 system-ui,Segoe UI,sans-serif;padding:24px}
+  h1{font-size:20px;margin:0 0 2px;letter-spacing:.5px}
+  h1 span{color:var(--neon)}
+  .sub{color:var(--dim);margin:0 0 18px;font-size:12px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--cyan);margin:0 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}
+  .row label{color:var(--dim);font-size:12px}
+  input[type=number]{width:74px;background:#0b0e18;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 6px;font:12px var(--mono);text-align:right}
+  input[type=range]{width:140px;accent-color:var(--neon)}
+  table{width:100%;border-collapse:collapse;font:12px var(--mono)}
+  th,td{padding:5px 7px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--dim);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+  td input{width:60px}
+  .tag{font:10px var(--mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--dim)}
+  .boss{color:var(--neon)} .mini{color:var(--warn)} .topdown{color:var(--cyan)}
+  button{background:var(--neon);color:#0b0d14;border:0;border-radius:7px;padding:9px 16px;font-weight:700;cursor:pointer;letter-spacing:.5px}
+  button.alt{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .card{background:#0b0e18;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
+  .card .big{font:28px var(--mono);font-weight:700}
+  .card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-top:2px}
+  .ok{color:var(--good)} .miss{color:var(--bad)}
+  .note{font-size:11px;color:var(--dim);margin-top:6px}
+  .seg{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 12px}
+  .seg button{background:#0b0e18;border:1px solid var(--line);color:var(--dim);font-weight:600;padding:5px 10px;font-size:11px}
+  .seg button.on{border-color:var(--neon);color:var(--neon)}
+  details{margin-top:8px}
+  summary{cursor:pointer;color:var(--cyan);font-size:12px}
+  .died{color:var(--bad)} .cleared{color:var(--good)}
+</style>
+
+<h1>SAINT <span>MANICK</span> — Balance Simulator</h1>
+<p class="sub">Tunes meta-progression so weak players clear in 4–5 runs, average in 2–3. Threat = damage if a fight were fully tanked. All values editable; sim re-runs live.</p>
+
+<div class="grid">
+  <!-- LEFT: globals -->
+  <div>
+    <div class="panel">
+      <h2>Nick — base stats</h2>
+      <div class="row"><label>HP pool</label><input type="number" id="hp" value="120"></div>
+      <div class="row"><label>Lives</label><input type="number" id="lives" value="3"></div>
+      <div class="row"><label>Shield absorb / fight</label><input type="number" id="shield" value="40"></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Skill presets — % damage avoided</h2>
+      <div class="row"><label>Weak</label><input type="range" id="skWeak" min="0" max="90" value="35"><span id="skWeakV" class="tag">35%</span></div>
+      <div class="row"><label>Average</label><input type="range" id="skAvg" min="0" max="90" value="58"><span id="skAvgV" class="tag">58%</span></div>
+      <div class="row"><label>Good</label><input type="range" id="skGood" min="0" max="95" value="75"><span id="skGoodV" class="tag">75%</span></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Upgrade nodes (cumulative)</h2>
+      <table id="upTbl">
+        <thead><tr><th>Node</th><th>Effect</th><th>Base $</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:8px"><label>Cost growth ×/buy</label><input type="number" id="costMul" value="1.5" step="0.1"></div>
+      <div class="row"><label>Mitigation cap %</label><input type="number" id="mitCap" value="40"></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Rules</h2>
+      <div class="row"><label>Karen checkpoint (Retry Boss)</label><input type="checkbox" id="ckpt" checked></div>
+      <div class="row"><label>Scrap kept on a death (%)</label><input type="number" id="keepScrap" value="100"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: encounters + results -->
+  <div>
+    <div class="panel">
+      <h2>Active content</h2>
+      <div class="seg" id="scope">
+        <button data-scope="full" class="on">Full game</button>
+        <button data-scope="sliceA">Slice A → mini-boss</button>
+        <button data-scope="sliceB">Slice B → district boss</button>
+      </div>
+      <table id="encTbl">
+        <thead><tr><th>Encounter</th><th>Type</th><th>Threat</th><th>Scrap</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:12px;display:flex;gap:10px">
+        <button id="run">▶ Simulate</button>
+        <button class="alt" id="reset">Reset numbers</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Runs to clear</h2>
+      <div class="cards">
+        <div class="card"><div class="big" id="rWeak">–</div><div class="lbl">Weak player<br>target 4–5</div></div>
+        <div class="card"><div class="big" id="rAvg">–</div><div class="lbl">Average<br>target 2–3</div></div>
+        <div class="card"><div class="big" id="rGood">–</div><div class="lbl">Good</div></div>
+      </div>
+      <div class="note" id="verdict"></div>
+      <details><summary>Average-player run-by-run trace</summary>
+        <div id="trace" style="font:11px var(--mono);margin-top:8px;white-space:pre-wrap"></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- default data ----------
+const DEF_ENC = [
+  // id, name, type, threat, scrap, districts: 1=Suburbs 2=Factory 3=Neon 4=Corp 5=Tower
+  ["s1","Suburbs: tutorial runners","grunt",8,6,1],
+  ["s2","Suburbs: street brawl","grunt",16,12,1],
+  ["sb","BOSS: Junk-Yard Maestro","boss",60,40,1],
+  ["f1","Factory: piston platforming","grunt",20,14,2],
+  ["f2","Factory: security room","topdown",30,20,2],
+  ["f3","Factory: sniper scaffolding","grunt",26,18,2],
+  ["fb","BOSS: The Overseer","boss",80,50,2],
+  ["n1","Neon: market entrance","grunt",28,20,3],
+  ["n2","Neon: plaza ambush","topdown",42,30,3],
+  ["nm","MINI-BOSS: Rhythm Enforcer","mini",55,35,3],   // Slice A ends here
+  ["n3","Neon: QTE escape (HP cost)","qte",24,16,3],
+  ["n4","Neon: elevator endurance","grunt",50,34,3],
+  ["nb","BOSS: The Headliner","boss",110,70,3],          // Slice B ends here
+  ["c1","Corporate: laser grids","grunt",40,28,4],
+  ["c2","Corporate: drone strikes","topdown",55,38,4],
+  ["cb","BOSS: The Auditor","boss",130,85,4],
+  ["t1","Tower: final approach","grunt",60,40,5],
+  ["kf","FINAL BOSS: Karen","boss",180,0,5],             // checkpoint before this
+];
+const DEF_UP = [
+  // id,name,effect-label,base cost, apply(power)=>mutate
+  ["hp","+HP","+25 hp",40],
+  ["dmg","+Damage","+12% dmg",45],
+  ["life","+Life","+1 life",90],
+  ["mit","+Armor","+6% mit",50],
+  ["shd","+Shield","+15 absorb",40],
+];
+const SCOPES = {
+  full:  e=>true,
+  sliceA:e=>(e[5]===2)||(e[5]===3 && ["n1","n2","nm"].includes(e[0])),
+  sliceB:e=>(e[5]===2)||(e[5]===3 && ["n1","n2","nm","n3","n4","nb"].includes(e[0])),
+};
+let scope="full";
+let enc = structuredClone(DEF_ENC);
+
+// ---------- UI build ----------
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function buildEnc(){
+  const list = enc.filter(SCOPES[scope]);
+  $("#encTbl tbody").innerHTML = list.map(e=>{
+    const cls = e[2]==="boss"?"boss":e[2]==="mini"?"mini":e[2]==="topdown"?"topdown":"";
+    return `<tr data-id="${e[0]}">
+      <td>${e[1]}</td>
+      <td><span class="tag ${cls}">${e[2]}</span></td>
+      <td><input type="number" data-f="3" value="${e[3]}"></td>
+      <td><input type="number" data-f="4" value="${e[4]}"></td></tr>`;
+  }).join("");
+  $$("#encTbl input").forEach(i=>i.oninput=e=>{
+    const id=e.target.closest("tr").dataset.id, f=+e.target.dataset.f;
+    enc.find(x=>x[0]===id)[f]=+e.target.value; run();
+  });
+}
+let ups = structuredClone(DEF_UP);
+function buildUp(){
+  $("#upTbl tbody").innerHTML = ups.map(u=>`<tr data-id="${u[0]}">
+    <td>${u[1]}</td><td style="text-align:left;color:var(--dim)">${u[2]}</td>
+    <td><input type="number" value="${u[3]}"></td></tr>`).join("");
+  $$("#upTbl input").forEach(i=>i.oninput=e=>{
+    ups.find(x=>x[0]===e.target.closest("tr").dataset.id)[3]=+e.target.value; run();
+  });
+}
+$$("#scope button").forEach(b=>b.onclick=()=>{
+  scope=b.dataset.scope; $$("#scope button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); buildEnc(); run();
+});
+["skWeak","skAvg","skGood"].forEach(id=>{
+  $("#"+id).oninput=e=>{ $("#"+id+"V").textContent=e.target.value+"%"; run(); };
+});
+["hp","lives","shield","costMul","mitCap","keepScrap"].forEach(id=>$("#"+id).oninput=run);
+$("#ckpt").oninput=run;
+$("#run").onclick=run;
+$("#reset").onclick=()=>{ enc=structuredClone(DEF_ENC); ups=structuredClone(DEF_UP); buildEnc(); buildUp(); run(); };
+
+// ---------- simulation ----------
+function simulate(skill, traceOut){
+  const base={
+    hp:+$("#hp").value, lives:+$("#lives").value, shield:+$("#shield").value,
+    costMul:+$("#costMul").value, mitCap:+$("#mitCap").value/100,
+    keep:+$("#keepScrap").value/100, ckpt:$("#ckpt").checked
+  };
+  const list = enc.filter(SCOPES[scope]);
+  const finalId = list[list.length-1][0];
+  // meta power: counts of each node bought
+  const owned={hp:0,dmg:0,life:0,mit:0,shd:0};
+  let bank=0, reachedBoss=false, trace=[];
+  const MAX_RUNS=40;
+
+  for(let runN=1; runN<=MAX_RUNS; runN++){
+    const hpPool = base.hp + owned.hp*25;
+    const dmgMul = 1 + owned.dmg*0.12;
+    const mit    = Math.min(base.mitCap, owned.mit*0.06);
+    const shield = base.shield + owned.shd*15;
+    let lives    = base.lives + owned.life;
+    let hp = hpPool, scrapRun=0, diedAt=null, cleared=false;
+
+    // checkpoint: retry boss directly if we've reached it before
+    const startList = (base.ckpt && reachedBoss && finalId==="kf")
+        ? list.filter(e=>e[0]==="kf") : list;
+
+    for(const e of startList){
+      const ttk = 1/dmgMul;                       // more dmg -> shorter fight -> less incoming
+      let inc = e[3]*(1-skill)*(1-mit)*ttk;
+      inc = Math.max(0, inc - shield);            // shield regenerates between fights
+      hp -= inc;
+      while(hp<=0 && lives>1){ lives--; hp+=hpPool; }   // lose a life, respawn full
+      if(hp<=0 && lives<=1){ diedAt=e[1]; scrapRun+=Math.round(e[4]*0.4); break; }
+      scrapRun += e[4];
+      if(e[0]==="kf"||e[0]===finalId){ reachedBoss=true; }
+      if(e[0]===finalId && hp>0){ cleared=true; }
+    }
+    if(diedAt) reachedBoss = reachedBoss || startList.some(e=>e[0]==="kf"&&false);
+    bank += diedAt ? Math.round(scrapRun*base.keep) : scrapRun;
+
+    trace.push(`Run ${runN}: ${cleared?"CLEARED ✓":"died @ "+diedAt} | dmg×${dmgMul.toFixed(2)} hp${hpPool} L${lives} mit${(mit*100)|0}% | bank ${bank}`);
+    if(cleared){ if(traceOut) traceOut(trace); return runN; }
+
+    // greedy shop: buy best $/value until broke
+    let bought=true;
+    while(bought){
+      bought=false;
+      // simple value heuristic: prefer dmg & hp early, life when cheap-ish
+      const order = ups.slice().sort((a,b)=>cost(a)-cost(b));
+      for(const u of order){
+        if(u[0]==="mit" && owned.mit*0.06>=base.mitCap) continue;
+        const c=cost(u);
+        if(bank>=c){ bank-=c; owned[u[0]]++; bought=true; break; }
+      }
+    }
+    function cost(u){ return Math.round(u[3]*Math.pow(base.costMul, owned[u[0]])); }
+  }
+  if(traceOut) traceOut(trace);
+  return MAX_RUNS; // never cleared
+}
+
+function verdictClass(n,lo,hi){ return (n>=lo&&n<=hi)?"ok":"miss"; }
+
+function run(){
+  const sk={w:+$("#skWeak").value/100, a:+$("#skAvg").value/100, g:+$("#skGood").value/100};
+  const w=simulate(sk.w), g=simulate(sk.g);
+  let traceLines=[]; const a=simulate(sk.a, t=>traceLines=t);
+  const fmt=(n)=> n>=40?"40+":n;
+  $("#rWeak").innerHTML=`<span class="${verdictClass(w,4,5)}">${fmt(w)}</span>`;
+  $("#rAvg").innerHTML =`<span class="${verdictClass(a,2,3)}">${fmt(a)}</span>`;
+  $("#rGood").innerHTML=`<span class="ok">${fmt(g)}</span>`;
+  const avgOk=a>=2&&a<=3, weakOk=w>=4&&w<=5;
+  $("#verdict").innerHTML =
+    (avgOk&&weakOk) ? "✅ On target — average 2–3, weak 4–5."
+    : `⚠ Off target: ${avgOk?"":"average should be 2–3. "}${weakOk?"":"weak should be 4–5. "}`+
+      "Nudge boss threat, upgrade effects, or cost growth.";
+  $("#trace").textContent = traceLines.join("\n");
+}
+
+// init
+buildEnc(); buildUp(); run();
+</script>

@@ -1,0 +1,32 @@
+# Godot 4
+.godot/
+/android/
+/builds/
+export_presets.cfg
+*.translation
+
+# Godot import cache (Godot 3 legacy, harmless to keep ignored)
+.import/
+
+# Build outputs
+/Build/*
+!/Build/.gitkeep
+
+# Legacy Unity (deprecated, kept for reference but not built)
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/*.csproj
+UnityProject/*.sln
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.tmp
+*~
+
+# Excluded Directories
+/old/
+/graphify-out/

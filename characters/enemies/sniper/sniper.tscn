@@ -1,0 +1,59 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://characters/enemies/sniper/sniper.gd" id="1_xxx"]
+[ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_xxx"]
+[ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="3_xxx"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="4_xxx"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sniper"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_sniper"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sniper"]
+albedo_color = Color(0, 1, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_laser"]
+size = Vector3(0.1, 0.1, 30.0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_laser"]
+size = Vector3(0.3, 0.3, 30.0)
+
+[node name="Sniper" type="CharacterBody3D"]
+script = ExtResource("1_xxx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_sniper")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_sniper")
+surface_material_override/0 = SubResource("StandardMaterial3D_sniper")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_xxx")
+max_health = 24
+
+[node name="Hurtbox3D" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
+collision_layer = 4096
+collision_mask = 0
+script = ExtResource("3_xxx")
+health_component = NodePath("../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox3D"]
+shape = SubResource("CapsuleShape3D_sniper")
+
+[node name="LaserBeam" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -15)
+mesh = SubResource("BoxMesh_laser")
+
+[node name="LaserHitbox" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -15)
+collision_layer = 2048
+collision_mask = 1024
+script = ExtResource("4_xxx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LaserHitbox"]
+shape = SubResource("BoxShape3D_laser")

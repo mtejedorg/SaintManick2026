@@ -13,12 +13,25 @@ extends CharacterBody3D
 
 var can_double_jump: bool = true
 var is_facing_right: bool = true
+var is_jump_enabled: bool = true
 
-@onready var state_machine: StateMachine = $StateMachine
+@onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
-@onready var katana_hitbox: Hitbox3D = $MeshInstance3D/KatanaHitbox
+@onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
+@onready var health_component: HealthComponent = $HealthComponent
 
 func _ready() -> void:
+	health_component.is_player = true
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		health_component.max_health = gm.max_hp
+		health_component.current_health = gm.current_hp
+		health_component.max_shield = gm.max_shield
+		health_component.current_shield = gm.current_shield
+	health_component.died.connect(_on_died)
+
+func _on_died() -> void:
+	# Handled centrally by HealthComponent, but can trigger player-specific visuals here
 	pass
 
 func _physics_process(_delta: float) -> void:
@@ -35,12 +48,15 @@ func apply_gravity(delta: float) -> void:
 	else:
 		can_double_jump = true
 
-func get_movement_input() -> float:
-	return Input.get_axis("ui_left", "ui_right")
+func get_movement_input() -> Vector2:
+	return Vector2(
+		Input.get_axis("ui_left", "ui_right"),
+		Input.get_axis("ui_up", "ui_down")
+	)
 
-func get_path_direction(input_dir: float) -> Vector3:
+func get_path_direction(input_dir: Vector2) -> Vector3:
 	if not current_path or not current_path.curve:
-		return Vector3(input_dir, 0, 0)
+		return Vector3(input_dir.x, 0, input_dir.y).normalized() * input_dir.length()
 		
 	var local_pos = current_path.to_local(global_position)
 	var offset = current_path.curve.get_closest_offset(local_pos)
@@ -50,8 +66,9 @@ func get_path_direction(input_dir: float) -> Vector3:
 	var next_pt = current_path.to_global(current_path.curve.sample_baked(offset + 0.1))
 	
 	var dir = (next_pt - current_pt).normalized()
-	dir.y = 0 # Keep movement purely horizontal along the path
-	return dir * input_dir
+	dir.y = 0
+	# For Path3D, only the X input moves us along the path
+	return dir * input_dir.x
 
 func face_direction(direction: float) -> void:
 	if direction == 0:

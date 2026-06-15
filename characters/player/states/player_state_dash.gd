@@ -2,11 +2,12 @@ extends PlayerState
 
 var dash_duration: float = 0.15
 var dash_timer: float = 0.0
-var dash_direction: float = 1.0
+var dash_direction: Vector2 = Vector2.RIGHT
 
 func enter() -> void:
 	dash_timer = dash_duration
-	dash_direction = 1.0 if player.is_facing_right else -1.0
+	var input_dir = player.get_movement_input()
+	dash_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)
 	player.velocity.y = 0
 
 func physics_update(delta: float) -> void:

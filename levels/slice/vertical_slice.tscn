@@ -1,0 +1,89 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_xxx"]
+[ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_xxx"]
+[ext_resource type="Script" path="res://levels/components/camera_shift_trigger.gd" id="3_xxx"]
+[ext_resource type="PackedScene" path="res://characters/enemies/runner/runner.tscn" id="4_xxx"]
+[ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer.tscn" id="5_xxx"]
+[ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner.tscn" id="6_xxx"]
+[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="7_xxx"]
+
+[sub_resource type="Curve3D" id="Curve3D_slice"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_shift"]
+size = Vector3(10, 10, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+transparency = 1
+albedo_color = Color(1, 0, 0, 0.2)
+
+[node name="VerticalSlice" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Zone1_2_Path" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, -0.5, 0)
+use_collision = true
+size = Vector3(40, 1, 5)
+
+[node name="WalkablePath" type="Path3D" parent="Zone1_2_Path"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 0)
+curve = SubResource("Curve3D_slice")
+
+[node name="Zone3_Arena" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -0.5, 0)
+use_collision = true
+size = Vector3(40, 1, 40)
+
+[node name="WallN" type="CSGBox3D" parent="Zone3_Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -20)
+use_collision = true
+size = Vector3(40, 5, 1)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="WallS" type="CSGBox3D" parent="Zone3_Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 20)
+use_collision = true
+size = Vector3(40, 5, 1)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="WallE" type="CSGBox3D" parent="Zone3_Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 0)
+use_collision = true
+size = Vector3(1, 5, 40)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="CameraShiftTrigger" type="Area3D" parent="Zone3_Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, 0)
+script = ExtResource("3_xxx")
+target_path = NodePath("../../Zone1_2_Path/WalkablePath")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Zone3_Arena/CameraShiftTrigger"]
+shape = SubResource("BoxShape3D_shift")
+
+[node name="Player" parent="." node_paths=PackedStringArray("current_path") instance=ExtResource("1_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+current_path = NodePath("../Zone1_2_Path/WalkablePath")
+
+[node name="DroneCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("2_xxx")]
+target = NodePath("../Player")
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="Runner" parent="Enemies" instance=ExtResource("4_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.5, 0)
+
+[node name="Enforcer" parent="Enemies" instance=ExtResource("5_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 1.5, -5)
+
+[node name="Headliner" parent="Enemies" instance=ExtResource("6_xxx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 1.5, 10)
+
+[node name="InputOverlay" parent="." instance=ExtResource("7_xxx")]

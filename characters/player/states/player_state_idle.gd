@@ -10,7 +10,7 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAirborne")
 		return
 		
-	if Input.is_action_just_pressed("ui_accept"):
+	if Input.is_action_just_pressed("ui_accept") and player.is_jump_enabled:
 		transition_requested.emit("StateAirborne")
 		return
 		
@@ -26,5 +26,5 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAttack")
 		return
 
-	if player.get_movement_input() != 0:
+	if player.get_movement_input() != Vector2.ZERO:
 		transition_requested.emit("StateRun")

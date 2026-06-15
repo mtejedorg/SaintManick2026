@@ -1,0 +1,24 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://characters/player/drone_camera.gd" id="1_xxx"]
+[ext_resource type="Script" path="res://_core/state_machine/state_machine.gd" id="2_xxx"]
+[ext_resource type="Script" path="res://characters/player/camera_states/state_sidescroll.gd" id="3_xxx"]
+[ext_resource type="Script" path="res://characters/player/camera_states/state_transitioning.gd" id="4_xxx"]
+[ext_resource type="Script" path="res://characters/player/camera_states/state_top_down.gd" id="5_xxx"]
+
+[node name="DroneCamera" type="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 10)
+script = ExtResource("1_xxx")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("2_xxx")
+initial_state = NodePath("Sidescroll")
+
+[node name="Sidescroll" type="Node" parent="StateMachine"]
+script = ExtResource("3_xxx")
+
+[node name="Transitioning" type="Node" parent="StateMachine"]
+script = ExtResource("4_xxx")
+
+[node name="TopDown" type="Node" parent="StateMachine"]
+script = ExtResource("5_xxx")

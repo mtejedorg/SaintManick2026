@@ -17,12 +17,26 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="Saint Manick"
 config/description="2.5D Action-Roguelite Beat'em up"
 config/version="0.1.0"
+run/main_scene="res://levels/slice/vertical_slice.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-run/main_scene="res://levels/factory/test_factory.tscn"
 
 [autoload]
 
 SignalBus="*res://_core/signal_bus.gd"
+Conductor="*res://_core/conductor.gd"
+SaveManager="*res://_core/persistence/save_manager.gd"
+GameManager="*res://_core/game_manager.gd"
+
+[layer_names/3d_physics]
+
+1="world"
+2="player"
+3="enemies"
+10="player_hitbox"
+11="player_hurtbox"
+12="enemy_hitbox"
+13="enemy_hurtbox"
+14="hazard_hitbox"
 
 [display]
 
@@ -34,3 +48,4 @@ window/stretch/aspect="expand"
 [dotnet]
 
 project/assembly_name="Saint Manick"
+

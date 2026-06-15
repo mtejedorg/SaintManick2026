@@ -30,3 +30,6 @@ Thumbs.db
 # Excluded Directories
 /old/
 /graphify-out/
+
+# Cravify / Antigravity temp files
+.gemini/

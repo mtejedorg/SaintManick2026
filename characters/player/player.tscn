@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://characters/player/states/player_state_roll.gd" id="7_xxx"]
 [ext_resource type="Script" path="res://characters/player/states/player_state_attack.gd" id="8_xxx"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="9_xxx"]
+[ext_resource type="Script" path="res://_core/components/health_component.gd" id="10_xxx"]
+[ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="11_xxx"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xxx"]
 radius = 0.5
@@ -31,12 +33,25 @@ shape = SubResource("CapsuleShape3D_xxx")
 mesh = SubResource("CapsuleMesh_xxx")
 
 [node name="KatanaHitbox" type="Area3D" parent="MeshInstance3D"]
+collision_layer = 512
+collision_mask = 4096
 script = ExtResource("9_xxx")
-damage = 15
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/KatanaHitbox"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 0, 0)
 shape = SubResource("BoxShape3D_katana")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("10_xxx")
+
+[node name="Hurtbox3D" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
+collision_layer = 1024
+collision_mask = 0
+script = ExtResource("11_xxx")
+health_component = NodePath("../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox3D"]
+shape = SubResource("CapsuleShape3D_xxx")
 
 [node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
 script = ExtResource("2_xxx")

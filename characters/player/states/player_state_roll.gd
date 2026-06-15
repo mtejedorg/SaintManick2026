@@ -2,13 +2,13 @@ extends PlayerState
 
 var roll_duration: float = 0.4
 var roll_timer: float = 0.0
-var roll_direction: float = 1.0
+var roll_direction: Vector2 = Vector2.RIGHT
 
 func enter() -> void:
 	roll_timer = roll_duration
 	var input_dir = player.get_movement_input()
-	roll_direction = input_dir if input_dir != 0 else (1.0 if player.is_facing_right else -1.0)
-	player.face_direction(roll_direction)
+	roll_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)
+	player.face_direction(roll_direction.x if roll_direction.x != 0 else roll_direction.y)
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)

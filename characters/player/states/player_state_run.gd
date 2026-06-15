@@ -4,9 +4,9 @@ func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
 	
 	var input_dir = player.get_movement_input()
-	player.face_direction(input_dir)
+	player.face_direction(input_dir.x if input_dir.x != 0 else input_dir.y) # Face roughly movement dir
 	
-	if input_dir != 0:
+	if input_dir != Vector2.ZERO:
 		var path_dir = player.get_path_direction(input_dir)
 		player.velocity.x = move_toward(player.velocity.x, path_dir.x * player.max_speed, player.acceleration * delta)
 		player.velocity.z = move_toward(player.velocity.z, path_dir.z * player.max_speed, player.acceleration * delta)
@@ -20,7 +20,7 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAirborne")
 		return
 		
-	if Input.is_action_just_pressed("ui_accept"):
+	if Input.is_action_just_pressed("ui_accept") and player.is_jump_enabled:
 		transition_requested.emit("StateAirborne")
 		return
 		

@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://levels/components/pooled_projectile.gd" id="1_proj"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="2_hitbox"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_proj"]
+radius = 0.4
+
+[sub_resource type="SphereMesh" id="SphereMesh_proj"]
+radius = 0.4
+height = 0.8
+
+[node name="PooledProjectile" type="Area3D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_proj")
+
+[node name="Hitbox3D" type="Area3D" parent="."]
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("2_hitbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox3D"]
+shape = SubResource("SphereShape3D_proj")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_proj")

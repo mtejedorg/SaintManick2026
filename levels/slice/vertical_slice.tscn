@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=42 format=3]
 
 [ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_camera"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://levels/components/escape_collapsing_hazard.gd" id="18_collapsing_hazard"]
 [ext_resource type="Script" path="res://levels/components/elevator_encounter.gd" id="19_elevator_encounter"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="20_hitbox_3d"]
+[ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner.tscn" id="21_headliner"]
 
 
 ; --- Curve 3D Resources ---
@@ -140,6 +141,20 @@ size = Vector3(8, 1, 6)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_elevator_entry"]
 size = Vector3(2, 4, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gate"]
+size = Vector3(1, 4, 8)
+
+[sub_resource type="Curve3D" id="Curve3D_z10"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 349, 15, 0, 0, 0, 0, 0, 0, 0, 377, 15, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_z10_trigger"]
+size = Vector3(2, 4, 8)
+
 
 
 ; --- Main Node ---
@@ -604,7 +619,51 @@ shape = SubResource("BoxShape3D_elevator_entry")
 
 ; ================= ZONE 10: Docking Arena =================
 [node name="Zone10_Dock" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 14.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 14.5, 0)
 use_collision = true
 size = Vector3(25, 1, 8)
+
+[node name="FarWall" type="CSGBox3D" parent="Zone10_Dock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -4)
+use_collision = true
+size = Vector3(25, 4, 0.5)
+
+[node name="NearWall" type="CSGBox3D" parent="Zone10_Dock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 4)
+use_collision = true
+size = Vector3(25, 4, 0.5)
+
+[node name="RightWall" type="CSGBox3D" parent="Zone10_Dock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 2.5, 0)
+use_collision = true
+size = Vector3(0.5, 4, 8)
+
+[node name="LeftGate" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 352.5, 17, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LeftGate"]
+shape = SubResource("BoxShape3D_gate")
+disabled = true
+
+[node name="Visual" type="CSGBox3D" parent="LeftGate"]
+size = Vector3(0.5, 4, 8)
+
+[node name="Path_Z10" type="Path3D" parent="."]
+curve = SubResource("Curve3D_z10")
+
+[node name="Zone10_Trigger" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 354, 17, 0)
+collision_layer = 0
+collision_mask = 1024
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Zone10_Trigger"]
+shape = SubResource("BoxShape3D_z10_trigger")
+
+[node name="Headliner" parent="." node_paths=PackedStringArray("path_z10") instance=ExtResource("21_headliner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 18, 0)
+path_z10 = NodePath("../Path_Z10")
+
+[connection signal="encounter_completed" from="ElevatorEncounter" to="Headliner" method="activate_boss"]
+[connection signal="body_entered" from="Zone10_Trigger" to="Headliner" method="activate_boss"]
+
 

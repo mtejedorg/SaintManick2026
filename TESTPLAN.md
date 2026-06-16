@@ -22,7 +22,9 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 
 ## 2. Test Coverage Table
 
-The automated suite consists of **42 test cases** across **11 test suites**, covering all core Phase 0-4 systems:
+The automated suite consists of **49 test cases** across **12 test suites**, covering all core Phase 0-4 systems:
+
+
 
 | Test Suite File | Test Cases | Objective / Verification |
 | :--- | :---: | :--- |
@@ -37,6 +39,8 @@ The automated suite consists of **42 test cases** across **11 test suites**, cov
 | [`test_camera_fsm.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_camera_fsm.gd) | 3 | <ul><li>Verify camera transitions via `SignalBus.camera_shift_requested` (Sidescroll -> Transitioning -> TopDown).</li><li>Confirm target tracking and camera offset updates.</li><li>Confirm target `is_jump_enabled` and `current_path` properties update accordingly.</li></ul> |
 | [`test_juice_combat.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_juice_combat.gd) | 5 | <ul><li>Verify roll invincibility damage mitigation.</li><li>Verify enemy knockback direction and floor friction decay.</li><li>Verify vertical launch Y pop on launcher attacks for air-juggles.</li><li>Verify combo counter accumulation, timeout resets, and attack string whiff drops.</li><li>Verify hit-stop time scale freeze and unscaled time recovery.</li></ul> |
 | [`test_slice_b_logic.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_slice_b_logic.gd) | 5 | <ul><li>Verify enforcer death rewiring (emits global miniboss_defeated signal and rewards scrap without run completion).</li><li>Verify escape sequence camera shift, wall acceleration trigger, and end zone detection.</li><li>Verify escape hazards deal non-instant periodic damage routing through HealthComponent.</li><li>Verify elevator encounter translation along Y-axis, wave spawning, and cooldown delays for shield regeneration.</li><li>Verify elevator platform completion conditions when reaching target Y and clearing all waves.</li></ul> |
+| [`test_headliner_boss.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_headliner_boss.gd) | 7 | <ul><li>Verify ObjectPool pre-instantiation, acquisition (reset/enable), release (reset/disable/reposition), and growth.</li><li>Verify PooledProjectile movement, hit detection, damage dealing, and lifetime/boundary pool release.</li><li>Verify HeadlinerBoss dormant starting state, and activation transition to Shield state.</li><li>Verify Shield state damage mitigation, and shield breaking/vulnerability under shield-breakers.</li><li>Verify Phase 2 transition to top-down camera shift at 50% HP threshold.</li><li>Verify Bullet Hell state stationary, shielded movement, beat-driven wave firing, and enraged transition on shield break.</li><li>Verify Death state collision deactivation, death visuals, scrap rewards, and run completion.</li></ul> |
+
 
 ---
 
@@ -75,5 +79,18 @@ For features and visual/game-feel parameters that cannot be fully validated prog
 - [ ] **Elevator Entry**: Verify stepping into the elevator platform shifts the camera to Path_Z9 and starts the vertical movement.
 - [ ] **Elevator Waves & Cooldowns**: Verify waves spawn sequentially, pausing for `wave_cooldown` (5s) after each wave is cleared to allow shield regeneration.
 - [ ] **Elevator Completion**: Verify the elevator stops at target Y if waves remain, or continues rising to target Y if cleared early, successfully completing the encounter upon meeting both conditions.
+
+### 3.6 Zone 10: "The Headliner" Boss Fight
+- [ ] **Boss Activation**: Verify that the boss remains dormant (`is_active_boss = false`) and ignores beats until the player enters the `Zone10_Trigger` or the `ElevatorEncounter` completes, which calls `activate_boss()`.
+- [ ] **Arena Seal**: Verify that once the boss is activated, the `LeftGate` collision is enabled to prevent the player from escaping the arena.
+- [ ] **Shield Phase (P1)**: Verify the boss starts in the `StateShield` state with the shield bubble mesh visible, mitigating all non-shield-breaker player damage.
+- [ ] **Melee Loop**: Verify that if the player gets within range, the boss telegraphs (turns orange/emits albedo) and performs a lunging melee attack on the next beat, activating its melee hitbox.
+- [ ] **Shield Break & Recovery**: Verify that hitting the active shield with a heavy/shield-breaker attack breaks the shield, transitioning the boss to `StateRecovery`, rendering it vulnerable (turns blue) and taking 1.5x damage for 2 beats before returning to shield state.
+- [ ] **Transition to Phase 2**: Verify that reducing the boss's HP to 50% or below (750 HP) triggers the transition state (`StateTransition`). The boss becomes invulnerable, the camera shifts to top-down, and the BPM speeds up to 160.
+- [ ] **Bullet Hell State**: Verify that in `StateBulletHell`, the boss remains stationary, maintains its shield, and fires beat-driven radial, spiral, and aimed projectile waves.
+- [ ] **Bullet Hell Shield Break**: Verify that breaking the shield in the bullet hell phase transitions the boss to the enraged state (`StateEnraged`) and shifts the camera back to 2.5D sidescroll view.
+- [ ] **Enraged Phase (P2)**: Verify that in `StateEnraged`, the boss has a 1.2x movement and attack speed multiplier, loops melee attacks without a shield, and pulses albedo/scale on the downbeat.
+- [ ] **Death & Run Completion**: Verify that defeating the boss (HP <= 0) triggers the `StateDead` state, which disables boss collisions, plays a death scale tween, awards 1000 scrap, and triggers the `GameManager.complete_run()` flow to conclude the vertical slice.
+
 
 

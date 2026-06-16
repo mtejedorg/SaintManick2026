@@ -1,39 +1,109 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=22 format=3]
 
-[ext_resource type="Script" path="res://characters/enemies/headliner/headliner.gd" id="1_xxx"]
-[ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_xxx"]
-[ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="3_xxx"]
-[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="4_visual"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/headliner.gd" id="1_headliner"]
+[ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/headliner_hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="4_hitbox"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/headliner_state_machine.gd" id="5_state_machine"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_dormant.gd" id="6_state_dormant"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_shield.gd" id="7_state_shield"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_telegraph.gd" id="8_state_telegraph"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_melee.gd" id="9_state_melee"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_recovery.gd" id="10_state_recovery"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_transition.gd" id="11_state_transition"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_bullet_hell.gd" id="12_state_bullet_hell"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_enraged.gd" id="13_state_enraged"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/states/headliner_state_dead.gd" id="14_state_dead"]
+[ext_resource type="Script" path="res://characters/enemies/headliner/projectile_emitter.gd" id="15_emitter"]
+[ext_resource type="Script" path="res://_core/pool/object_pool.gd" id="16_pool"]
+[ext_resource type="PackedScene" path="res://levels/components/pooled_projectile.tscn" id="17_proj_scene"]
+[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="18_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_headliner"]
 radius = 2.0
 height = 6.0
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_headliner"]
-radius = 2.0
-height = 6.0
+[sub_resource type="SphereMesh" id="SphereMesh_shield"]
+radius = 3.5
+height = 7.0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_headliner"]
-albedo_color = Color(0.8, 0, 0.8, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shield"]
+albedo_color = Color(0, 0.6, 1, 0.25)
+transparency = 1
+emission_enabled = true
+emission = Color(0, 0.4, 0.8, 1)
 
 [node name="Headliner" type="CharacterBody3D"]
-script = ExtResource("1_xxx")
+script = ExtResource("1_headliner")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_headliner")
 
-[node name="MeshInstance3D" parent="." instance=ExtResource("4_visual")]
+[node name="MeshInstance3D" parent="." instance=ExtResource("18_visual")]
 tint = Color(0.8, 0, 0.8, 1)
 
+[node name="ShieldBubble" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("SphereMesh_shield")
+surface_material_override/0 = SubResource("StandardMaterial3D_shield")
+
 [node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("2_xxx")
-max_health = 1500
+script = ExtResource("2_health")
+max_health = 1500.0
 
 [node name="Hurtbox3D" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
 collision_layer = 4096
 collision_mask = 0
-script = ExtResource("3_xxx")
+script = ExtResource("3_hurtbox")
 health_component = NodePath("../HealthComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox3D"]
 shape = SubResource("CapsuleShape3D_headliner")
+
+[node name="Hitbox3D" type="Area3D" parent="."]
+collision_layer = 2048
+collision_mask = 1024
+script = ExtResource("4_hitbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox3D"]
+shape = SubResource("CapsuleShape3D_headliner")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("5_state_machine")
+initial_state = NodePath("StateDormant")
+
+[node name="StateDormant" type="Node" parent="StateMachine"]
+script = ExtResource("6_state_dormant")
+
+[node name="StateShield" type="Node" parent="StateMachine"]
+script = ExtResource("7_state_shield")
+
+[node name="StateTelegraph" type="Node" parent="StateMachine"]
+script = ExtResource("8_state_telegraph")
+
+[node name="StateMelee" type="Node" parent="StateMachine"]
+script = ExtResource("9_state_melee")
+
+[node name="StateRecovery" type="Node" parent="StateMachine"]
+script = ExtResource("10_state_recovery")
+
+[node name="StateTransition" type="Node" parent="StateMachine"]
+script = ExtResource("11_state_transition")
+
+[node name="StateBulletHell" type="Node" parent="StateMachine"]
+script = ExtResource("12_state_bullet_hell")
+
+[node name="StateEnraged" type="Node" parent="StateMachine"]
+script = ExtResource("13_state_enraged")
+
+[node name="StateDead" type="Node" parent="StateMachine"]
+script = ExtResource("14_state_dead")
+
+[node name="ObjectPool" type="Node" parent="."]
+script = ExtResource("16_pool")
+template = ExtResource("17_proj_scene")
+initial_pool_size = 40
+
+[node name="ProjectileEmitter" type="Node3D" parent="." node_paths=PackedStringArray("pool")]
+script = ExtResource("15_emitter")
+pool = NodePath("../ObjectPool")

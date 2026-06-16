@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://characters/enemies/headliner/headliner.gd" id="1_xxx"]
 [ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_xxx"]
 [ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="3_xxx"]
+[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="4_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_headliner"]
 radius = 2.0
@@ -21,9 +22,8 @@ script = ExtResource("1_xxx")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_headliner")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("CapsuleMesh_headliner")
-surface_material_override/0 = SubResource("StandardMaterial3D_headliner")
+[node name="MeshInstance3D" parent="." instance=ExtResource("4_visual")]
+tint = Color(0.8, 0, 0.8, 1)
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_xxx")

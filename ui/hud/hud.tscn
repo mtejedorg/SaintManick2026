@@ -1,0 +1,74 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="2_input_overlay"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_beat"]
+bg_color = Color(0.08, 0.08, 0.1, 0.8)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(1, 1, 1, 0.2)
+shadow_size = 8
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="InputOverlay" parent="." instance=ExtResource("2_input_overlay")]
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 150.0
+grow_horizontal = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 2
+
+[node name="BatteryRect" type="TextureRect" parent="MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShieldBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(180, 24)
+layout_mode = 2
+size_flags_vertical = 4
+value = 100.0
+nine_patch_stretch = true
+
+[node name="LivesRect" type="TextureRect" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BeatPulse" type="Panel" parent="."]
+custom_minimum_size = Vector2(40, 40)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_top = 20.0
+offset_right = 20.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_beat")

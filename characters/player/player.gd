@@ -74,6 +74,7 @@ func face_direction(direction: float) -> void:
 	if direction == 0:
 		return
 	is_facing_right = direction > 0
-	# Smooth rotation for the 3D mesh to face left/right
+	# Smooth rotation for the 3D MeshInstance3D parent to face left/right.
+	# This correctly propagates rotation to both the KatanaHitbox and the CharacterVisual.
 	var target_rotation = PI / 2.0 if is_facing_right else -PI / 2.0
 	mesh.rotation.y = lerp_angle(mesh.rotation.y, target_rotation, 0.2)

@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://3D_Assets/Characters/Nick/NickProto.fbx" id="2_model"]
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+script = ExtResource("1_visual")
+
+[node name="NickProto" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(0.22, 0, 0, 0, 0.22, 0, 0, 0, 0.22, 0, -1.0, 0)

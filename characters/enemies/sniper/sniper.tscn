@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_xxx"]
 [ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="3_xxx"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="4_xxx"]
+[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="5_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sniper"]
 radius = 0.4
@@ -28,9 +29,8 @@ script = ExtResource("1_xxx")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_sniper")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("CapsuleMesh_sniper")
-surface_material_override/0 = SubResource("StandardMaterial3D_sniper")
+[node name="MeshInstance3D" parent="." instance=ExtResource("5_visual")]
+tint = Color(0, 1, 0, 1)
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_xxx")

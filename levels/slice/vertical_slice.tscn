@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" path="res://characters/enemies/bruiser/bruiser.tscn" id="4_bruiser"]
 [ext_resource type="PackedScene" path="res://characters/enemies/sniper/sniper.tscn" id="5_sniper"]
 [ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer.tscn" id="6_enforcer"]
-[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="7_hud"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="7_hud"]
 [ext_resource type="Script" path="res://levels/components/wave_def.gd" id="8_wave_def"]
 [ext_resource type="PackedScene" path="res://levels/components/wave_spawner.tscn" id="9_spawner"]
 [ext_resource type="PackedScene" path="res://levels/components/zone_encounter.tscn" id="10_encounter"]
@@ -94,7 +94,7 @@ emission = Color(1.0, 0.0, 0.0, 1.0)
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
 shadow_enabled = true
 
-[node name="InputOverlay" parent="." instance=ExtResource("7_hud")]
+[node name="HUD" parent="." instance=ExtResource("7_hud")]
 
 ; --- Walkable Paths ---
 [node name="Path_Z1_2_3" type="Path3D" parent="."]

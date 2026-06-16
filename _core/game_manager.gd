@@ -14,8 +14,11 @@ var current_lives: int = 3
 var current_hp: float = 120.0
 var current_shield: float = 40.0
 
+var is_test: bool = false
+
 func _ready() -> void:
-	start_new_run()
+	if not is_test:
+		start_new_run()
 
 func start_new_run() -> void:
 	if SaveManager and SaveManager.profile:
@@ -56,7 +59,8 @@ func respawn_or_game_over() -> void:
 		lives_changed.emit(current_lives)
 		SignalBus.player_life_lost.emit(current_lives)
 		if current_lives > 0:
-			get_tree().reload_current_scene()
+			if not is_test:
+				get_tree().reload_current_scene()
 			return
 
 	# No lives left – game over
@@ -69,11 +73,13 @@ func respawn_or_game_over() -> void:
 		SaveManager.profile.persistent_scrap += scrap
 		SaveManager.save_profile()
 
-	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
+	if not is_test:
+		get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
 
 func complete_run() -> void:
 	if SaveManager and SaveManager.profile:
 		SaveManager.profile.persistent_scrap += scrap
 		SaveManager.save_profile()
 	
-	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
+	if not is_test:
+		get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")

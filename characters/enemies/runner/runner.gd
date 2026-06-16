@@ -6,6 +6,7 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+var combat_comp: Node = null
 
 var player: Node3D
 var base_material: StandardMaterial3D
@@ -13,6 +14,12 @@ var telegraph_material: StandardMaterial3D
 var attack_step: int = 0 # 0 = idle, 1 = telegraph, 2 = active, 3 = recovery
 
 func _ready() -> void:
+	var combat_script = load("res://_core/components/enemy_combat_component.gd")
+	if combat_script:
+		combat_comp = combat_script.new()
+		combat_comp.name = "EnemyCombatComponent"
+		add_child(combat_comp)
+
 	if not stats:
 		stats = load("res://characters/enemies/runner/runner_stats.tres")
 		
@@ -52,28 +59,31 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 		
-	if player and is_on_floor():
-		if attack_step == 0:
-			var dist = global_position.distance_to(player.global_position)
-			if dist > 1.5:
-				var dir = (player.global_position - global_position).normalized()
-				dir.y = 0
-				velocity.x = dir.x * stats.speed
-				velocity.z = dir.z * stats.speed
+	if not combat_comp.is_stunned():
+		if player and is_on_floor():
+			if attack_step == 0:
+				var dist = global_position.distance_to(player.global_position)
+				if dist > 1.5:
+					var dir = (player.global_position - global_position).normalized()
+					dir.y = 0
+					velocity.x = dir.x * stats.speed
+					velocity.z = dir.z * stats.speed
+				else:
+					velocity.x = move_toward(velocity.x, 0, 10 * delta)
+					velocity.z = move_toward(velocity.z, 0, 10 * delta)
+			elif attack_step == 2:
+				velocity.x = move_toward(velocity.x, 0, 5 * delta)
+				velocity.z = move_toward(velocity.z, 0, 5 * delta)
 			else:
-				velocity.x = move_toward(velocity.x, 0, 10 * delta)
-				velocity.z = move_toward(velocity.z, 0, 10 * delta)
-		elif attack_step == 2:
-			velocity.x = move_toward(velocity.x, 0, 5 * delta)
-			velocity.z = move_toward(velocity.z, 0, 5 * delta)
-		else:
-			velocity.x = move_toward(velocity.x, 0, 20 * delta)
-			velocity.z = move_toward(velocity.z, 0, 20 * delta)
+				velocity.x = move_toward(velocity.x, 0, 20 * delta)
+				velocity.z = move_toward(velocity.z, 0, 20 * delta)
 		
 	move_and_slide()
 
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":
+		return
+	if combat_comp.is_stunned():
 		return
 		
 	if attack_step == 1:
@@ -99,9 +109,9 @@ func _on_beat(layer: String, beat_index: int) -> void:
 
 func _on_health_changed(current: float, _max_health: float) -> void:
 	print("Runner hit! HP: ", current)
-	velocity.y = 8.0
 
 func _on_died() -> void:
 	print("Runner Died!")
 	GameManager.add_scrap(stats.scrap)
 	queue_free()
+

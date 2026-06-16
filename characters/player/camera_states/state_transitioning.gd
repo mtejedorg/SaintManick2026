@@ -37,7 +37,8 @@ func physics_update(delta: float) -> void:
 		return
 	# Standard player tracking during the transition
 	var target_position = camera.target.global_position + camera.offset
-	camera.global_position = camera.global_position.lerp(target_position, camera.smooth_speed * delta)
+	camera.base_position = camera.base_position.lerp(target_position, camera.smooth_speed * delta)
+
 
 func _on_tween_finished() -> void:
 	if camera.target:

@@ -68,7 +68,11 @@ func slam() -> void:
 		.set_ease(Tween.EASE_IN)
 	
 	# Activate hitbox on impact
-	tween.tween_callback(func(): hitbox.is_active = true)
+	tween.tween_callback(func():
+		hitbox.is_active = true
+		SignalBus.camera_shake_requested.emit(0.4, 0.2)
+	)
+
 	
 	# Hold
 	tween.tween_interval(hold_duration)

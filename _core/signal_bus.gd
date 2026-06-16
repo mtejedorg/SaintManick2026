@@ -11,6 +11,10 @@ signal player_life_lost(current_lives: int)
 # --- Combat Events ---
 signal combo_increased(current_combo: int)
 signal combo_dropped()
+signal hit_stop_requested(duration: float, time_scale: float)
+signal camera_shake_requested(strength: float, duration: float)
+signal player_hit_landed(damage_info: DamageInfo)
+
 
 # --- Music/Rhythm Events ---
 signal beat(layer: String, beat_index: int)

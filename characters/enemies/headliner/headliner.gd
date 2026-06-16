@@ -5,12 +5,19 @@ extends CharacterBody3D
 
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+var combat_comp: Node = null
 
 var base_material: StandardMaterial3D
 var phase_2_material: StandardMaterial3D
 var phase_2_triggered: bool = false
 
 func _ready() -> void:
+	var combat_script = load("res://_core/components/enemy_combat_component.gd")
+	if combat_script:
+		combat_comp = combat_script.new()
+		combat_comp.name = "EnemyCombatComponent"
+		add_child(combat_comp)
+
 	if not stats:
 		stats = load("res://characters/enemies/headliner/headliner_stats.tres")
 		
@@ -46,8 +53,11 @@ func _physics_process(delta: float) -> void:
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":
 		return
+	if combat_comp.is_stunned():
+		return
 		
 	if phase_2_triggered:
+
 		print("Headliner fires bullet hell wave on beat ", beat_index)
 		# Pulse albedo on beat
 		var tween = create_tween()

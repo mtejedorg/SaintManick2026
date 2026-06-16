@@ -8,6 +8,7 @@ extends CharacterBody3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 @onready var shield_bubble: MeshInstance3D = $ShieldBubble
 @onready var state_machine: EnforcerStateMachine = $StateMachine
+var combat_comp: Node = null
 
 var player: Node3D
 var base_material: StandardMaterial3D
@@ -18,6 +19,12 @@ var is_shield_active: bool = false
 var is_vulnerable: bool = false
 
 func _ready() -> void:
+	var combat_script = load("res://_core/components/enemy_combat_component.gd")
+	if combat_script:
+		combat_comp = combat_script.new()
+		combat_comp.name = "EnemyCombatComponent"
+		add_child(combat_comp)
+
 	if not stats:
 		stats = load("res://characters/enemies/enforcer/enforcer_stats.tres")
 		
@@ -63,14 +70,21 @@ func _ready() -> void:
 	SignalBus.beat.connect(_on_beat)
 
 func _physics_process(delta: float) -> void:
-	state_machine.physics_process(delta)
+	if combat_comp.is_stunned():
+		apply_gravity(delta)
+		move_and_slide()
+	else:
+		state_machine.physics_process(delta)
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 
 func _on_beat(layer: String, beat_index: int) -> void:
+	if combat_comp.is_stunned():
+		return
 	state_machine.handle_beat(layer, beat_index)
+
 
 func break_shield() -> void:
 	print("Enforcer shield broken!")

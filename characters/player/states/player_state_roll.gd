@@ -9,6 +9,12 @@ func enter() -> void:
 	var input_dir = player.get_movement_input()
 	roll_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)
 	player.face_direction(roll_direction.x if roll_direction.x != 0 else roll_direction.y)
+	if player.health_component:
+		player.health_component.is_invincible = true
+
+func exit() -> void:
+	if player.health_component:
+		player.health_component.is_invincible = false
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
@@ -26,3 +32,4 @@ func physics_update(delta: float) -> void:
 			transition_requested.emit("StateAirborne")
 		else:
 			transition_requested.emit("StateIdle")
+

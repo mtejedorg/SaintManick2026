@@ -16,6 +16,7 @@ var current_shield: float
 var regen_timer: float = 0.0
 
 @export var is_player: bool = false
+var is_invincible: bool = false
 
 func _ready() -> void:
 	current_health = max_health
@@ -34,8 +35,11 @@ func _process(delta: float) -> void:
 				gm.current_shield = current_shield
 
 func take_damage(damage_info: DamageInfo) -> void:
+	if is_invincible:
+		return
 	if current_health <= 0.0:
 		return
+
 		
 	# Reset shield regen timer
 	regen_timer = shield_regen_delay

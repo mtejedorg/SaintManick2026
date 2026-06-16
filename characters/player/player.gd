@@ -19,9 +19,16 @@ var is_jump_enabled: bool = true
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
 @onready var health_component: HealthComponent = $HealthComponent
+var combo_component: Node = null
 
 func _ready() -> void:
+	var combo_script = load("res://characters/player/player_combo_component.gd")
+	if combo_script:
+		combo_component = combo_script.new()
+		combo_component.name = "PlayerComboComponent"
+		add_child(combo_component)
 	health_component.is_player = true
+
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:
 		health_component.max_health = gm.max_hp

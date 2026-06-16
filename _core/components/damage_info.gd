@@ -8,3 +8,5 @@ extends Resource
 ## Runtime-only reference to the attacker. NOT exported: Godot forbids exporting a
 ## Node reference on a Resource (resources are shared/serialized and cannot hold scene nodes).
 var source: Node3D = null
+var is_launcher: bool = false
+

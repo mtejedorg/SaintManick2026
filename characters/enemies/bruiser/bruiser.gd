@@ -6,11 +6,18 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+var combat_comp: Node = null
 
 var player: Node3D
 var base_material: StandardMaterial3D
 
 func _ready() -> void:
+	var combat_script = load("res://_core/components/enemy_combat_component.gd")
+	if combat_script:
+		combat_comp = combat_script.new()
+		combat_comp.name = "EnemyCombatComponent"
+		add_child(combat_comp)
+
 	if not stats:
 		stats = load("res://characters/enemies/bruiser/bruiser_stats.tres")
 		
@@ -49,6 +56,8 @@ func _physics_process(delta: float) -> void:
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":
 		return
+	if combat_comp.is_stunned():
+		return
 	# Visual scale pulse on the beat
 	var tween = create_tween()
 	tween.tween_property(mesh_instance, "scale", Vector3(1.1, 1.1, 1.1), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -56,7 +65,6 @@ func _on_beat(layer: String, beat_index: int) -> void:
 
 func _on_health_changed(current: float, _max_health: float) -> void:
 	print("Bruiser hit! HP: ", current)
-	velocity.y = 2.0
 
 func _on_died() -> void:
 	print("Bruiser Died!")

@@ -6,12 +6,19 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var laser_beam: MeshInstance3D = $LaserBeam
 @onready var laser_hitbox: Hitbox3D = $LaserHitbox
+var combat_comp: Node = null
 
 var player: Node3D
 var laser_material: StandardMaterial3D
 var is_aim_locked: bool = false
 
 func _ready() -> void:
+	var combat_script = load("res://_core/components/enemy_combat_component.gd")
+	if combat_script:
+		combat_comp = combat_script.new()
+		combat_comp.name = "EnemyCombatComponent"
+		add_child(combat_comp)
+
 	if not stats:
 		stats = load("res://characters/enemies/sniper/sniper_stats.tres")
 		
@@ -46,15 +53,20 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
-	if player and not is_aim_locked:
-		var target_pos = player.global_position
-		target_pos.y = global_position.y
-		if global_position.distance_to(target_pos) > 0.1:
-			look_at(target_pos, Vector3.UP)
+	if not combat_comp.is_stunned():
+		if player and not is_aim_locked:
+			var target_pos = player.global_position
+			target_pos.y = global_position.y
+			if global_position.distance_to(target_pos) > 0.1:
+				look_at(target_pos, Vector3.UP)
 	move_and_slide()
 
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":
+		return
+	if combat_comp.is_stunned():
+		laser_beam.visible = false
+		laser_hitbox.is_active = false
 		return
 		
 	match beat_index:
@@ -80,7 +92,6 @@ func _on_beat(layer: String, beat_index: int) -> void:
 
 func _on_health_changed(current: float, _max_health: float) -> void:
 	print("Sniper hit! HP: ", current)
-	velocity.y = 5.0
 
 func _on_died() -> void:
 	print("Sniper Died!")

@@ -22,7 +22,7 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 
 ## 2. Test Coverage Table
 
-The automated suite consists of **32 test cases** across **9 test suites**, covering all core Phase 0-3 systems:
+The automated suite consists of **37 test cases** across **10 test suites**, covering all core Phase 0-4 systems:
 
 | Test Suite File | Test Cases | Objective / Verification |
 | :--- | :---: | :--- |
@@ -35,6 +35,7 @@ The automated suite consists of **32 test cases** across **9 test suites**, cove
 | [`test_wave_encounter.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_wave_encounter.gd) | 2 | <ul><li>Verify WaveSpawner emits `wave_cleared` when spawned enemies are defeated.</li><li>Verify ZoneEncounter wave progression, initial gate locking, and gate unlocking upon completion.</li></ul> |
 | [`test_collision_layers.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_collision_layers.gd) | 4 | <ul><li>Verify 3D physics collision layer constants (e.g. player_hitbox=512, player_hurtbox=1024, enemy_hitbox=2048, enemy_hurtbox=4096, hazard_hitbox=8192).</li><li>Verify layer and mask assignments on player, enemy, and hazard scenes.</li></ul> |
 | [`test_camera_fsm.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_camera_fsm.gd) | 3 | <ul><li>Verify camera transitions via `SignalBus.camera_shift_requested` (Sidescroll -> Transitioning -> TopDown).</li><li>Confirm target tracking and camera offset updates.</li><li>Confirm target `is_jump_enabled` and `current_path` properties update accordingly.</li></ul> |
+| [`test_juice_combat.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_juice_combat.gd) | 5 | <ul><li>Verify roll invincibility damage mitigation.</li><li>Verify enemy knockback direction and floor friction decay.</li><li>Verify vertical launch Y pop on launcher attacks for air-juggles.</li><li>Verify combo counter accumulation, timeout resets, and attack string whiff drops.</li><li>Verify hit-stop time scale freeze and unscaled time recovery.</li></ul> |
 
 ---
 
@@ -56,5 +57,13 @@ For features and visual/game-feel parameters that cannot be fully validated prog
 ### 3.3 Combat Flow & UI
 - [ ] **Attack Input**: Verify light attack (J) and heavy attack (K) trigger animations and damage enemies.
 - [ ] **Health & Shield UI**: Verify that taking damage updates the health/shield UI bars immediately.
-- [ ] **Combo Counter**: Check that the combo counter increases upon consecutive hits and drops after a delay of no combat.
+- [ ] **Combo Counter**: Check that the combo counter increases upon consecutive hits, drops after a 2.0s delay of no combat, and drops immediately on whiffing an attack string.
 - [ ] **Shop Transition**: Confirm that losing all lives triggers a screen fade and transitions the player to Karen's Shop.
+
+### 3.4 Combat Juice & Game-Feel
+- [ ] **Hit-Stop (Freeze-Frame)**: Verify that landing a hit on an enemy causes a brief, satisfying time-freeze (80ms at 0.05 time_scale) before returning to normal speed.
+- [ ] **Camera Screen-Shake**: Check that landing player hits, ceiling piston slams, and other heavy impacts request and execute a dynamic camera screen-shake.
+- [ ] **Roll Invincibility**: Verify that rolling provides full invincibility frames (HP and Shield do not decrease when hit during a roll).
+- [ ] **Enemy Knockback & Stun**: Ensure enemies are pushed back away from the player when hit and pause their AI behavior, movement, and beat actions for the duration of the stun.
+- [ ] **Air-Juggle Launch**: Verify that launcher hits (heavy attacks or the third hit of a light combo string) launch enemies vertically for air-juggles.
+

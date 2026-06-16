@@ -6,45 +6,58 @@ The game features classic heavy beat'em up combat blended with ambient rhythm me
 
 ---
 
-## Project Status: Vertical Slice Prototype (Build A+B) Complete
+## Project Status: Vertical Slice Playable (Zones 1–10 complete)
 
-We have successfully migrated the project to **Godot 4.6** and completed the massive `/goal` sprint to build the foundational **Vertical Slice**. 
+Running on **Godot 4.6**. The full designed vertical slice is implemented end-to-end — all 10 zones from the Factory floor to the Headliner rooftop, both bosses, the roguelite meta-loop, a game-feel layer, placeholder art, and a self-verifying automated test suite (**49 tests, all green**).
 
-**Current Functional Systems:**
-- **Drone Camera & Perspective Shifts:** A dynamic Camera3D that tracks the player in 2.5D and seamlessly tweens into a Top-Down perspective when passing through a `CameraShiftTrigger` Area3D.
-- **Rhythm Conductor:** An Autoload running a global 128 BPM timer. Enemies hook into the Conductor's signals to synchronize their attacks (e.g. Snipers firing on the downbeat).
-- **Roguelite Meta-Loop:** `GameManager` Autoload tracking Max HP, Lives, and Scrap. If Nick dies, the player is routed to **Karen's Shop** (`karens_shop.tscn`) to purchase permanent upgrades using Scrap before restarting.
-- **Modular Combat Architecture:** Decoupled Godot components including `HealthComponent`, `Hurtbox3D`, and `Hitbox3D` that govern damage without hardcoded dependencies.
-- **Enemy AI Roster:** The 4 prototype enemies (Runner, Bruiser, Sniper, Enforcer, Headliner) have basic chase logic and deal damage upon collision.
-- **Master Level Sequence:** `vertical_slice.tscn` connects the 2.5D `Path3D` traversal sequence directly into a bounded Top-Down boss arena.
+**Functional Systems:**
+- **Combat Contract:** `DamageInfo` resource flows `Hitbox3D → Hurtbox3D → HealthComponent`. `HealthComponent` owns the universal death rule (shield → HP → lose a life → permadeath only at 0 HP + 0 lives, shield regen 12/s after 3s) and roll **i-frames**. A named collision-layer scheme prevents self-hits/friendly-fire.
+- **The Conductor (tempo engine):** Autoload metronome emitting `SignalBus.beat / downbeat / tempo_changed`; **variable BPM** (the Headliner ramps 128→160 in phase 2) with meter-layer support. Every hazard/enemy/boss telegraph is beat-driven; the player is never required to act on the beat.
+- **Camera HSM:** `Sidescroll / Transitioning / TopDown` state machine driven by `SignalBus.camera_shift_requested`; owns the 2.5D plane-lock and jump suppression and shifts both ways (used for the security room, the plaza ambush, and the Headliner's bullet-hell phase).
+- **Persistence:** `SaveManager` + `PlayerProfile` persist Scrap and permanent upgrades to `user://`; **Karen's Shop** spends them and equips a Run Booster. Volatile run state is never persisted.
+- **Enemy roster (data-driven `EnemyStats` `.tres`):** Runner, Bruiser, Sniper (beat-locked laser), the **Rhythm Enforcer** mini-boss (beat-locked 3-hit bursts, shield-break) and the **Headliner** (multi-phase HSM with a pooled top-down bullet-hell). Knockback/stun and air-juggle launches are data-driven via `DamageInfo`.
+- **Encounter & hazard systems:** reusable `ZoneEncounter` + `WaveSpawner` (camera-locked waves), and beat-driven hazards — ceiling pistons, bomb grid, sniper lasers, toxic pit, the Zone 8 escape gauntlet, and the Zone 9 ascending elevator.
+- **Game feel:** hit-stop, screen-shake, roll invincibility, combo counter, and air juggles.
+- **Object pool (`_core/pool`):** projectiles are pre-instantiated and reused, never freed mid-combat (bullet-hell performance).
+- **Master sequence:** `vertical_slice.tscn` chains Zones 1–7 (Slice A, → Enforcer → shop) into Zones 8–10 (Slice B: escape → elevator → Headliner → results), full meta-loop included.
+
+### Running & testing
+
+The project requires **Godot 4.6**. Open `project.godot` in the editor and press Play, or from the CLI:
+
+```
+# Launch the slice
+godot --path . 
+
+# Compile-check all scripts (CI-style)
+godot --headless --path . --import
+
+# Run the automated test suite (exits non-zero on any failure)
+godot --headless --path . -s res://tests/run_tests.gd
+```
+
+See **`TESTPLAN.md`** for the automated-coverage table and the manual playtest/regression checklist.
 
 ---
 
-## Next Steps / Immediate Roadmap
+## Next Steps / Remaining Polish
 
-With the foundational mechanics blocking out the core loop, the next phase focuses on **game-feel, combat depth, and content creation**.
+The designed slice is feature-complete; what remains is fidelity and tuning:
 
-1. **Combat Combo System Expansion:** 
-   - Implement the Hierarchical State Machine (HSM) logic for chained attacks (Light/Heavy strings) and air juggles.
-   - Add hit-stop (freeze-frame) and screen-shake for heavy attacks.
-2. **Visual Polish & Animation:**
-   - Replace the `CapsuleMesh` placeholder characters with rigged 3D models.
-   - Integrate Godot `AnimationPlayer` / `AnimationTree` for run, dash, roll, and attack animations.
-3. **Level Geometry & Shaders:**
-   - Replace `CSGBox3D` block-outs with actual environmental 3D assets (Factory and Neon districts).
-   - Implement the proper post-processing stack (bloom, chromatic aberration, retro grading).
-4. **Audio & The Rhythm UI:**
-   - Integrate the industrial techno backing track.
-   - Build the diegetic UI elements (perhaps a heartbeat monitor on the drone UI) so players can *see* the Conductor's tempo if they want to optimize their dodges.
+1. **Art & Animation:** the `NickProto.fbx` placeholder ships only a bind-pose clip — author run/dash/roll/attack animations and swap the `CSGBox3D` block-outs for real Factory/Neon environment art. Add the post-processing stack (bloom, chromatic aberration, retro grading).
+2. **Audio:** integrate the industrial-techno stems, slaved to the Conductor (currently metronome-only by design).
+3. **Run Boosters & balance:** implement actual Run-Booster effects (selection already persists) and tune numbers in `tools/balance_tool.html` toward the 2–3 / 4–5 runs-to-clear targets.
+4. **Front-end:** a main-menu/start screen and the diegetic heartbeat tempo readout.
 
 ---
 
 ## Directory Structure
 
-- **`/_core`** - Autoloads (GameManager, Conductor, SignalBus) and modular node Components (Health, Hitboxes).
-- **`/characters`** - Player and Enemy scripts, HSM states, and scenes.
-- **`/levels`** - The Vertical Slice prototype map and its trigger components.
-- **`/ui`** - The diegetic Input Overlay and Karen's Shop interface.
-- **`/Documents`** - The definitive source of truth (GDD, VerticalSlice.md, CodeArchitecture.md).
+- **`/_core`** - Autoloads (GameManager, Conductor, SignalBus, SaveManager, HitStop), modular Components (Health, Hit/Hurtbox, DamageInfo, combat/combo), the HSM base, persistence, and the object `pool`.
+- **`/characters`** - Player (controller, HSM states, camera-state machine, combo) and Enemies (data-driven stats + HSM bosses); `shared/` holds the reusable recolorable character visual.
+- **`/levels`** - `slice/vertical_slice.tscn` (Zones 1–10) and reusable `components/` (encounters, wave spawner, hazards, escape, elevator).
+- **`/ui`** - The diegetic HUD (battery/shield/lives/beat pulse) and Karen's Shop.
+- **`/tests`** - Self-contained GDScript test framework + cases (run headless; see TESTPLAN.md).
+- **`/Documents`** - The definitive source of truth (GDD, VerticalSlice.md, CodeArchitecture.md, Roadmap.md).
 - **`/UnityProject`** - The legacy Unity 5 prototype codebase (Deprecated).
-- **`/2D_Assets`** & **`/3D_Assets`** - Legacy art resources, textures, and models.
+- **`/2D_Assets`** & **`/3D_Assets`** - Art resources, textures, and the placeholder NickProto model.

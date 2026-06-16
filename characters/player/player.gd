@@ -11,9 +11,14 @@ extends CharacterBody3D
 
 @export var current_path: Path3D
 
+## Y below which the player is considered to have fallen out of the world. Below every
+## legitimate floor in the slice (lowest arena floor ~ -4.5); the elevator rises well above 0.
+const FALL_KILL_Y: float = -15.0
+
 var can_double_jump: bool = true
 var is_facing_right: bool = true
 var is_jump_enabled: bool = true
+var _fall_handled: bool = false
 
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -48,6 +53,15 @@ func _physics_process(_delta: float) -> void:
 		var closest_pt = current_path.to_global(current_path.curve.get_closest_point(local_pos))
 		global_position.x = closest_pt.x
 		global_position.z = closest_pt.z
+
+	# Fall out of the world -> costs a life via the universal death rule (never an infinite fall).
+	if not _fall_handled and global_position.y < FALL_KILL_Y:
+		_fall_handled = true
+		var fall_damage := DamageInfo.new()
+		fall_damage.amount = 99999.0
+		fall_damage.is_shield_breaker = true
+		fall_damage.source = self
+		health_component.take_damage(fall_damage)
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():

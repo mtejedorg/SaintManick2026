@@ -14,11 +14,14 @@ extends CharacterBody3D
 ## Y below which the player is considered to have fallen out of the world. Below every
 ## legitimate floor in the slice (lowest arena floor ~ -4.5); the elevator rises well above 0.
 const FALL_KILL_Y: float = -15.0
+## HP cost paid when falling out of the world (shield absorbs first, per the universal rule).
+@export var fall_damage: float = 20.0
 
 var can_double_jump: bool = true
 var is_facing_right: bool = true
 var is_jump_enabled: bool = true
-var _fall_handled: bool = false
+## Last grounded position; a fall returns Nick here instead of reloading the level.
+var last_safe_position: Vector3 = Vector3.ZERO
 
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -41,6 +44,7 @@ func _ready() -> void:
 		health_component.max_shield = gm.max_shield
 		health_component.current_shield = gm.current_shield
 	health_component.died.connect(_on_died)
+	last_safe_position = global_position
 
 func _on_died() -> void:
 	# Handled centrally by HealthComponent, but can trigger player-specific visuals here
@@ -54,14 +58,21 @@ func _physics_process(_delta: float) -> void:
 		global_position.x = closest_pt.x
 		global_position.z = closest_pt.z
 
-	# Fall out of the world -> costs a life via the universal death rule (never an infinite fall).
-	if not _fall_handled and global_position.y < FALL_KILL_Y:
-		_fall_handled = true
-		var fall_damage := DamageInfo.new()
-		fall_damage.amount = 99999.0
-		fall_damage.is_shield_breaker = true
-		fall_damage.source = self
-		health_component.take_damage(fall_damage)
+	# Remember the last solid ground so a fall can return Nick there.
+	if is_on_floor():
+		last_safe_position = global_position
+
+	# Fell out of the world -> snap back to the last safe ground and pay HP (shield absorbs first;
+	# if the bar empties the HealthComponent's universal rule costs a life). No infinite fall, no
+	# full level reset.
+	if global_position.y < FALL_KILL_Y:
+		global_position = last_safe_position
+		velocity = Vector3.ZERO
+		can_double_jump = true
+		var fall_hit := DamageInfo.new()
+		fall_hit.amount = fall_damage
+		fall_hit.source = self
+		health_component.take_damage(fall_hit)
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():

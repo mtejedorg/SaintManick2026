@@ -9,6 +9,7 @@ extends CharacterBody3D
 
 var player: Node3D
 var laser_material: StandardMaterial3D
+var is_aim_locked: bool = false
 
 func _ready() -> void:
 	if not stats:
@@ -26,6 +27,9 @@ func _ready() -> void:
 	laser_hitbox.damage_info.source = self
 	laser_hitbox.is_active = false
 	
+	laser_hitbox.collision_layer = 8192 # Layer 14
+	laser_hitbox.collision_mask = 1024 # Layer 11
+	
 	laser_beam.visible = false
 	
 	# Setup laser material
@@ -42,7 +46,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
-	if player:
+	if player and not is_aim_locked:
 		var target_pos = player.global_position
 		target_pos.y = global_position.y
 		if global_position.distance_to(target_pos) > 0.1:
@@ -55,10 +59,12 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		
 	match beat_index:
 		3:
+			is_aim_locked = false
 			laser_beam.visible = true
 			laser_beam.scale = Vector3(0.05, 0.05, 1.0)
 			laser_material.albedo_color.a = 0.3
 		4:
+			is_aim_locked = true
 			laser_beam.scale = Vector3(0.15, 0.15, 1.0)
 			laser_material.albedo_color.a = 0.6
 		1:
@@ -70,6 +76,7 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		2:
 			laser_beam.visible = false
 			laser_hitbox.is_active = false
+			is_aim_locked = false
 
 func _on_health_changed(current: float, _max_health: float) -> void:
 	print("Sniper hit! HP: ", current)

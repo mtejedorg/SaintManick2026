@@ -6,11 +6,16 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+@onready var shield_bubble: MeshInstance3D = $ShieldBubble
+@onready var state_machine: EnforcerStateMachine = $StateMachine
 
 var player: Node3D
 var base_material: StandardMaterial3D
 var telegraph_material: StandardMaterial3D
-var in_attack_sequence: bool = false
+var vulnerable_material: StandardMaterial3D
+
+var is_shield_active: bool = false
+var is_vulnerable: bool = false
 
 func _ready() -> void:
 	if not stats:
@@ -45,63 +50,32 @@ func _ready() -> void:
 	telegraph_material.emission_enabled = true
 	telegraph_material.emission = Color(1.0, 0.3, 0.0, 1.0)
 
+	vulnerable_material = base_material.duplicate()
+	vulnerable_material.albedo_color = Color(0.2, 0.6, 1.0, 1.0)
+	vulnerable_material.emission_enabled = true
+	vulnerable_material.emission = Color(0.1, 0.3, 0.8, 1.0)
+
 	player = get_tree().current_scene.get_node_or_null("Player")
+	
+	# Initialize state machine
+	state_machine.init(self)
+	
 	SignalBus.beat.connect(_on_beat)
 
 func _physics_process(delta: float) -> void:
+	state_machine.physics_process(delta)
+
+func apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
-		
-	if player and is_on_floor() and not in_attack_sequence:
-		var dist = global_position.distance_to(player.global_position)
-		if dist > 3.0:
-			var dir = (player.global_position - global_position).normalized()
-			dir.y = 0
-			velocity.x = dir.x * stats.speed
-			velocity.z = dir.z * stats.speed
-		else:
-			velocity.x = move_toward(velocity.x, 0, 10 * delta)
-			velocity.z = move_toward(velocity.z, 0, 10 * delta)
-	elif in_attack_sequence:
-		velocity.x = move_toward(velocity.x, 0, 5 * delta)
-		velocity.z = move_toward(velocity.z, 0, 5 * delta)
-		
-	move_and_slide()
 
 func _on_beat(layer: String, beat_index: int) -> void:
-	if layer != "primary":
-		return
-		
-	# Enforcer cycle:
-	# Beat 1: Check distance & telegraph
-	# Beat 2: Lunge & swing
-	# Beat 3: Reset hitbox and recover albedo
-	# Beat 4: End sequence
-	match beat_index:
-		1:
-			if player:
-				var dist = global_position.distance_to(player.global_position)
-				if dist <= 4.0:
-					in_attack_sequence = true
-					mesh_instance.set_surface_override_material(0, telegraph_material)
-					print("Enforcer charges attack on beat 1")
-		2:
-			if in_attack_sequence:
-				hitbox.is_active = true
-				if player:
-					var dir = (player.global_position - global_position).normalized()
-					dir.y = 0
-					velocity.x = dir.x * stats.speed * 1.5
-					velocity.z = dir.z * stats.speed * 1.5
-				print("Enforcer swings on beat 2")
-		3:
-			if in_attack_sequence:
-				hitbox.is_active = false
-				mesh_instance.set_surface_override_material(0, base_material)
-				print("Enforcer recovers on beat 3")
-		4:
-			in_attack_sequence = false
-			mesh_instance.set_surface_override_material(0, base_material)
+	state_machine.handle_beat(layer, beat_index)
+
+func break_shield() -> void:
+	print("Enforcer shield broken!")
+	if state_machine.current_state and state_machine.current_state.has_method("on_shield_broken"):
+		state_machine.current_state.on_shield_broken()
 
 func _on_health_changed(current: float, _max_health: float) -> void:
 	print("Enforcer hit! HP: ", current)
@@ -109,4 +83,5 @@ func _on_health_changed(current: float, _max_health: float) -> void:
 func _on_died() -> void:
 	print("MINI-BOSS DEFEATED!")
 	GameManager.add_scrap(stats.scrap)
+	GameManager.complete_run()
 	queue_free()

@@ -1,0 +1,73 @@
+class_name ZoneEncounter
+extends Area3D
+
+signal encounter_completed
+
+@export var waves: Array[WaveDef] = []
+@export var spawner: WaveSpawner
+@export var is_top_down: bool = false
+@export var target_camera_path: Path3D
+@export var gates: Array[Node3D] = []
+
+var current_wave_index: int = 0
+var active: bool = false
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+	set_gate_locked(false)
+	if spawner:
+		spawner.wave_cleared.connect(_on_wave_cleared)
+
+func _on_body_entered(body: Node3D) -> void:
+	if active:
+		return
+	if body is PlayerController:
+		active = true
+		# Disable detection so it doesn't trigger again
+		set_deferred("monitoring", false)
+		
+		# Lock gates
+		set_gate_locked(true)
+		
+		# Handle camera shift
+		if is_top_down:
+			SignalBus.camera_shift_requested.emit(true, null, 1.5)
+			
+		# Start spawning waves
+		current_wave_index = 0
+		_spawn_current_wave()
+
+func _spawn_current_wave() -> void:
+	if current_wave_index < waves.size():
+		if spawner:
+			spawner.spawn_wave(waves[current_wave_index])
+		else:
+			push_error("ZoneEncounter: No WaveSpawner assigned!")
+			_on_wave_cleared()
+	else:
+		# All waves completed
+		_complete_encounter()
+
+func _on_wave_cleared() -> void:
+	current_wave_index += 1
+	_spawn_current_wave()
+
+func _complete_encounter() -> void:
+	set_gate_locked(false)
+	if is_top_down:
+		SignalBus.camera_shift_requested.emit(false, target_camera_path, 1.5)
+	encounter_completed.emit()
+
+func set_gate_locked(locked: bool) -> void:
+	for gate in gates:
+		if not gate:
+			continue
+		gate.visible = locked
+		if gate is CSGPrimitive3D:
+			gate.use_collision = locked
+		elif gate is CollisionObject3D:
+			for child in gate.get_children():
+				if child is CollisionShape3D:
+					child.set_deferred("disabled", not locked)
+		elif gate is CollisionShape3D:
+			gate.set_deferred("disabled", not locked)

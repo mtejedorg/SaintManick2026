@@ -1,89 +1,400 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=24 format=3]
 
-[ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_xxx"]
-[ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_xxx"]
-[ext_resource type="Script" path="res://levels/components/camera_shift_trigger.gd" id="3_xxx"]
-[ext_resource type="PackedScene" path="res://characters/enemies/runner/runner.tscn" id="4_xxx"]
-[ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer.tscn" id="5_xxx"]
-[ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner.tscn" id="6_xxx"]
-[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="7_xxx"]
+[ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_camera"]
+[ext_resource type="PackedScene" path="res://characters/enemies/runner/runner.tscn" id="3_runner"]
+[ext_resource type="PackedScene" path="res://characters/enemies/bruiser/bruiser.tscn" id="4_bruiser"]
+[ext_resource type="PackedScene" path="res://characters/enemies/sniper/sniper.tscn" id="5_sniper"]
+[ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer.tscn" id="6_enforcer"]
+[ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="7_hud"]
+[ext_resource type="Script" path="res://levels/components/wave_def.gd" id="8_wave_def"]
+[ext_resource type="PackedScene" path="res://levels/components/wave_spawner.tscn" id="9_spawner"]
+[ext_resource type="PackedScene" path="res://levels/components/zone_encounter.tscn" id="10_encounter"]
+[ext_resource type="PackedScene" path="res://levels/components/ceiling_piston.tscn" id="11_piston"]
+[ext_resource type="PackedScene" path="res://levels/components/bomb_grid.tscn" id="12_bomb_grid"]
+[ext_resource type="PackedScene" path="res://levels/components/toxic_pit.tscn" id="13_toxic_pit"]
 
-[sub_resource type="Curve3D" id="Curve3D_slice"]
+; --- Curve 3D Resources ---
+[sub_resource type="Curve3D" id="Curve3D_z1_2_3"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 0),
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, -4, 0, 0, 0, 0, 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 0, 110, 0, 0),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0)
+}
+point_count = 5
+
+[sub_resource type="Curve3D" id="Curve3D_z4_5_6"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 110, 0, 0, 0, 0, 0, 0, 0, 0, 122.5, 0, 0, 0, 0, 0, 0, 0, 0, 172.5, 0, 0, 0, 0, 0, 0, 0, 0, 202.5, -4, 0, 0, 0, 0, 0, 0, 0, 225, -4, 0),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0)
+}
+point_count = 5
+
+[sub_resource type="Curve3D" id="Curve3D_z7"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 225, -4, 0, 0, 0, 0, 0, 0, 0, 280, -4, 0),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_shift"]
-size = Vector3(10, 10, 10)
+; --- Wave Def Resources ---
+[sub_resource type="Resource" id="Resource_z1_w1"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("3_runner")]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+[sub_resource type="Resource" id="Resource_z1_w2"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("3_runner")]
+
+[sub_resource type="Resource" id="Resource_z1_w3"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("3_runner")]
+
+[sub_resource type="Resource" id="Resource_z3_w1"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner")]
+
+[sub_resource type="Resource" id="Resource_z3_w2"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("4_bruiser")]
+
+[sub_resource type="Resource" id="Resource_z6_w1"]
+script = ExtResource("8_wave_def")
+enemies = [
+	ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"),
+	ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"),
+	ExtResource("5_sniper"), ExtResource("5_sniper")
+]
+
+; --- Collision Shapes ---
+[sub_resource type="BoxShape3D" id="BoxShape3D_z1_trig"]
+size = Vector3(10, 4, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_z3_trig"]
+size = Vector3(6, 4, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_z6_trig"]
+size = Vector3(8, 4, 8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hologram"]
 transparency = 1
-albedo_color = Color(1, 0, 0, 0.2)
+albedo_color = Color(0.0, 0.8, 1.0, 0.3)
+emission_enabled = true
+emission = Color(0.0, 0.5, 1.0, 1.0)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gate"]
+transparency = 1
+albedo_color = Color(1.0, 0.0, 0.0, 0.4)
+emission_enabled = true
+emission = Color(1.0, 0.0, 0.0, 1.0)
+
+; --- Main Node ---
 [node name="VerticalSlice" type="Node3D"]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
 shadow_enabled = true
 
-[node name="Zone1_2_Path" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, -0.5, 0)
-use_collision = true
-size = Vector3(40, 1, 5)
+[node name="InputOverlay" parent="." instance=ExtResource("7_hud")]
 
-[node name="WalkablePath" type="Path3D" parent="Zone1_2_Path"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 0)
-curve = SubResource("Curve3D_slice")
+; --- Walkable Paths ---
+[node name="Path_Z1_2_3" type="Path3D" parent="."]
+curve = SubResource("Curve3D_z1_2_3")
 
-[node name="Zone3_Arena" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -0.5, 0)
-use_collision = true
-size = Vector3(40, 1, 40)
+[node name="Path_Z4_5_6" type="Path3D" parent="."]
+curve = SubResource("Curve3D_z4_5_6")
 
-[node name="WallN" type="CSGBox3D" parent="Zone3_Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -20)
-use_collision = true
-size = Vector3(40, 5, 1)
-material = SubResource("StandardMaterial3D_wall")
+[node name="Path_Z7" type="Path3D" parent="."]
+curve = SubResource("Curve3D_z7")
 
-[node name="WallS" type="CSGBox3D" parent="Zone3_Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 20)
-use_collision = true
-size = Vector3(40, 5, 1)
-material = SubResource("StandardMaterial3D_wall")
+; --- Player and Camera ---
+[node name="Player" parent="." node_paths=PackedStringArray("current_path") instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+current_path = NodePath("../Path_Z1_2_3")
 
-[node name="WallE" type="CSGBox3D" parent="Zone3_Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 0)
-use_collision = true
-size = Vector3(1, 5, 40)
-material = SubResource("StandardMaterial3D_wall")
-
-[node name="CameraShiftTrigger" type="Area3D" parent="Zone3_Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, 0)
-script = ExtResource("3_xxx")
-target_path = NodePath("../../Zone1_2_Path/WalkablePath")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Zone3_Arena/CameraShiftTrigger"]
-shape = SubResource("BoxShape3D_shift")
-
-[node name="Player" parent="." node_paths=PackedStringArray("current_path") instance=ExtResource("1_xxx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-current_path = NodePath("../Zone1_2_Path/WalkablePath")
-
-[node name="DroneCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("2_xxx")]
+[node name="DroneCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("2_camera")]
 target = NodePath("../Player")
 
-[node name="Enemies" type="Node3D" parent="."]
+; ================= ZONE 1: Linear Tutorial (2.5D) =================
+[node name="Z1_Ground" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, -0.5, 0)
+use_collision = true
+size = Vector3(30, 1, 5)
 
-[node name="Runner" parent="Enemies" instance=ExtResource("4_xxx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.5, 0)
+[node name="Z1_Encounter" parent="." node_paths=PackedStringArray("spawner") instance=ExtResource("10_encounter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+waves = [SubResource("Resource_z1_w1"), SubResource("Resource_z1_w2"), SubResource("Resource_z1_w3")]
+spawner = NodePath("Z1_Spawner")
 
-[node name="Enforcer" parent="Enemies" instance=ExtResource("5_xxx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 1.5, -5)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Z1_Encounter"]
+shape = SubResource("BoxShape3D_z1_trig")
 
-[node name="Headliner" parent="Enemies" instance=ExtResource("6_xxx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 1.5, 10)
+[node name="Z1_Spawner" parent="Z1_Encounter" instance=ExtResource("9_spawner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
 
-[node name="InputOverlay" parent="." instance=ExtResource("7_xxx")]
+; ================= ZONE 2: Piston Platforming (2.5D) =================
+[node name="Z2_Platforms" type="Node3D" parent="."]
+
+[node name="Platform1" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, -0.5, 0)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="Platform2" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, -0.5, -2)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="Platform3" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, -0.5, -3.5)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="Platform4" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, -0.5, -3.5)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="Platform5" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, -0.5, -2)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="Platform6" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, -0.5, 0)
+use_collision = true
+size = Vector3(5, 1, 5)
+
+[node name="ToxicPit" parent="." instance=ExtResource("13_toxic_pit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -2.5, -2)
+
+[node name="Piston1" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 3.5, 0)
+
+[node name="Piston2" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 3.5, -2)
+
+[node name="Piston3" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 3.5, -3.5)
+
+[node name="Piston4" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 3.5, -3.5)
+accelerate_pattern = true
+
+[node name="Piston5" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 3.5, -2)
+accelerate_pattern = true
+
+[node name="Piston6" parent="." instance=ExtResource("11_piston")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 3.5, 0)
+accelerate_pattern = true
+
+[node name="Z2_Enemies" type="Node3D" parent="."]
+
+[node name="Runner1" parent="Z2_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 1.0, -2)
+
+[node name="Runner2" parent="Z2_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 1.0, -3.5)
+
+[node name="Runner3" parent="Z2_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 1.0, 0)
+
+; ================= ZONE 3: Security Room (Top-Down) =================
+[node name="Z3_Room" type="Node3D" parent="."]
+
+[node name="Floor" type="CSGBox3D" parent="Z3_Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, -0.5, 0)
+use_collision = true
+size = Vector3(25, 1, 25)
+
+[node name="WallN" type="CSGBox3D" parent="Z3_Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.5, -12.5)
+use_collision = true
+size = Vector3(25, 5, 1)
+
+[node name="WallS" type="CSGBox3D" parent="Z3_Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.5, 12.5)
+use_collision = true
+size = Vector3(25, 5, 1)
+
+[node name="WallEntrance" type="CSGBox3D" parent="Z3_Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 97.5, 2.5, 0)
+size = Vector3(1, 5, 25)
+material = SubResource("StandardMaterial3D_gate")
+
+[node name="WallExit" type="CSGBox3D" parent="Z3_Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 122.5, 2.5, 0)
+size = Vector3(1, 5, 25)
+material = SubResource("StandardMaterial3D_gate")
+
+[node name="Z3_Encounter" parent="." node_paths=PackedStringArray("spawner", "target_camera_path", "gates") instance=ExtResource("10_encounter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 0, 0)
+waves = [SubResource("Resource_z3_w1"), SubResource("Resource_z3_w2")]
+spawner = NodePath("Z3_Spawner")
+is_top_down = true
+target_camera_path = NodePath("../Path_Z4_5_6")
+gates = [NodePath("../Z3_Room/WallEntrance"), NodePath("../Z3_Room/WallExit")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Z3_Encounter"]
+shape = SubResource("BoxShape3D_z3_trig")
+
+[node name="Z3_Spawner" parent="Z3_Encounter" instance=ExtResource("9_spawner")]
+
+[node name="SpawnPoint1" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -8)
+
+[node name="SpawnPoint2" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
+
+[node name="SpawnPoint3" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 8)
+
+[node name="SpawnPoint4" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
+
+[node name="BombGrid" parent="." instance=ExtResource("12_bomb_grid")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 0, 0)
+
+; ================= ZONE 4: Scaffolding & Vista (2.5D) =================
+[node name="Z4_Ground" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147.5, -0.5, 0)
+use_collision = true
+size = Vector3(50, 1, 5)
+
+[node name="Z4_BackgroundTowers" type="Node3D" parent="."]
+
+[node name="CentralTower" type="CSGBox3D" parent="Z4_BackgroundTowers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147.5, 20, -40)
+size = Vector3(10, 50, 10)
+
+[node name="Z4_Snipers" type="Node3D" parent="."]
+
+[node name="SniperPlatform1" type="CSGBox3D" parent="Z4_Snipers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 140, 4.5, -8)
+use_collision = true
+size = Vector3(4, 1, 4)
+
+[node name="Sniper1" parent="Z4_Snipers" instance=ExtResource("5_sniper")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 140, 6.0, -8)
+
+[node name="SniperPlatform2" type="CSGBox3D" parent="Z4_Snipers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160, 4.5, -8)
+use_collision = true
+size = Vector3(4, 1, 4)
+
+[node name="Sniper2" parent="Z4_Snipers" instance=ExtResource("5_sniper")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160, 6.0, -8)
+
+[node name="Z4_Enemies" type="Node3D" parent="."]
+
+[node name="Runner1" parent="Z4_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 130, 1.0, 0)
+
+[node name="Runner2" parent="Z4_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 140, 1.0, 0)
+
+[node name="Runner3" parent="Z4_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150, 1.0, 0)
+
+[node name="Runner4" parent="Z4_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160, 1.0, 0)
+
+; ================= ZONE 5: Neon Market Entrance (2.5D) =================
+[node name="Z5_Ground" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, -0.133, 0, 1, 0, 0.133, 0, 1, 187.5, -2.5, 0)
+use_collision = true
+size = Vector3(30, 1, 5)
+
+[node name="Z5_Enemies" type="Node3D" parent="."]
+
+[node name="Runner1" parent="Z5_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 180, 1.0, 0)
+
+[node name="Runner2" parent="Z5_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 185, 1.0, 0)
+
+[node name="Runner3" parent="Z5_Enemies" instance=ExtResource("3_runner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 190, 1.0, 0)
+
+[node name="Bruiser1" parent="Z5_Enemies" instance=ExtResource("4_bruiser")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 195, 1.0, 0)
+
+; ================= ZONE 6: Market Square Ambush (Top-Down) =================
+[node name="Z6_Plaza" type="Node3D" parent="."]
+
+[node name="Floor" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -4.5, 0)
+use_collision = true
+size = Vector3(30, 1, 30)
+
+[node name="WallN" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -1.5, -15)
+use_collision = true
+size = Vector3(30, 5, 1)
+
+[node name="WallS" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -1.5, 15)
+use_collision = true
+size = Vector3(30, 5, 1)
+
+[node name="WallEntrance" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 210, -1.5, 0)
+size = Vector3(1, 5, 30)
+material = SubResource("StandardMaterial3D_hologram")
+
+[node name="WallExit" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 240, -1.5, 0)
+size = Vector3(1, 5, 30)
+material = SubResource("StandardMaterial3D_hologram")
+
+[node name="Z6_Encounter" parent="." node_paths=PackedStringArray("spawner", "target_camera_path", "gates") instance=ExtResource("10_encounter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -4, 0)
+waves = [SubResource("Resource_z6_w1")]
+spawner = NodePath("Z6_Spawner")
+is_top_down = true
+target_camera_path = NodePath("../Path_Z7")
+gates = [NodePath("../Z6_Plaza/WallEntrance"), NodePath("../Z6_Plaza/WallExit")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Z6_Encounter"]
+shape = SubResource("BoxShape3D_z6_trig")
+
+[node name="Z6_Spawner" parent="Z6_Encounter" instance=ExtResource("9_spawner")]
+
+[node name="SpawnPoint1" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, -10)
+
+[node name="SpawnPoint2" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -10)
+
+[node name="SpawnPoint3" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 10)
+
+[node name="SpawnPoint4" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 10)
+
+[node name="SpawnPoint5" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -12)
+
+[node name="SpawnPoint6" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -12)
+
+[node name="SpawnPoint7" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 0)
+
+[node name="SpawnPoint8" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+
+[node name="SpawnPoint9" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2, -14)
+
+[node name="SpawnPoint10" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 14)
+
+; ================= ZONE 7: Mini-Boss Arena (2.5D) =================
+[node name="Z7_Ground" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 261.25, -4.5, 0)
+use_collision = true
+size = Vector3(37.5, 1, 5)
+
+[node name="RhythmEnforcer" parent="." instance=ExtResource("6_enforcer")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)

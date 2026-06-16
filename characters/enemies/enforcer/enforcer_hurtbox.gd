@@ -1,0 +1,27 @@
+class_name EnforcerHurtbox
+extends Hurtbox3D
+
+func receive_hit(damage_info: DamageInfo) -> void:
+	if not owner:
+		super.receive_hit(damage_info)
+		return
+		
+	# Check if boss has shield active
+	if owner.is_shield_active:
+		if damage_info.is_shield_breaker:
+			# Shield breaks!
+			owner.break_shield()
+		else:
+			# Complete mitigation, emit hit_received but do not take damage
+			print("Attack mitigated by Enforcer shield!")
+			hit_received.emit(damage_info)
+			return
+	else:
+		# If the enforcer is vulnerable, increase damage by 1.5x
+		if owner.is_vulnerable:
+			var dup_damage = damage_info.duplicate()
+			dup_damage.amount *= 1.5
+			super.receive_hit(dup_damage)
+			return
+			
+	super.receive_hit(damage_info)

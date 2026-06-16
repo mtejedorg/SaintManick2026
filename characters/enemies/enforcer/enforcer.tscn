@@ -1,9 +1,15 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=15 format=3]
 
-[ext_resource type="Script" path="res://characters/enemies/enforcer/enforcer.gd" id="1_xxx"]
-[ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_xxx"]
-[ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="3_xxx"]
-[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="4_xxx"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/enforcer.gd" id="1_enforcer"]
+[ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/enforcer_hurtbox.gd" id="3_enforcer"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="4_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/enforcer_state_machine.gd" id="5_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_idle.gd" id="6_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_telegraph.gd" id="7_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_attack.gd" id="8_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_recovery.gd" id="9_enforcer"]
+[ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_shield.gd" id="10_enforcer"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enforcer"]
 radius = 1.2
@@ -16,8 +22,18 @@ height = 3.0
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_enforcer"]
 albedo_color = Color(1, 0.5, 0, 1)
 
+[sub_resource type="SphereMesh" id="SphereMesh_shield"]
+radius = 1.6
+height = 3.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shield"]
+albedo_color = Color(0.0, 0.6, 1.0, 0.25)
+transparency = 1
+emission_enabled = true
+emission = Color(0.0, 0.4, 0.8, 1.0)
+
 [node name="Enforcer" type="CharacterBody3D"]
-script = ExtResource("1_xxx")
+script = ExtResource("1_enforcer")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_enforcer")
@@ -26,14 +42,20 @@ shape = SubResource("CapsuleShape3D_enforcer")
 mesh = SubResource("CapsuleMesh_enforcer")
 surface_material_override/0 = SubResource("StandardMaterial3D_enforcer")
 
+[node name="ShieldBubble" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+visible = false
+mesh = SubResource("SphereMesh_shield")
+surface_material_override/0 = SubResource("StandardMaterial3D_shield")
+
 [node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("2_xxx")
+script = ExtResource("2_enforcer")
 max_health = 600
 
 [node name="Hurtbox3D" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
 collision_layer = 4096
 collision_mask = 0
-script = ExtResource("3_xxx")
+script = ExtResource("3_enforcer")
 health_component = NodePath("../HealthComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox3D"]
@@ -42,7 +64,26 @@ shape = SubResource("CapsuleShape3D_enforcer")
 [node name="Hitbox3D" type="Area3D" parent="."]
 collision_layer = 2048
 collision_mask = 1024
-script = ExtResource("4_xxx")
+script = ExtResource("4_enforcer")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox3D"]
 shape = SubResource("CapsuleShape3D_enforcer")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("5_enforcer")
+initial_state = NodePath("StateShield")
+
+[node name="StateIdle" type="Node" parent="StateMachine"]
+script = ExtResource("6_enforcer")
+
+[node name="StateTelegraph" type="Node" parent="StateMachine"]
+script = ExtResource("7_enforcer")
+
+[node name="State3HitBurst" type="Node" parent="StateMachine"]
+script = ExtResource("8_enforcer")
+
+[node name="StateRecovery" type="Node" parent="StateMachine"]
+script = ExtResource("9_enforcer")
+
+[node name="StateShield" type="Node" parent="StateMachine"]
+script = ExtResource("10_enforcer")

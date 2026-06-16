@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://levels/components/ceiling_piston.gd" id="1_zzzzz"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="2_zzzzz"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.5, 3.0, 1.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(1.5, 3.0, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
+albedo_color = Color(0.3, 0.3, 0.35, 1.0)
+metallic = 0.8
+roughness = 0.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_damage"]
+size = Vector3(1.6, 0.5, 1.6)
+
+[node name="CeilingPiston" type="Node3D"]
+script = ExtResource("1_zzzzz")
+
+[node name="PistonBody" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PistonBody"]
+shape = SubResource("BoxShape3D_body")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PistonBody"]
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="Hitbox3D" type="Area3D" parent="PistonBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, 0)
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("2_zzzzz")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PistonBody/Hitbox3D"]
+shape = SubResource("BoxShape3D_damage")

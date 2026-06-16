@@ -70,3 +70,10 @@ func respawn_or_game_over() -> void:
 		SaveManager.save_profile()
 
 	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
+
+func complete_run() -> void:
+	if SaveManager and SaveManager.profile:
+		SaveManager.profile.persistent_scrap += scrap
+		SaveManager.save_profile()
+	
+	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")

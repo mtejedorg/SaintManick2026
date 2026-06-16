@@ -1,0 +1,39 @@
+extends EnforcerState
+
+func enter() -> void:
+	enforcer.is_shield_active = false
+	if enforcer.shield_bubble:
+		enforcer.shield_bubble.visible = false
+
+func physics_update(delta: float) -> void:
+	enforcer.apply_gravity(delta)
+	
+	if enforcer.player:
+		var target_pos = enforcer.player.global_position
+		target_pos.y = enforcer.global_position.y
+		if enforcer.global_position.distance_to(target_pos) > 0.1:
+			enforcer.look_at(target_pos, Vector3.UP)
+			
+		var dist = enforcer.global_position.distance_to(enforcer.player.global_position)
+		if dist > 3.0:
+			var dir = (enforcer.player.global_position - enforcer.global_position).normalized()
+			dir.y = 0
+			enforcer.velocity.x = dir.x * enforcer.stats.speed
+			enforcer.velocity.z = dir.z * enforcer.stats.speed
+		else:
+			enforcer.velocity.x = move_toward(enforcer.velocity.x, 0, 10.0 * delta)
+			enforcer.velocity.z = move_toward(enforcer.velocity.z, 0, 10.0 * delta)
+	else:
+		enforcer.velocity.x = move_toward(enforcer.velocity.x, 0, 10.0 * delta)
+		enforcer.velocity.z = move_toward(enforcer.velocity.z, 0, 10.0 * delta)
+		
+	enforcer.move_and_slide()
+
+func on_beat(layer: String, beat_index: int) -> void:
+	if layer != "primary":
+		return
+		
+	if beat_index == 1 and enforcer.player:
+		var dist = enforcer.global_position.distance_to(enforcer.player.global_position)
+		if dist <= 4.0:
+			state_machine.transition_to("StateTelegraph")

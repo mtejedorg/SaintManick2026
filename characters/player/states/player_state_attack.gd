@@ -7,12 +7,20 @@ var attack_durations: Array[float] = [0.3, 0.3, 0.6]
 
 func enter() -> void:
 	combo_step = 0
-	_start_attack()
+	var is_heavy = Input.is_action_just_pressed("attack_heavy")
+	_start_attack(is_heavy)
 
-func _start_attack() -> void:
+func _start_attack(is_heavy: bool) -> void:
 	attack_timer = attack_durations[combo_step]
 	player.velocity.x = 0 # Stop movement during attack for heavy feel
 	player.velocity.z = 0
+	
+	if not player.katana_hitbox.damage_info:
+		player.katana_hitbox.damage_info = DamageInfo.new()
+	player.katana_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
+	player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+	player.katana_hitbox.damage_info.source = player
+	
 	player.katana_hitbox.is_active = true
 
 func exit() -> void:
@@ -27,7 +35,8 @@ func physics_update(delta: float) -> void:
 	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):
 		if combo_step < max_combo_step and attack_timer < 0.15: # combo window
 			combo_step += 1
-			_start_attack()
+			var is_heavy = Input.is_action_just_pressed("attack_heavy")
+			_start_attack(is_heavy)
 			return
 			
 	if attack_timer <= 0:

@@ -22,7 +22,7 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 
 ## 2. Test Coverage Table
 
-The automated suite consists of **37 test cases** across **10 test suites**, covering all core Phase 0-4 systems:
+The automated suite consists of **42 test cases** across **11 test suites**, covering all core Phase 0-4 systems:
 
 | Test Suite File | Test Cases | Objective / Verification |
 | :--- | :---: | :--- |
@@ -36,6 +36,7 @@ The automated suite consists of **37 test cases** across **10 test suites**, cov
 | [`test_collision_layers.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_collision_layers.gd) | 4 | <ul><li>Verify 3D physics collision layer constants (e.g. player_hitbox=512, player_hurtbox=1024, enemy_hitbox=2048, enemy_hurtbox=4096, hazard_hitbox=8192).</li><li>Verify layer and mask assignments on player, enemy, and hazard scenes.</li></ul> |
 | [`test_camera_fsm.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_camera_fsm.gd) | 3 | <ul><li>Verify camera transitions via `SignalBus.camera_shift_requested` (Sidescroll -> Transitioning -> TopDown).</li><li>Confirm target tracking and camera offset updates.</li><li>Confirm target `is_jump_enabled` and `current_path` properties update accordingly.</li></ul> |
 | [`test_juice_combat.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_juice_combat.gd) | 5 | <ul><li>Verify roll invincibility damage mitigation.</li><li>Verify enemy knockback direction and floor friction decay.</li><li>Verify vertical launch Y pop on launcher attacks for air-juggles.</li><li>Verify combo counter accumulation, timeout resets, and attack string whiff drops.</li><li>Verify hit-stop time scale freeze and unscaled time recovery.</li></ul> |
+| [`test_slice_b_logic.gd`](file:///C:/Users/MARCO/Documents/GitHub/SAINT%20MANICK/tests/cases/test_slice_b_logic.gd) | 5 | <ul><li>Verify enforcer death rewiring (emits global miniboss_defeated signal and rewards scrap without run completion).</li><li>Verify escape sequence camera shift, wall acceleration trigger, and end zone detection.</li><li>Verify escape hazards deal non-instant periodic damage routing through HealthComponent.</li><li>Verify elevator encounter translation along Y-axis, wave spawning, and cooldown delays for shield regeneration.</li><li>Verify elevator platform completion conditions when reaching target Y and clearing all waves.</li></ul> |
 
 ---
 
@@ -66,4 +67,13 @@ For features and visual/game-feel parameters that cannot be fully validated prog
 - [ ] **Roll Invincibility**: Verify that rolling provides full invincibility frames (HP and Shield do not decrease when hit during a roll).
 - [ ] **Enemy Knockback & Stun**: Ensure enemies are pushed back away from the player when hit and pause their AI behavior, movement, and beat actions for the duration of the stun.
 - [ ] **Air-Juggle Launch**: Verify that launcher hits (heavy attacks or the third hit of a light combo string) launch enemies vertically for air-juggles.
+
+### 3.5 Slice B: Escape & Elevator Flow
+- [ ] **Miniboss Rewire**: Verify defeating the Rhythm Enforcer emits `miniboss_defeated` and awards scrap without completing the run, transitioning camera smoothly to Path_Z8.
+- [ ] **Escape Sequence**: Verify the kill wall starts moving behind the player, closing doors open/close on the beat, falling hazards telegraph for 2 beats before dropping, and the collapsing platform shakes on step.
+- [ ] **Non-instant Damage**: Verify that escape hazards (kill wall, doors, falling box) only deal damage (10-20 HP/shield) and do not trigger instant game-over.
+- [ ] **Elevator Entry**: Verify stepping into the elevator platform shifts the camera to Path_Z9 and starts the vertical movement.
+- [ ] **Elevator Waves & Cooldowns**: Verify waves spawn sequentially, pausing for `wave_cooldown` (5s) after each wave is cleared to allow shield regeneration.
+- [ ] **Elevator Completion**: Verify the elevator stops at target Y if waves remain, or continues rising to target Y if cleared early, successfully completing the encounter upon meeting both conditions.
+
 

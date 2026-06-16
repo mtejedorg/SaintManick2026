@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_camera"]
@@ -13,6 +13,14 @@
 [ext_resource type="PackedScene" path="res://levels/components/ceiling_piston.tscn" id="11_piston"]
 [ext_resource type="PackedScene" path="res://levels/components/bomb_grid.tscn" id="12_bomb_grid"]
 [ext_resource type="PackedScene" path="res://levels/components/toxic_pit.tscn" id="13_toxic_pit"]
+[ext_resource type="Script" path="res://levels/components/escape_sequence.gd" id="14_escape_seq"]
+[ext_resource type="Script" path="res://levels/components/escape_kill_wall.gd" id="15_kill_wall"]
+[ext_resource type="Script" path="res://levels/components/escape_door_hazard.gd" id="16_door_hazard"]
+[ext_resource type="Script" path="res://levels/components/escape_falling_hazard.gd" id="17_falling_hazard"]
+[ext_resource type="Script" path="res://levels/components/escape_collapsing_hazard.gd" id="18_collapsing_hazard"]
+[ext_resource type="Script" path="res://levels/components/elevator_encounter.gd" id="19_elevator_encounter"]
+[ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="20_hitbox_3d"]
+
 
 ; --- Curve 3D Resources ---
 [sub_resource type="Curve3D" id="Curve3D_z1_2_3"]
@@ -87,6 +95,53 @@ albedo_color = Color(1.0, 0.0, 0.0, 0.4)
 emission_enabled = true
 emission = Color(1.0, 0.0, 0.0, 1.0)
 
+[sub_resource type="Curve3D" id="Curve3D_z8"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 280, -4, 0, 0, 0, 0, 0, 0, 0, 340, -4, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="Curve3D" id="Curve3D_z9"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -4, 0.5, 0, 0, 0, 0, 0, 0, 0, 4, 0.5, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="Resource" id="Resource_z9_w1"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("3_runner"), ExtResource("3_runner")]
+
+[sub_resource type="Resource" id="Resource_z9_w2"]
+script = ExtResource("8_wave_def")
+enemies = [ExtResource("4_bruiser"), ExtResource("3_runner")]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kill_wall"]
+size = Vector3(2, 10, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_escape_end"]
+size = Vector3(2, 6, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door_hitbox"]
+size = Vector3(1.2, 4.2, 4.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_falling_hitbox"]
+size = Vector3(2.2, 2.2, 2.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_collapsing_platform"]
+size = Vector3(4, 1, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_step_detector"]
+size = Vector3(3.8, 0.5, 3.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_elevator_platform"]
+size = Vector3(8, 1, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_elevator_entry"]
+size = Vector3(2, 4, 4)
+
+
 ; --- Main Node ---
 [node name="VerticalSlice" type="Node3D"]
 
@@ -105,6 +160,10 @@ curve = SubResource("Curve3D_z4_5_6")
 
 [node name="Path_Z7" type="Path3D" parent="."]
 curve = SubResource("Curve3D_z7")
+
+[node name="Path_Z8" type="Path3D" parent="."]
+curve = SubResource("Curve3D_z8")
+
 
 ; --- Player and Camera ---
 [node name="Player" parent="." node_paths=PackedStringArray("current_path") instance=ExtResource("1_player")]
@@ -398,3 +457,154 @@ size = Vector3(37.5, 1, 5)
 
 [node name="RhythmEnforcer" parent="." instance=ExtResource("6_enforcer")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)
+
+; ================= ZONE 8: Rhythm-Action Escape (2.5D) =================
+[node name="Z8_Ground1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, -4.5, 0)
+use_collision = true
+size = Vector3(30, 1, 5)
+
+[node name="Z8_Ground2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 330, -4.5, 0)
+use_collision = true
+size = Vector3(30, 1, 5)
+
+[node name="EscapeSequence" type="Node3D" parent="." node_paths=PackedStringArray("path_z8", "kill_wall", "end_trigger")]
+script = ExtResource("14_escape_seq")
+path_z8 = NodePath("../Path_Z8")
+kill_wall = NodePath("EscapeKillWall")
+end_trigger = NodePath("EscapeEndTrigger")
+
+[node name="EscapeKillWall" type="Area3D" parent="EscapeSequence"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 275, -4, 0)
+script = ExtResource("15_kill_wall")
+speed = 3.0
+damage = 15.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeSequence/EscapeKillWall"]
+shape = SubResource("BoxShape3D_kill_wall")
+
+[node name="EscapeEndTrigger" type="Area3D" parent="EscapeSequence"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 338, -4, 0)
+collision_layer = 0
+collision_mask = 1024
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeSequence/EscapeEndTrigger"]
+shape = SubResource("BoxShape3D_escape_end")
+
+[node name="EscapeDoorHazard" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, 0, 0)
+script = ExtResource("16_door_hazard")
+close_beat_interval = 4
+closed_duration_beats = 2
+damage = 12.0
+slide_distance = 3.0
+
+[node name="DoorBody" type="CSGBox3D" parent="EscapeDoorHazard"]
+use_collision = true
+size = Vector3(1, 4, 4)
+
+[node name="Hitbox3D" type="Area3D" parent="EscapeDoorHazard/DoorBody"]
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("20_hitbox_3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeDoorHazard/DoorBody/Hitbox3D"]
+shape = SubResource("BoxShape3D_door_hitbox")
+
+[node name="EscapeFallingHazard" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 310, 6, 0)
+script = ExtResource("17_falling_hazard")
+beat_interval = 8
+telegraph_beats = 2
+fall_distance = 6.0
+damage = 15.0
+
+[node name="HazardBody" type="CSGBox3D" parent="EscapeFallingHazard"]
+use_collision = true
+size = Vector3(2, 2, 2)
+
+[node name="Hitbox3D" type="Area3D" parent="EscapeFallingHazard/HazardBody"]
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("20_hitbox_3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeFallingHazard/HazardBody/Hitbox3D"]
+shape = SubResource("BoxShape3D_falling_hitbox")
+
+[node name="EscapeCollapsingHazard" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 313, -4.5, 0)
+script = ExtResource("18_collapsing_hazard")
+shake_duration = 0.5
+fall_distance = 10.0
+reset_delay = 3.0
+
+[node name="PlatformBody" type="StaticBody3D" parent="EscapeCollapsingHazard"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeCollapsingHazard/PlatformBody"]
+shape = SubResource("BoxShape3D_collapsing_platform")
+
+[node name="PlatformVisual" type="CSGBox3D" parent="EscapeCollapsingHazard/PlatformBody"]
+size = Vector3(4, 1, 4)
+
+[node name="StepDetector" type="Area3D" parent="EscapeCollapsingHazard"]
+collision_layer = 0
+collision_mask = 1024
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeCollapsingHazard/StepDetector"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_step_detector")
+
+; ================= ZONE 9: Classic Elevator (2.5D) =================
+[node name="ElevatorPlatform" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, -4.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ElevatorPlatform"]
+shape = SubResource("BoxShape3D_elevator_platform")
+
+[node name="PlatformVisual" type="CSGBox3D" parent="ElevatorPlatform"]
+size = Vector3(8, 1, 6)
+
+[node name="Path_Z9" type="Path3D" parent="ElevatorPlatform"]
+curve = SubResource("Curve3D_z9")
+
+[node name="ElevatorSpawner" parent="ElevatorPlatform" instance=ExtResource("9_spawner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="SpawnPoint1" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, -2)
+
+[node name="SpawnPoint2" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, -2)
+
+[node name="SpawnPoint3" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, 2)
+
+[node name="SpawnPoint4" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 2)
+
+[node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path")]
+script = ExtResource("19_elevator_encounter")
+platform = NodePath("../ElevatorPlatform")
+spawner = NodePath("../ElevatorPlatform/ElevatorSpawner")
+entry_trigger = NodePath("ElevatorEntryTrigger")
+target_path = NodePath("../ElevatorPlatform/Path_Z9")
+target_y = 15.0
+speed = 2.0
+wave_cooldown = 5.0
+waves = [SubResource("Resource_z9_w1"), SubResource("Resource_z9_w2")]
+
+[node name="ElevatorEntryTrigger" type="Area3D" parent="ElevatorEncounter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 347, -4.0, 0)
+collision_layer = 0
+collision_mask = 1024
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ElevatorEncounter/ElevatorEntryTrigger"]
+shape = SubResource("BoxShape3D_elevator_entry")
+
+; ================= ZONE 10: Docking Arena =================
+[node name="Zone10_Dock" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 14.0, 0)
+use_collision = true
+size = Vector3(25, 1, 8)
+

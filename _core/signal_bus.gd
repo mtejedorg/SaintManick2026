@@ -23,6 +23,7 @@ signal tempo_changed(new_bpm: float)
 
 # --- Camera Events ---
 signal camera_shift_requested(top_down: bool, target_path: Path3D, transition_time: float)
+signal miniboss_defeated()
 
 func _ready():
 	_register_input("dash", KEY_SHIFT)

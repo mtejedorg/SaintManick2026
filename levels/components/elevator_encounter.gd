@@ -1,0 +1,89 @@
+class_name ElevatorEncounter
+extends Node3D
+
+signal encounter_completed
+
+@export var platform: AnimatableBody3D
+@export var target_y: float = 15.0
+@export var speed: float = 2.0
+@export var waves: Array[WaveDef] = []
+@export var spawner: WaveSpawner
+@export var wave_cooldown: float = 5.0
+
+@export var entry_trigger: Area3D
+@export var target_path: Path3D # Path_Z9
+
+var current_wave_index: int = 0
+var is_active: bool = false
+var is_cooldown: bool = false
+var cooldown_timer: float = 0.0
+
+func _ready() -> void:
+	if spawner:
+		spawner.wave_cleared.connect(_on_wave_cleared)
+	if entry_trigger:
+		entry_trigger.body_entered.connect(_on_entry_trigger_entered)
+
+func _on_entry_trigger_entered(body: Node3D) -> void:
+	if body is PlayerController and not is_active:
+		# Disable entry trigger monitoring to avoid multiple triggers
+		entry_trigger.set_deferred("monitoring", false)
+		
+		# Shift camera from Path_Z8 to Path_Z9
+		SignalBus.camera_shift_requested.emit(false, target_path, 1.5)
+		
+		# Start encounter
+		start_encounter()
+
+func start_encounter() -> void:
+	is_active = true
+	is_cooldown = false
+	current_wave_index = 0
+	_spawn_current_wave()
+
+func _physics_process(delta: float) -> void:
+	if not is_active:
+		return
+		
+	if is_cooldown:
+		cooldown_timer -= delta
+		if cooldown_timer <= 0.0:
+			is_cooldown = false
+			_spawn_current_wave()
+			
+	if platform:
+		var current_y = platform.position.y
+		if current_y < target_y:
+			current_y = min(target_y, current_y + speed * delta)
+			platform.position.y = current_y
+			
+	_check_completion()
+
+func _spawn_current_wave() -> void:
+	if current_wave_index < waves.size():
+		if spawner:
+			spawner.spawn_wave(waves[current_wave_index])
+		else:
+			push_error("ElevatorEncounter: No WaveSpawner assigned!")
+			_on_wave_cleared()
+
+func _on_wave_cleared() -> void:
+	current_wave_index += 1
+	if current_wave_index < waves.size():
+		is_cooldown = true
+		cooldown_timer = wave_cooldown
+	else:
+		_check_completion()
+
+func _check_completion() -> void:
+	if not is_active:
+		return
+		
+	var platform_y = platform.position.y if platform else target_y
+	var reached_top = platform_y >= target_y
+	var all_waves_done = current_wave_index >= waves.size()
+	
+	if reached_top and all_waves_done:
+		is_active = false
+		encounter_completed.emit()
+		print("Elevator encounter completed!")

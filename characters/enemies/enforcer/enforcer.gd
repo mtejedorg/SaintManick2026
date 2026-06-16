@@ -97,5 +97,5 @@ func _on_health_changed(current: float, _max_health: float) -> void:
 func _on_died() -> void:
 	print("MINI-BOSS DEFEATED!")
 	GameManager.add_scrap(stats.scrap)
-	GameManager.complete_run()
+	SignalBus.miniboss_defeated.emit()
 	queue_free()

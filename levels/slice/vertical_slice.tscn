@@ -1,8 +1,9 @@
-[gd_scene load_steps=49 format=3]
+[gd_scene load_steps=50 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
 [ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="34_vcr_overlay"]
+[ext_resource type="Script" path="res://levels/components/stage_light.gd" id="35_stage_light"]
 
 [ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_camera"]
@@ -950,6 +951,75 @@ script = ExtResource("30_vfx_manager")
 [node name="ComboFlash" parent="." instance=ExtResource("31_combo_flash")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("32_pause_menu")]
+
+; ================= Per-Zone Lighting (M13 first pass) =================
+; Zone-tinted OmniLight3Ds layered on top of the global WorldEnvironment (C2), positioned
+; near each zone's entry X (see the "ZONE N:" comment markers above for reference X's).
+; Zones 1-3: warm sodium + cyan accent. Zones 4-6: magenta/cyan (Neon District identity).
+; Zones 7-9: cold white/blue (Corporate High-Rise identity). Zone 10: beat-animated
+; stage lighting (stage_light.gd).
+[node name="ZoneLights" type="Node3D" parent="."]
+
+[node name="Z1_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 6, 0)
+light_color = Color(1.0, 0.6, 0.2, 1)
+light_energy = 1.4
+omni_range = 20.0
+
+[node name="Z2_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 6, 0)
+light_color = Color(0.0, 0.949, 1.0, 1)
+light_energy = 1.0
+omni_range = 20.0
+
+[node name="Z3_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 8, 0)
+light_color = Color(1.0, 0.65, 0.25, 1)
+light_energy = 1.4
+omni_range = 24.0
+
+[node name="Z4_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147.5, 10, 0)
+light_color = Color(1.0, 0.0, 0.667, 1)
+light_energy = 1.4
+omni_range = 24.0
+
+[node name="Z5_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 177.25, 6, 0)
+light_color = Color(0.0, 0.949, 1.0, 1)
+light_energy = 1.4
+omni_range = 22.0
+
+[node name="Z6_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, 8, 0)
+light_color = Color(1.0, 0.0, 0.667, 1)
+light_energy = 1.6
+omni_range = 26.0
+
+[node name="Z7_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, 6, 0)
+light_color = Color(0.75, 0.85, 1.0, 1)
+light_energy = 1.4
+omni_range = 20.0
+
+[node name="Z8_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281, 6, 0)
+light_color = Color(0.6, 0.75, 1.0, 1)
+light_energy = 1.4
+omni_range = 22.0
+
+[node name="Z9_Light" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 343, 10, 0)
+light_color = Color(0.7, 0.8, 1.0, 1)
+light_energy = 1.4
+omni_range = 24.0
+
+[node name="Z10_StageLight" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 18, 0)
+light_color = Color(0.0, 0.949, 1.0, 1)
+light_energy = 2.0
+omni_range = 30.0
+script = ExtResource("35_stage_light")
 
 [connection signal="encounter_completed" from="ElevatorEncounter" to="Headliner" method="activate_boss"]
 [connection signal="body_entered" from="Zone10_Trigger" to="Headliner" method="activate_boss"]

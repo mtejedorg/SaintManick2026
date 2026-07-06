@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3]
+[gd_scene load_steps=48 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -193,6 +193,15 @@ size = Vector3(6, 4, 5)
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("5_sniper"), ExtResource("5_sniper"), ExtResource("5_sniper")])
 
+[sub_resource type="Environment" id="Environment_glow"]
+background_mode = 1
+background_color = Color(0, 0, 0, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.0392, 0.0392, 0.0706, 1)
+tonemap_mode = 3
+glow_enabled = true
+glow_hdr_threshold = 1.0
+
 ; --- Main Node ---
 [node name="VerticalSlice" type="Node3D"]
 script = ExtResource("33_vs_script")
@@ -200,6 +209,9 @@ script = ExtResource("33_vs_script")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
 shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_glow")
 
 [node name="HUD" parent="." instance=ExtResource("7_hud")]
 

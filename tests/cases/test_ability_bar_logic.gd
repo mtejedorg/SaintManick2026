@@ -35,6 +35,13 @@ func test_heavy_attack_free_at_zero_meter() -> void:
 func test_battery_ram_sets_guard_breaking_at_zero_meter() -> void:
 	# BB (Battery Ram) must be reachable with an empty meter and must set is_guard_breaking —
 	# it's the answer to Bruiser's shield, and the meter must never block it.
+	# M8: Battery Ram is gated behind the Combo Skill Tree, independent of the meter —
+	# unlock it here so this test isolates the meter behavior specifically.
+	assert_not_null(SaveManager.profile, "SaveManager profile should exist for combo gating")
+	var was_unlocked = SaveManager.profile.unlocked_combos.has("BB")
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.append("BB")
+
 	player.ability_meter = 0.0
 	var fsm = player.state_machine
 	var attack_state = fsm.get_node("StateAttack")
@@ -50,6 +57,9 @@ func test_battery_ram_sets_guard_breaking_at_zero_meter() -> void:
 	assert_eq(player.ability_meter, 0.0, "Battery Ram must not require or consume ability meter")
 	assert_eq("".join(attack_state.current_sequence), "BB", "Battery Ram sequence should register")
 	assert_true(player.katana_hitbox.damage_info.is_guard_breaking, "Battery Ram should set is_guard_breaking")
+
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.erase("BB")
 
 func test_meter_fill_classifies_by_heavy_threshold_not_damage_scale() -> void:
 	# C5: fill must be exported flat constants classified via DamageInfo.HEAVY_THRESHOLD,

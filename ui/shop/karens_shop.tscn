@@ -1,6 +1,27 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://ui/shop/karens_shop.gd" id="1_xxx"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(1, 0, 0.667, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(1, 0.2, 0.75, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
+bg_color = Color(0.8, 0, 0.53, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="KarensShop" type="Control"]
 layout_mode = 3
@@ -11,59 +32,107 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_xxx")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.1, 0.1, 0.15, 1)
+color = Color(0.039, 0.039, 0.071, 1)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="Margin" type="MarginContainer" parent="Background"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -150.0
-offset_right = 150.0
-offset_bottom = 150.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 60
+theme_override_constants/margin_bottom = 40
 
-[node name="Label" type="Label" parent="VBox"]
+[node name="VBox" type="VBoxContainer" parent="Background/Margin"]
 layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="Background/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.949, 1, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 48
 text = "KAREN'S SHOP"
 horizontal_alignment = 1
 
-[node name="ScrapLabel" type="Label" parent="VBox"]
+[node name="CurrencyLabel" type="Label" parent="Background/Margin/VBox"]
 layout_mode = 2
-text = "Scrap: 0"
+theme_override_colors/font_color = Color(0, 0.949, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "SCRAP 0   CELLS 0   CORES 0"
 horizontal_alignment = 1
 
-[node name="BuyHPButton" type="Button" parent="VBox"]
+[node name="HSep" type="HSeparator" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
-text = "Max HP +20 (100 Scrap)"
 
-[node name="BuyShieldButton" type="Button" parent="VBox"]
+[node name="HBox" type="HBoxContainer" parent="Background/Margin/VBox"]
 layout_mode = 2
-text = "Max Shield +10 (150 Scrap)"
+size_flags_vertical = 3
+theme_override_constants/separation = 60
 
-[node name="BuyLifeButton" type="Button" parent="VBox"]
+[node name="CumulativeColumn" type="VBoxContainer" parent="Background/Margin/VBox/HBox"]
 layout_mode = 2
-text = "Extra Life (300 Scrap)"
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
 
-[node name="BuyDoubleJumpButton" type="Button" parent="VBox"]
+[node name="CumulativeHeader" type="Label" parent="Background/Margin/VBox/HBox/CumulativeColumn"]
 layout_mode = 2
-text = "Double Jump (200 Scrap)"
+theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_font_sizes/font_size = 28
+text = "UPGRADES"
 
-[node name="BoosterButton" type="Button" parent="VBox"]
+[node name="CumulativeList" type="VBoxContainer" parent="Background/Margin/VBox/HBox/CumulativeColumn"]
 layout_mode = 2
-text = "Equipped Booster: None"
+theme_override_constants/separation = 8
 
-[node name="StartRunButton" type="Button" parent="VBox"]
+[node name="ComboColumn" type="VBoxContainer" parent="Background/Margin/VBox/HBox"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="ComboHeader" type="Label" parent="Background/Margin/VBox/HBox/ComboColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_font_sizes/font_size = 28
+text = "COMBO SKILL TREE"
+
+[node name="ComboList" type="VBoxContainer" parent="Background/Margin/VBox/HBox/ComboColumn"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HSep2" type="HSeparator" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="BoosterButton" type="Button" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+text = "Equipped Booster: None  (Slots: 1)"
+
+[node name="StartRunButton" type="Button" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
 text = "START RUN"

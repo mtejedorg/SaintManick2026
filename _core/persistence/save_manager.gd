@@ -4,6 +4,11 @@ var save_path: String = "user://save_data.tres"
 
 var profile: PlayerProfile
 
+## Combo tree entries with no prerequisite and 0 cost (Tri-Cut/Launcher) — granted to every
+## profile so a fresh save can still throw the two basic chains without a shop visit first
+## (GDD §5.2 "basic chains" vs. purchased "advanced juggles or heavy sweeps").
+const STARTER_COMBOS: Array[String] = ["AAA", "AAB"]
+
 func _ready() -> void:
 	load_profile()
 
@@ -13,10 +18,24 @@ func load_profile() -> void:
 
 	if not profile:
 		profile = PlayerProfile.new()
+		_grant_starter_combos()
 		save_profile()
 		return
 
 	_migrate_legacy_persistent_scrap()
+	_grant_starter_combos()
+
+## Ensures the basic combo chains are always present, even on saves created before this
+## upgrade shipped (mirrors the spirit of _migrate_legacy_persistent_scrap — an existing
+## save must not regress to fewer combos than a brand new one).
+func _grant_starter_combos() -> void:
+	var changed = false
+	for combo_id in STARTER_COMBOS:
+		if not profile.unlocked_combos.has(combo_id):
+			profile.unlocked_combos.append(combo_id)
+			changed = true
+	if changed:
+		save_profile()
 
 ## One-time migration: PlayerProfile used to export `persistent_scrap`; the property was
 ## renamed to `scrap` (+ new `cells`/`cores`). ResourceLoader silently drops properties that

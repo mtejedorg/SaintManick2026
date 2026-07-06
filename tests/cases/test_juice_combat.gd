@@ -188,12 +188,20 @@ func test_player_combo_counter() -> void:
 func test_player_combo_routes() -> void:
 	var player = load("res://characters/player/player.tscn").instantiate()
 	add_child(player)
-	
+
 	var fsm = player.state_machine
 	var attack_state = fsm.get_node("StateAttack")
 	assert_not_null(attack_state, "Should have attack state")
-	
+
 	player.ability_meter = 100.0 # Ensure enough meter for heavy attacks
+
+	# M8: Sweeper/Battery Ram are gated behind the Combo Skill Tree — unlock them for
+	# this test so route data (damage/flags) can be exercised end to end.
+	assert_not_null(SaveManager.profile, "SaveManager profile should exist for combo gating")
+	if not SaveManager.profile.unlocked_combos.has("ABB"):
+		SaveManager.profile.unlocked_combos.append("ABB")
+	if not SaveManager.profile.unlocked_combos.has("BB"):
+		SaveManager.profile.unlocked_combos.append("BB")
 	
 	# Test Tri-Cut (A-A-A)
 	attack_state.enter()
@@ -236,6 +244,8 @@ func test_player_combo_routes() -> void:
 	assert_true(player.katana_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
 	assert_eq(player.katana_hitbox.damage_info.amount, 40.0)
 
+	SaveManager.profile.unlocked_combos.erase("ABB")
+	SaveManager.profile.unlocked_combos.erase("BB")
 	player.queue_free()
 
 func test_combo_routes_are_resource_driven() -> void:

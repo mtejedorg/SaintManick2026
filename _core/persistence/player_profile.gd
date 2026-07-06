@@ -10,3 +10,5 @@ extends Resource
 @export var unlocked_combos: Array[String] = []
 @export var double_jump_unlocked: bool = false
 @export var equipped_run_booster: String = ""
+## GDD §5.3: Nick starts with 1 Run Booster slot; the shop's cores-unique upgrade grants +1.
+@export var booster_slots: int = 1

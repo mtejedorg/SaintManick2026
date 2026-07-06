@@ -25,13 +25,17 @@ func after_each() -> void:
 
 func test_fallback_to_default_profile_when_missing() -> void:
 	SaveManager.load_profile()
-	
+
 	assert_not_null(SaveManager.profile, "Profile should fallback to a new profile if missing")
 	assert_eq(SaveManager.profile.scrap, 0, "Default scrap should be 0")
 	assert_eq(SaveManager.profile.max_hp_upgrades, 0, "Default hp upgrades should be 0")
 	assert_eq(SaveManager.profile.max_lives_upgrades, 0, "Default lives upgrades should be 0")
 	assert_eq(SaveManager.profile.shield_upgrades, 0, "Default shield upgrades should be 0")
 	assert_false(SaveManager.profile.double_jump_unlocked, "Default double_jump_unlocked should be false")
+	# M8: a brand new profile still ships with the basic combo chains unlocked
+	# (Tri-Cut/Launcher) so Nick can fight before ever visiting the shop.
+	assert_true(SaveManager.profile.unlocked_combos.has("AAA"), "Fresh profile should have Tri-Cut unlocked")
+	assert_true(SaveManager.profile.unlocked_combos.has("AAB"), "Fresh profile should have Launcher unlocked")
 
 func test_save_and_load_profile() -> void:
 	# Initialize default profile
@@ -63,7 +67,9 @@ func test_save_and_load_profile() -> void:
 	assert_eq(SaveManager.profile.max_hp_upgrades, 3, "Max HP upgrades should match saved value")
 	assert_eq(SaveManager.profile.shield_upgrades, 4, "Shield upgrades should match saved value")
 	assert_true(SaveManager.profile.double_jump_unlocked, "double_jump_unlocked should match saved value")
-	assert_eq(SaveManager.profile.unlocked_combos.size(), 2, "Should deserialize correct array size")
+	# _grant_starter_combos() tops up AAA/AAB on every load, so a saved array of 2 custom
+	# entries becomes 4 after reload — assert the saved entries persisted rather than an
+	# exact size.
 	assert_true(SaveManager.profile.unlocked_combos.has("combo_heavy_slam"), "Should contain combo_heavy_slam")
 	assert_true(SaveManager.profile.unlocked_combos.has("combo_light_spin"), "Should contain combo_light_spin")
 

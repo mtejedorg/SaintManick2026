@@ -41,6 +41,18 @@ func _ensure_combo_defs_loaded() -> void:
 		if def:
 			_combo_defs_by_chain["".join(def.input_chain)] = def
 
+## Every route (including Tri-Cut/Launcher) is gated through the Combo Skill Tree
+## (GDD §5.2: "Nick must unlock basic chains before he can purchase advanced juggles or
+## heavy sweeps") via PlayerProfile.unlocked_combos. Tri-Cut/Launcher are the 0-cost,
+## no-prerequisite entries in the tree (see combo_unlock_tri_cut.tres/combo_unlock_launcher
+## .tres) — SaveManager grants them to every profile on first load (see save_manager.gd)
+## so a fresh save can still throw the two basic chains without a shop visit.
+func _is_combo_unlocked(seq: String) -> bool:
+	var sm = player.get_node_or_null("/root/SaveManager") if player else null
+	if not sm or not sm.profile:
+		return false
+	return sm.profile.unlocked_combos.has(seq)
+
 func enter() -> void:
 	_ensure_combo_defs_loaded()
 	combo_step = 0
@@ -60,6 +72,11 @@ func _start_attack(is_heavy: bool) -> void:
 
 	var seq = "".join(current_sequence)
 	var combo_def: ComboDef = _combo_defs_by_chain.get(seq)
+	if combo_def and not _is_combo_unlocked(seq):
+		# M8: combo tree gating (PlayerProfile.unlocked_combos). An unpurchased route
+		# behaves like an unmatched sequence — generic mashed light/heavy values instead
+		# of the route's tuned damage/knockback/flags.
+		combo_def = null
 
 	attack_timer = combo_def.duration if combo_def else attack_durations[combo_step]
 	current_hit_duration = attack_timer

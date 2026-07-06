@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ShopUpgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://_core/persistence/shop_upgrade.gd" id="1_xxx"]
+
+[resource]
+script = ExtResource("1_xxx")
+id = "double_jump"
+name = "Double Jump"
+description = "Unlocks the Double Jump skill for platforming and aerial repositioning."
+cost = 200
+currency = 0
+prerequisite_id = ""
+is_repeatable = false
+effect = 3
+combo_id = ""

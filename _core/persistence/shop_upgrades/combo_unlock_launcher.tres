@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ShopUpgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://_core/persistence/shop_upgrade.gd" id="1_xxx"]
+
+[resource]
+script = ExtResource("1_xxx")
+id = "combo_launcher"
+name = "Unlock: Launcher (A-A-B)"
+description = "Two quick blade hits into a bionic uppercut that punches enemies airborne."
+cost = 0
+currency = 0
+prerequisite_id = "combo_tri_cut"
+is_repeatable = false
+effect = 4
+combo_id = "AAB"

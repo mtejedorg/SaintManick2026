@@ -42,5 +42,75 @@ func test_bruiser_shield_and_guard_break() -> void:
 	# Stun applies because shield is 0 (it broke during this hit... wait, actually it applies because the shield was reduced to 0!)
 	# Wait, my logic checks `current_shield > 0`. If it's 0, it WILL stun. Let's verify.
 	assert_true(combat.is_stunned(), "Hit that breaks shield causes stun")
-	
+
 	bruiser.queue_free()
+
+func test_bruiser_hitbox_inactive_by_default() -> void:
+	# M6b: the original hitbox-clarity violation — Bruiser must not deal permanent
+	# contact damage. Hitbox starts inactive; only the beat-gated attack step turns it on.
+	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
+	add_child(bruiser)
+
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.IDLE, "Bruiser should start idle")
+	assert_false(bruiser.hitbox.is_active, "Hitbox must be inactive by default (no untelegraphed contact damage)")
+
+	bruiser.queue_free()
+
+func test_bruiser_telegraphs_one_beat_before_downbeat() -> void:
+	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
+	add_child(bruiser)
+	var player_stub = Node3D.new()
+	player_stub.name = "PlayerStub"
+	add_child(player_stub)
+	bruiser.player = player_stub
+	player_stub.global_position = bruiser.global_position # within melee_range
+
+	# Conductor's primary layer defaults to 4 beats/measure — beat_index == 4 is one
+	# beat before the downbeat (beat_index wraps to a fresh downbeat at 1).
+	bruiser._on_beat("primary", 4)
+
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.TELEGRAPH, "Bruiser should enter TELEGRAPH one beat before the downbeat")
+	assert_false(bruiser.hitbox.is_active, "Hitbox should still be inactive during telegraph")
+
+	bruiser.queue_free()
+	player_stub.queue_free()
+
+func test_bruiser_hitbox_active_only_on_downbeat_then_recovers() -> void:
+	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
+	add_child(bruiser)
+	var player_stub = Node3D.new()
+	add_child(player_stub)
+	bruiser.player = player_stub
+	player_stub.global_position = bruiser.global_position
+
+	bruiser._on_beat("primary", 4) # arm telegraph
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.TELEGRAPH)
+
+	bruiser._on_downbeat("primary", 1) # downbeat -> active, hitbox on
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.ACTIVE, "Bruiser should become ACTIVE on the downbeat")
+	assert_true(bruiser.hitbox.is_active, "Hitbox should be active only during the ACTIVE step")
+
+	bruiser._on_downbeat("primary", 2) # next downbeat -> recovery, hitbox off
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.RECOVERY, "Bruiser should move to RECOVERY after its active downbeat")
+	assert_false(bruiser.hitbox.is_active, "Hitbox should switch off once recovery starts")
+
+	bruiser._on_beat("primary", 1) # any subsequent beat while in recovery returns to idle
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.IDLE, "Bruiser should return to IDLE after recovery")
+
+	bruiser.queue_free()
+	player_stub.queue_free()
+
+func test_bruiser_does_not_telegraph_out_of_range() -> void:
+	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
+	add_child(bruiser)
+	var player_stub = Node3D.new()
+	add_child(player_stub)
+	bruiser.player = player_stub
+	player_stub.global_position = bruiser.global_position + Vector3(100, 0, 0) # far away
+
+	bruiser._on_beat("primary", 4)
+
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.IDLE, "Bruiser should not telegraph an attack on a player far outside melee_range")
+
+	bruiser.queue_free()
+	player_stub.queue_free()

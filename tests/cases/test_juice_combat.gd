@@ -235,8 +235,55 @@ func test_player_combo_routes() -> void:
 	assert_eq("".join(attack_state.current_sequence), "BB")
 	assert_true(player.katana_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
 	assert_eq(player.katana_hitbox.damage_info.amount, 40.0)
-	
+
 	player.queue_free()
+
+func test_combo_routes_are_resource_driven() -> void:
+	# C4: route data (damage/duration/knockback/flags) must come from the ComboDef .tres
+	# resources, not literals baked into player_state_attack.gd. Prove it by loading the
+	# Launcher resource directly and confirming the attack state's output matches it exactly.
+	var launcher_def: ComboDef = load("res://characters/player/combos/combo_launcher.tres")
+	assert_not_null(launcher_def, "Launcher ComboDef resource should exist")
+	assert_eq("".join(launcher_def.input_chain), "AAB")
+
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var fsm = player.state_machine
+	var attack_state = fsm.get_node("StateAttack")
+
+	attack_state.enter() # A
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = false
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0) # AA
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0) # AAB (Launcher)
+
+	assert_eq("".join(attack_state.current_sequence), "AAB")
+	assert_eq(player.katana_hitbox.damage_info.amount, launcher_def.damage, "Launcher damage should match the ComboDef resource")
+	assert_eq(player.katana_hitbox.damage_info.knockback, launcher_def.knockback, "Launcher knockback should match the ComboDef resource")
+	assert_eq(player.katana_hitbox.damage_info.stun, launcher_def.stun_time, "Launcher stun should match the ComboDef resource")
+	assert_true(player.katana_hitbox.damage_info.is_launcher, "Launcher route should set is_launcher")
+	assert_almost_eq(attack_state.attack_timer, launcher_def.duration, 0.001, "Attack timer should match the ComboDef duration")
+
+	player.queue_free()
+
+func test_bruiser_shield_driven_by_enemy_stats() -> void:
+	# C4: Bruiser's shield must come from EnemyStats.shield (bruiser_stats.tres), not a
+	# hardcoded 50.0 in bruiser.gd.
+	var stats: EnemyStats = load("res://characters/enemies/bruiser/bruiser_stats.tres")
+	assert_not_null(stats, "Bruiser stats resource should exist")
+	assert_eq(stats.shield, 50.0, "bruiser_stats.tres should define shield = 50")
+
+	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
+	add_child(bruiser)
+	var health = bruiser.get_node("HealthComponent")
+	assert_eq(health.max_shield, stats.shield, "Bruiser's max_shield should be sourced from EnemyStats.shield")
+	assert_eq(health.current_shield, stats.shield, "Bruiser's current_shield should be sourced from EnemyStats.shield")
+
+	bruiser.queue_free()
 
 func test_hit_stop_time_scale_recovery() -> void:
 	var hit_stop = get_node("/root/HitStop")

@@ -1,5 +1,17 @@
 extends PlayerState
 
+## Route data lives in ComboDef resources (characters/player/combos/*.tres) — no magic
+## numbers here. Keyed by their input_chain joined into a string ("AAA", "AAB", "ABB", "BB")
+## so a full-chain match can look itself up directly.
+const COMBO_RESOURCE_PATHS: Array[String] = [
+	"res://characters/player/combos/combo_tri_cut.tres",
+	"res://characters/player/combos/combo_launcher.tres",
+	"res://characters/player/combos/combo_sweeper.tres",
+	"res://characters/player/combos/combo_battery_ram.tres",
+]
+
+static var _combo_defs_by_chain: Dictionary = {}
+
 var attack_timer: float = 0.0
 var combo_step: int = 0
 var max_combo_step: int = 2
@@ -12,7 +24,16 @@ var buffered_attack: bool = false
 var buffered_heavy: bool = false
 var current_sequence: Array[String] = []
 
+func _ensure_combo_defs_loaded() -> void:
+	if not _combo_defs_by_chain.is_empty():
+		return
+	for path in COMBO_RESOURCE_PATHS:
+		var def: ComboDef = load(path)
+		if def:
+			_combo_defs_by_chain["".join(def.input_chain)] = def
+
 func enter() -> void:
+	_ensure_combo_defs_loaded()
 	combo_step = 0
 	current_sequence.clear()
 	buffered_attack = false
@@ -27,24 +48,14 @@ func _start_attack(is_heavy: bool) -> void:
 	# never a cost gate on basic attacks. try_consume_ability_meter() stays available
 	# for the real spenders (EMP Dash-Cancel, Bass Drop).
 	current_sequence.append("B" if is_heavy else "A")
-	
+
 	var seq = "".join(current_sequence)
-	var is_launcher_combo = (seq == "AAB")
-	var is_sweeper_combo = (seq == "ABB")
-	var is_battery_ram = (seq == "BB")
-	var is_tricut = (seq == "AAA")
-	
-	attack_timer = attack_durations[combo_step]
-	if is_battery_ram:
-		attack_timer = 0.8
-	elif is_sweeper_combo:
-		attack_timer = 0.5
-		
-	# Widen hitbox for Sweeper
-	if is_sweeper_combo:
-		player.katana_hitbox.scale = Vector3(1.5, 1.0, 1.5)
-	else:
-		player.katana_hitbox.scale = Vector3.ONE
+	var combo_def: ComboDef = _combo_defs_by_chain.get(seq)
+
+	attack_timer = combo_def.duration if combo_def else attack_durations[combo_step]
+
+	# Widen hitbox per-route (Sweeper's ComboDef carries a wider hitbox_scale).
+	player.katana_hitbox.scale = combo_def.hitbox_scale if combo_def else Vector3.ONE
 
 	player.velocity.x = 0
 	player.velocity.z = 0
@@ -59,24 +70,25 @@ func _start_attack(is_heavy: bool) -> void:
 
 	if not player.katana_hitbox.damage_info:
 		player.katana_hitbox.damage_info = DamageInfo.new()
-	player.katana_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
-	player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+
+	if combo_def:
+		# Full route matched (Tri-Cut/Launcher/Sweeper/Battery Ram) — route data wins.
+		player.katana_hitbox.damage_info.amount = combo_def.damage
+		player.katana_hitbox.damage_info.knockback = combo_def.knockback
+		player.katana_hitbox.damage_info.stun = combo_def.stun_time
+		player.katana_hitbox.damage_info.is_launcher = combo_def.is_launcher
+		player.katana_hitbox.damage_info.is_guard_breaking = combo_def.is_guard_breaking
+		player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+	else:
+		# Unmatched/generic hit (mashing) — plain light/heavy basic-input values.
+		player.katana_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
+		player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+		player.katana_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
+		player.katana_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
+		player.katana_hitbox.damage_info.is_launcher = is_heavy
+		player.katana_hitbox.damage_info.is_guard_breaking = false
+
 	player.katana_hitbox.damage_info.source = player
-	player.katana_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
-	player.katana_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
-	player.katana_hitbox.damage_info.is_launcher = is_heavy or is_launcher_combo
-	player.katana_hitbox.damage_info.is_guard_breaking = is_battery_ram
-
-	if is_launcher_combo:
-		player.katana_hitbox.damage_info.knockback = 12.0
-		player.katana_hitbox.damage_info.amount = 35.0
-	elif is_sweeper_combo:
-		player.katana_hitbox.damage_info.amount = 20.0
-	elif is_battery_ram:
-		player.katana_hitbox.damage_info.amount = 40.0
-	elif is_tricut:
-		player.katana_hitbox.damage_info.amount = 20.0
-
 	player.katana_hitbox.is_active = true
 
 func exit() -> void:

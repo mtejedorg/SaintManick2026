@@ -23,8 +23,8 @@ func _ready() -> void:
 		
 	health_component.max_health = stats.max_health
 	health_component.current_health = stats.max_health
-	health_component.max_shield = 50.0
-	health_component.current_shield = 50.0
+	health_component.max_shield = stats.shield
+	health_component.current_shield = stats.shield
 	health_component.health_changed.connect(_on_health_changed)
 	health_component.died.connect(_on_died)
 	

@@ -9,3 +9,5 @@ extends Resource
 @export var stun: float = 0.5
 ## Distance at which the enemy stops chasing and can melee.
 @export var melee_range: float = 1.8
+## Starting shield (hyper-armor while > 0; only guard-breaking hits get through). 0 = no shield.
+@export var shield: float = 0.0

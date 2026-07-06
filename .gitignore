@@ -27,6 +27,10 @@ Thumbs.db
 *.tmp
 *~
 
+# Validation gate output (imp.log/smoke.log from the headless import/smoke passes —
+# see HANDOFF.md §1 / TESTPLAN.md §1.1)
+*.log
+
 # Excluded Directories
 /old/
 /graphify-out/

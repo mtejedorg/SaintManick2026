@@ -8,17 +8,22 @@ The game features classic heavy beat'em up combat blended with ambient rhythm me
 
 ## Project Status: Vertical Slice Playable (Zones 1–10 complete)
 
-Running on **Godot 4.6**. The full designed vertical slice is implemented end-to-end — all 10 zones from the Factory floor to the Headliner rooftop, both bosses, the roguelite meta-loop, a game-feel layer, placeholder art, and a self-verifying automated test suite (**49 tests, all green**).
+Running on **Godot 4.6**. The full designed vertical slice is implemented end-to-end — all 10 zones from the Factory floor to the Headliner rooftop, both bosses, the roguelite meta-loop, a data-driven shop + combo skill tree, a game-feel layer, per-zone lighting, placeholder art, and a self-verifying automated test suite (**100 tests, all green**).
 
 **Functional Systems:**
-- **Combat Contract:** `DamageInfo` resource flows `Hitbox3D → Hurtbox3D → HealthComponent`. `HealthComponent` owns the universal death rule (shield → HP → lose a life → permadeath only at 0 HP + 0 lives, shield regen 12/s after 3s) and roll **i-frames**. A named collision-layer scheme prevents self-hits/friendly-fire.
-- **The Conductor (tempo engine):** Autoload metronome emitting `SignalBus.beat / downbeat / tempo_changed`; **variable BPM** (the Headliner ramps 128→160 in phase 2) with meter-layer support. Every hazard/enemy/boss telegraph is beat-driven; the player is never required to act on the beat.
-- **Camera HSM:** `Sidescroll / Transitioning / TopDown` state machine driven by `SignalBus.camera_shift_requested`; owns the 2.5D plane-lock and jump suppression and shifts both ways (used for the security room, the plaza ambush, and the Headliner's bullet-hell phase).
-- **Persistence:** `SaveManager` + `PlayerProfile` persist Scrap and permanent upgrades to `user://`; **Karen's Shop** spends them and equips a Run Booster. Volatile run state is never persisted.
-- **Enemy roster (data-driven `EnemyStats` `.tres`):** Runner, Bruiser, Sniper (beat-locked laser), the **Rhythm Enforcer** mini-boss (beat-locked 3-hit bursts, shield-break) and the **Headliner** (multi-phase HSM with a pooled top-down bullet-hell). Knockback/stun and air-juggle launches are data-driven via `DamageInfo`.
+- **Combat Contract:** `DamageInfo` resource flows `Hitbox3D → Hurtbox3D → HealthComponent`. `HealthComponent` owns the universal death rule (shield → HP → lose a life → permadeath only at 0 HP + 0 lives, shield regen 12/s after 3s) and roll/dash **i-frames**. A named collision-layer scheme prevents self-hits/friendly-fire.
+- **The Ability Bar (reward, never a gate):** fills on landed hits (+4 light / +9 heavy, classified via `DamageInfo.HEAVY_THRESHOLD`, not a damage-scaled formula) and decays slowly out of combat. No basic input (move/jump/dash/roll/light/heavy) is ever gated by it — heavy is always heavy, even at 0 meter. Two real spenders: **EMP Dash-Cancel** (25 meter, cancels attack recovery straight into a dash) and **Bass Drop** (full meter, arms on input, detonates in an AoE on the next downbeat).
+- **Combos & the Combo Skill Tree:** Tri-Cut (AAA) and Launcher (AAB) are unlocked on every profile from the start; Sweeper (ABB) and Battery Ram (BB) are purchased with Cells in Karen's Shop. Route data (damage/duration/knockback/flags) lives in `ComboDef` `.tres` resources, not hardcoded literals. The combo counter caps at ×50 with a neon glitch/explode celebration, and resets immediately if Nick takes damage.
+- **The Conductor (tempo engine):** Autoload metronome emitting `SignalBus.beat / downbeat / tempo_changed`; **variable BPM** (the Headliner ramps 128→160 in phase 2) with meter-layer support. Every hazard/enemy/boss telegraph is beat-driven, including the Bruiser (telegraph one beat before, hitbox active only on the downbeat); the player is never required to act on the beat.
+- **Camera HSM:** `Sidescroll / Transitioning / TopDown` state machine driven by `SignalBus.camera_shift_requested`; owns the 2.5D plane-lock and jump suppression and shifts both ways (used for the security room, the plaza ambush, and the Headliner's bullet-hell phase). Perspective shifts (and player damage) trigger a VCR chromatic-aberration burst on the drone-feed overlay.
+- **Persistence:** `SaveManager` + `PlayerProfile` persist Scrap, Cells, Cores, unlocked combos, and permanent upgrades to `user://` (including a one-time migration for pre-rename saves); **Karen's Shop** is fully data-driven around `ShopUpgrade` resources and equips a Run Booster. Volatile run state is never persisted.
+- **Currencies:** Scrap (grunts), Cells/Rare Scrap (Enforcer kill, Zone 8 escape completion, Zone 9 elevator clear), Cores/Data Cores (district boss kill) — all tracked as GameManager run-totals, banked to the profile on game-over or full clear, shown on the HUD and run-results screen.
+- **Enemy roster (data-driven `EnemyStats` `.tres`):** Runner, Bruiser (beat-gated telegraphed attacks, hyper-armor shield from `EnemyStats.shield`), Sniper (beat-locked laser), the **Rhythm Enforcer** mini-boss (beat-locked 3-hit bursts, shield-break) and the **Headliner** (multi-phase HSM with a pooled top-down bullet-hell). Knockback/stun and air-juggle launches are data-driven via `DamageInfo`.
 - **Encounter & hazard systems:** reusable `ZoneEncounter` + `WaveSpawner` (camera-locked waves), and beat-driven hazards — ceiling pistons, bomb grid, sniper lasers, toxic pit, the Zone 8 escape gauntlet, and the Zone 9 ascending elevator.
-- **Game feel:** hit-stop, screen-shake, roll invincibility, combo counter, and air juggles.
+- **Game feel:** hit-stop, screen-shake, roll/dash invincibility, combo counter, air juggles, and a VCR scanline/vignette/chromatic-aberration overlay.
+- **Per-zone lighting:** zone-tinted `OmniLight3D`s (warm sodium/cyan for 1-3, magenta/cyan for 4-6, cold white/blue for 7-9) plus beat-animated stage lighting for Zone 10.
 - **Object pool (`_core/pool`):** projectiles are pre-instantiated and reused, never freed mid-combat (bullet-hell performance).
+- **Input:** a real `[input]` section in `project.godot` with keyboard + gamepad bindings for every action (jump/dash/roll/attack_light/attack_heavy/ability_ultimate).
 - **Master sequence:** `vertical_slice.tscn` chains Zones 1–7 (Slice A, → Enforcer → shop) into Zones 8–10 (Slice B: escape → elevator → Headliner → results), full meta-loop included.
 
 ### Running & testing
@@ -27,14 +32,19 @@ The project requires **Godot 4.6**. Open `project.godot` in the editor and press
 
 ```
 # Launch the slice
-godot --path . 
+godot --path .
 
 # Compile-check all scripts (CI-style)
 godot --headless --path . --import
 
+# Smoke-run for 300 frames headless (catches scene/shader corruption tests can't see)
+godot --headless --path . --quit-after 300
+
 # Run the automated test suite (exits non-zero on any failure)
-godot --headless --path . -s res://tests/run_tests.gd
+godot --headless --path . --script tests/run_tests.gd
 ```
+
+Grep the import/smoke logs for `SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|clash|renamed` — the test suite validates logic but is blind to scene-property misplacement and silent shader compile failures.
 
 See **`TESTPLAN.md`** for the automated-coverage table and the manual playtest/regression checklist.
 
@@ -42,21 +52,25 @@ See **`TESTPLAN.md`** for the automated-coverage table and the manual playtest/r
 
 ## Next Steps / Remaining Polish
 
-The designed slice is feature-complete; what remains is fidelity and tuning:
+The designed slice's machine-track systems (combat, economy, shop, input, UI theming, per-zone lighting) are feature-complete; what remains is content that needs a human in the loop:
 
-1. **Art & Animation:** the `NickProto.fbx` placeholder ships only a bind-pose clip — author run/dash/roll/attack animations and swap the `CSGBox3D` block-outs for real Factory/Neon environment art. Add the post-processing stack (bloom, chromatic aberration, retro grading).
-2. **Audio:** integrate the industrial-techno stems, slaved to the Conductor (currently metronome-only by design).
-3. **Run Boosters & balance:** implement actual Run-Booster effects (selection already persists) and tune numbers in `tools/balance_tool.html` toward the 2–3 / 4–5 runs-to-clear targets.
-4. **Front-end:** a main-menu/start screen and the diegetic heartbeat tempo readout.
+1. **Art & Animation:** the `NickProto.fbx` placeholder ships only a bind-pose clip — Mixamo clip rename + `animation_map` fill is still pending (expect `AnimationPlayer not found` warnings in the smoke log until then), then Nick model sign-off and the katana `BoneAttachment3D`. Swap the `CSGBox3D` block-outs for real Factory/Neon environment art.
+2. **3D asset generation:** enemy models beyond the current placeholders (bruiser/runner/sniper/enforcer/headliner all use recolored placeholder meshes via `CharacterVisual`).
+3. **Audio:** integrate real audio (SFX + the industrial-techno music stems, including `boss_headliner_phase2.ogg`) — `AudioManager` no-ops on missing files by design, so wiring is in place but silent until assets land.
+4. **Visual grading pass:** re-check bloom/tone-mapping/per-zone lighting now that the DirectionalLight3D's transform/shadows are restored (C2) and now that all 10 zone lights are in.
+5. **Playtest gauntlet:** full run-through checking heavy attacks work at 0 meter, Bass Drop lands cleanly on a downbeat, an old save keeps its banked scrap, and the combo skill tree gating feels right pacing-wise.
+6. **Run Boosters & balance:** implement actual Run-Booster effects (selection already persists) and tune numbers in `tools/balance_tool.html` toward the 2–3 / 4–5 runs-to-clear targets.
+7. **Front-end:** a main-menu/start screen and the diegetic heartbeat tempo readout.
 
 ---
 
 ## Directory Structure
 
-- **`/_core`** - Autoloads (GameManager, Conductor, SignalBus, SaveManager, HitStop), modular Components (Health, Hit/Hurtbox, DamageInfo, combat/combo), the HSM base, persistence, and the object `pool`.
-- **`/characters`** - Player (controller, HSM states, camera-state machine, combo) and Enemies (data-driven stats + HSM bosses); `shared/` holds the reusable recolorable character visual.
-- **`/levels`** - `slice/vertical_slice.tscn` (Zones 1–10) and reusable `components/` (encounters, wave spawner, hazards, escape, elevator).
-- **`/ui`** - The diegetic HUD (battery/shield/lives/beat pulse) and Karen's Shop.
+- **`/_core`** - Autoloads (GameManager, Conductor, SignalBus, SaveManager, HitStop), modular Components (Health, Hit/Hurtbox, DamageInfo, combat/combo), the HSM base, `persistence/` (PlayerProfile, ShopUpgrade + `shop_upgrades/` resources), and the object `pool`.
+- **`/characters`** - Player (controller, HSM states, camera-state machine, combo, `combos/` ComboDef resources) and Enemies (data-driven stats + HSM bosses, beat-gated Bruiser telegraph); `shared/` holds the reusable recolorable character visual.
+- **`/levels`** - `slice/vertical_slice.tscn` (Zones 1–10, per-zone lighting, VCR overlay) and reusable `components/` (encounters, wave spawner, hazards, escape, elevator, stage lighting).
+- **`/ui`** - The diegetic HUD (battery/shield overlay/ability bar/lives/beat pulse/currencies), the data-driven Karen's Shop (`ShopUpgrade`-based, combo skill tree), themed menus (pause/game-over/run-results), and `vcr/` (drone-feed overlay).
+- **`/assets/shaders`** - Neon rim (spatial) and VCR overlay (canvas_item, screen-space) shaders.
 - **`/tests`** - Self-contained GDScript test framework + cases (run headless; see TESTPLAN.md).
 - **`/Documents`** - The definitive source of truth (GDD, VerticalSlice.md, CodeArchitecture.md, Roadmap.md).
 - **`/UnityProject`** - The legacy Unity 5 prototype codebase (Deprecated).

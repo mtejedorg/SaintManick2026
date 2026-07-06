@@ -44,6 +44,9 @@ func _ready():
 	_register_input("roll", KEY_CTRL)
 	_register_input("attack_light", KEY_J)
 	_register_input("attack_heavy", KEY_K)
+	# Temporary binding for Bass Drop (M5b) — an unused key until M9 lands a real
+	# [input] section in project.godot with a dedicated action + gamepad binding.
+	_register_input("ability_ultimate", KEY_L)
 
 func _register_input(action_name: String, key_code: int):
 	if not InputMap.has_action(action_name):

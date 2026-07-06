@@ -14,4 +14,7 @@ const HEAVY_THRESHOLD: float = 20.0
 var source: Node3D = null
 var is_launcher: bool = false
 var is_guard_breaking: bool = false
+## Set on ability-spender hits (e.g. Bass Drop) so they don't refill the very meter they
+## just spent via the normal player_hit_landed -> add_ability_meter path.
+var is_ability_hit: bool = false
 

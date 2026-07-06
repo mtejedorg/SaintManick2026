@@ -8,6 +8,11 @@ signal hit_received(damage_info: DamageInfo)
 func _ready() -> void:
 	monitoring = false
 	monitorable = true
+	# Tag by side so AoE abilities (e.g. Bass Drop) can find valid targets without a
+	# scene-tree group system elsewhere in the project. Checked via the owner type rather
+	# than health_component.is_player, which children's _ready() can race against (the
+	# owning controller sets is_player in its own _ready(), which runs AFTER its children's).
+	add_to_group("player_hurtbox" if owner is PlayerController else "enemy_hurtbox")
 
 func receive_hit(damage_info: DamageInfo) -> void:
 	var was_invincible = health_component and health_component.is_invincible

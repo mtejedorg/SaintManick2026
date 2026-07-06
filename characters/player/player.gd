@@ -38,6 +38,15 @@ var _meter_decay_timer: float = 0.0
 ## Last grounded position; a fall returns Nick here instead of reloading the level.
 var last_safe_position: Vector3 = Vector3.ZERO
 
+## Bass Drop (M5b, GDD §3.3 full-bar ultimate): a screen-clearing AoE that detonates on
+## the next downbeat once armed. Meter must be completely full to arm; input action is
+## a temporary binding (see signal_bus.gd _register_input) until M9 lands a real input map.
+@export var bass_drop_radius: float = 6.0
+@export var bass_drop_damage: float = 60.0
+@export var bass_drop_knockback: float = 16.0
+@export var bass_drop_stun: float = 1.0
+var bass_drop_armed: bool = false
+
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
@@ -66,6 +75,7 @@ func _ready() -> void:
 	health_component.died.connect(_on_died)
 	health_component.damaged.connect(_on_damaged)
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
+	SignalBus.downbeat.connect(_on_downbeat)
 	last_safe_position = global_position
 
 	# Apply run booster speed multiplier if GameManager set one
@@ -79,7 +89,7 @@ func _emit_initial_ability_meter() -> void:
 	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 
 func _on_player_hit_landed(dmg_info: DamageInfo) -> void:
-	if dmg_info.source == self:
+	if dmg_info.source == self and not dmg_info.is_ability_hit:
 		var is_heavy_hit = dmg_info.amount >= DamageInfo.HEAVY_THRESHOLD
 		add_ability_meter(meter_per_heavy_hit if is_heavy_hit else meter_per_light_hit)
 		_meter_decay_timer = meter_decay_delay
@@ -111,6 +121,47 @@ func try_consume_ability_meter(amount: float) -> bool:
 		SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 		return true
 	return false
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ability_ultimate"):
+		try_arm_bass_drop()
+
+## Arms Bass Drop if the meter is completely full. Does not consume the meter yet —
+## it detonates (and only then zeroes the meter) on the next downbeat.
+func try_arm_bass_drop() -> bool:
+	if bass_drop_armed:
+		return false
+	if ability_meter < MAX_ABILITY_METER:
+		return false
+	bass_drop_armed = true
+	return true
+
+func _on_downbeat(_layer: String, _measure_index: int) -> void:
+	if not bass_drop_armed:
+		return
+	_detonate_bass_drop()
+
+func _detonate_bass_drop() -> void:
+	bass_drop_armed = false
+	ability_meter = 0.0
+	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
+
+	var dmg_info := DamageInfo.new()
+	dmg_info.amount = bass_drop_damage
+	dmg_info.knockback = bass_drop_knockback
+	dmg_info.stun = bass_drop_stun
+	dmg_info.is_shield_breaker = true
+	dmg_info.is_guard_breaking = true
+	dmg_info.is_ability_hit = true
+	dmg_info.source = self
+
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		if global_position.distance_to(hurtbox.global_position) <= bass_drop_radius:
+			hurtbox.receive_hit(dmg_info)
+
+	SignalBus.camera_shake_requested.emit(0.3, 0.4)
 
 func _on_died() -> void:
 	if animation_controller:

@@ -5,6 +5,10 @@ extends Node
 # --- Player Events ---
 signal player_health_changed(new_health: float, max_health: float)
 signal player_shield_changed(new_shield: float, max_shield: float)
+## Emitted whenever the player takes damage (HealthComponent.damaged is per-node; this is
+## the bus-wide equivalent so systems like the VCR overlay (M10) can react without a direct
+## node reference).
+signal player_damaged(damage_info: DamageInfo)
 signal player_died()
 signal player_life_lost(current_lives: int)
 signal ability_meter_changed(current: float, max_meter: float)

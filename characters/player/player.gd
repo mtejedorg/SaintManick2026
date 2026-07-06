@@ -167,9 +167,10 @@ func _on_died() -> void:
 	if animation_controller:
 		animation_controller.play_once("death")
 
-func _on_damaged(_info) -> void:
+func _on_damaged(info: DamageInfo) -> void:
 	if animation_controller:
 		animation_controller.play_once("hit_react")
+	SignalBus.player_damaged.emit(info)
 
 func _physics_process(_delta: float) -> void:
 	if current_path and current_path.curve:

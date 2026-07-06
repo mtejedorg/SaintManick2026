@@ -1,7 +1,8 @@
-[gd_scene load_steps=48 format=3]
+[gd_scene load_steps=49 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
+[ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="34_vcr_overlay"]
 
 [ext_resource type="PackedScene" path="res://characters/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://characters/player/drone_camera.tscn" id="2_camera"]
@@ -214,6 +215,8 @@ shadow_enabled = true
 environment = SubResource("Environment_glow")
 
 [node name="HUD" parent="." instance=ExtResource("7_hud")]
+
+[node name="VcrOverlay" parent="." instance=ExtResource("34_vcr_overlay")]
 
 ; --- Walkable Paths ---
 [node name="Path_Z1_2_3" type="Path3D" parent="."]

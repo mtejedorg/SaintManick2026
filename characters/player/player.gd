@@ -23,6 +23,18 @@ var is_facing_right: bool = true
 var is_jump_enabled: bool = true
 var ability_meter: float = 0.0
 const MAX_ABILITY_METER: float = 100.0
+
+## GDD §3.3: the bar charges by landing combo hits (~+4% per light hit, +9% per heavy
+## hit) — classified via DamageInfo.HEAVY_THRESHOLD, NOT a raw damage*scale formula, so
+## fill rates stay tunable independent of combo damage balancing.
+@export var meter_per_light_hit: float = 4.0
+@export var meter_per_heavy_hit: float = 9.0
+## Seconds of no landed hits before out-of-combat decay kicks in (mirrors the combo
+## component's 2s out-of-combat timeout notion).
+@export var meter_decay_delay: float = 2.0
+## Meter drained per second once decay starts, encouraging aggression.
+@export var meter_decay_rate: float = 5.0
+var _meter_decay_timer: float = 0.0
 ## Last grounded position; a fall returns Nick here instead of reloading the level.
 var last_safe_position: Vector3 = Vector3.ZERO
 
@@ -68,11 +80,30 @@ func _emit_initial_ability_meter() -> void:
 
 func _on_player_hit_landed(dmg_info: DamageInfo) -> void:
 	if dmg_info.source == self:
-		add_ability_meter(dmg_info.amount * 0.5)
+		var is_heavy_hit = dmg_info.amount >= DamageInfo.HEAVY_THRESHOLD
+		add_ability_meter(meter_per_heavy_hit if is_heavy_hit else meter_per_light_hit)
+		_meter_decay_timer = meter_decay_delay
 
 func add_ability_meter(amount: float) -> void:
 	ability_meter = clamp(ability_meter + amount, 0.0, MAX_ABILITY_METER)
 	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
+
+func _process(delta: float) -> void:
+	if ability_meter <= 0.0:
+		return
+	if _meter_decay_timer > 0.0:
+		_meter_decay_timer -= delta
+		if _meter_decay_timer > 0.0:
+			return
+		# The delay boundary fell inside this frame (large delta / low framerate) — only
+		# decay for the leftover time past the boundary, not the whole frame.
+		var overshoot = -_meter_decay_timer
+		_meter_decay_timer = 0.0
+		if overshoot <= 0.0:
+			return
+		delta = overshoot
+	# Out of combat: slowly drain the bar to encourage aggression (GDD §3.3).
+	add_ability_meter(-meter_decay_rate * delta)
 
 func try_consume_ability_meter(amount: float) -> bool:
 	if ability_meter >= amount:

@@ -5,7 +5,7 @@ var is_jumping: bool = false
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
-	if Input.is_action_just_pressed("ui_accept") and player and player.is_on_floor():
+	if Input.is_action_just_pressed("jump") and player and player.is_on_floor():
 		player.velocity.y = player.jump_force
 		is_jumping = true
 	else:
@@ -28,7 +28,7 @@ func physics_update(delta: float) -> void:
 		player.velocity.z = move_toward(player.velocity.z, 0, player.friction * delta * 0.5)
 		
 	# Double Jump logic
-	if Input.is_action_just_pressed("ui_accept") and player.can_double_jump and player.is_jump_enabled:
+	if Input.is_action_just_pressed("jump") and player.can_double_jump and player.is_jump_enabled:
 		player.velocity.y = player.jump_force
 		player.can_double_jump = false
 		

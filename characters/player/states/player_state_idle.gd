@@ -16,7 +16,7 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAirborne")
 		return
 		
-	if Input.is_action_just_pressed("ui_accept") and player.is_jump_enabled:
+	if Input.is_action_just_pressed("jump") and player.is_jump_enabled:
 		transition_requested.emit("StateAirborne")
 		return
 		

@@ -38,3 +38,7 @@ text = "LIGHT ATTACK (J)"
 [node name="AttackHLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "HEAVY ATTACK (K)"
+
+[node name="BassDropLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "BASS DROP (L)"

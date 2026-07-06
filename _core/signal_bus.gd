@@ -39,18 +39,6 @@ signal boss_spawned(boss_name: String)
 signal boss_health_changed(current: int, maximum: int)
 signal boss_died()
 
-func _ready():
-	_register_input("dash", KEY_SHIFT)
-	_register_input("roll", KEY_CTRL)
-	_register_input("attack_light", KEY_J)
-	_register_input("attack_heavy", KEY_K)
-	# Temporary binding for Bass Drop (M5b) — an unused key until M9 lands a real
-	# [input] section in project.godot with a dedicated action + gamepad binding.
-	_register_input("ability_ultimate", KEY_L)
-
-func _register_input(action_name: String, key_code: int):
-	if not InputMap.has_action(action_name):
-		InputMap.add_action(action_name)
-		var ev = InputEventKey.new()
-		ev.physical_keycode = key_code
-		InputMap.action_add_event(action_name, ev)
+# Input actions (jump/dash/roll/attack_light/attack_heavy/ability_ultimate) are now real
+# entries in project.godot's [input] section (M9) with keyboard + gamepad bindings —
+# no more runtime InputMap registration here.

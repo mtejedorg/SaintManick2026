@@ -5,13 +5,15 @@ extends CanvasLayer
 @onready var roll_label: Label = $VBoxContainer/RollLabel
 @onready var attack_l_label: Label = $VBoxContainer/AttackLLabel
 @onready var attack_h_label: Label = $VBoxContainer/AttackHLabel
+@onready var bass_drop_label: Label = $VBoxContainer/BassDropLabel
 
 func _process(_delta: float) -> void:
-	_update_label(jump_label, "ui_accept", "JUMP (Space)")
+	_update_label(jump_label, "jump", "JUMP (Space)")
 	_update_label(dash_label, "dash", "DASH (Shift)")
 	_update_label(roll_label, "roll", "ROLL (Ctrl)")
 	_update_label(attack_l_label, "attack_light", "LIGHT ATTACK (J)")
 	_update_label(attack_h_label, "attack_heavy", "HEAVY ATTACK (K)")
+	_update_label(bass_drop_label, "ability_ultimate", "BASS DROP (L)")
 
 func _update_label(label: Label, action: String, text: String) -> void:
 	if Input.is_action_pressed(action):

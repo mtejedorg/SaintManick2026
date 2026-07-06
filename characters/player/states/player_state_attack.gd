@@ -10,9 +10,11 @@ const COMBO_WINDOW: float = 0.15
 # it does — mashing chains combos instead of whiffing between windows.
 var buffered_attack: bool = false
 var buffered_heavy: bool = false
+var current_sequence: Array[String] = []
 
 func enter() -> void:
 	combo_step = 0
+	current_sequence.clear()
 	buffered_attack = false
 	buffered_heavy = false
 	if player.combo_component:
@@ -21,7 +23,29 @@ func enter() -> void:
 	_start_attack(is_heavy)
 
 func _start_attack(is_heavy: bool) -> void:
+	# Heavy is a free basic input (GDD §3.2/§3.3) — the Ability Bar is a reward meter,
+	# never a cost gate on basic attacks. try_consume_ability_meter() stays available
+	# for the real spenders (EMP Dash-Cancel, Bass Drop).
+	current_sequence.append("B" if is_heavy else "A")
+	
+	var seq = "".join(current_sequence)
+	var is_launcher_combo = (seq == "AAB")
+	var is_sweeper_combo = (seq == "ABB")
+	var is_battery_ram = (seq == "BB")
+	var is_tricut = (seq == "AAA")
+	
 	attack_timer = attack_durations[combo_step]
+	if is_battery_ram:
+		attack_timer = 0.8
+	elif is_sweeper_combo:
+		attack_timer = 0.5
+		
+	# Widen hitbox for Sweeper
+	if is_sweeper_combo:
+		player.katana_hitbox.scale = Vector3(1.5, 1.0, 1.5)
+	else:
+		player.katana_hitbox.scale = Vector3.ONE
+
 	player.velocity.x = 0
 	player.velocity.z = 0
 
@@ -40,7 +64,18 @@ func _start_attack(is_heavy: bool) -> void:
 	player.katana_hitbox.damage_info.source = player
 	player.katana_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
 	player.katana_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
-	player.katana_hitbox.damage_info.is_launcher = is_heavy or combo_step == 2
+	player.katana_hitbox.damage_info.is_launcher = is_heavy or is_launcher_combo
+	player.katana_hitbox.damage_info.is_guard_breaking = is_battery_ram
+
+	if is_launcher_combo:
+		player.katana_hitbox.damage_info.knockback = 12.0
+		player.katana_hitbox.damage_info.amount = 35.0
+	elif is_sweeper_combo:
+		player.katana_hitbox.damage_info.amount = 20.0
+	elif is_battery_ram:
+		player.katana_hitbox.damage_info.amount = 40.0
+	elif is_tricut:
+		player.katana_hitbox.damage_info.amount = 20.0
 
 	player.katana_hitbox.is_active = true
 

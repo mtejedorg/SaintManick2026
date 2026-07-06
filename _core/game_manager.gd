@@ -83,8 +83,8 @@ func add_scrap(amount: int) -> void:
 
 func spend_scrap(amount: int) -> bool:
 	if SaveManager and SaveManager.profile:
-		if SaveManager.profile.persistent_scrap >= amount:
-			SaveManager.profile.persistent_scrap -= amount
+		if SaveManager.profile.scrap >= amount:
+			SaveManager.profile.scrap -= amount
 			SaveManager.save_profile()
 			return true
 	return false
@@ -109,7 +109,7 @@ func respawn_or_game_over() -> void:
 
 	# Transfer run scrap to persistent profile
 	if SaveManager and SaveManager.profile:
-		SaveManager.profile.persistent_scrap += scrap
+		SaveManager.profile.scrap += scrap
 		SaveManager.save_profile()
 
 	if not is_test:
@@ -117,7 +117,7 @@ func respawn_or_game_over() -> void:
 
 func complete_run() -> void:
 	if SaveManager and SaveManager.profile:
-		SaveManager.profile.persistent_scrap += scrap
+		SaveManager.profile.scrap += scrap
 		SaveManager.save_profile()
 	
 	if not is_test:

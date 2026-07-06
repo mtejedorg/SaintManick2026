@@ -7,6 +7,7 @@ signal player_health_changed(new_health: float, max_health: float)
 signal player_shield_changed(new_shield: float, max_shield: float)
 signal player_died()
 signal player_life_lost(current_lives: int)
+signal ability_meter_changed(current: float, max_meter: float)
 
 # --- Combat Events ---
 signal combo_increased(current_combo: int)

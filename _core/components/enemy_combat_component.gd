@@ -40,6 +40,10 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 	if enemy.health_component and enemy.health_component.is_invincible:
 		return
 		
+	var has_shield = enemy.get("health_component") and enemy.health_component.current_shield > 0.0
+	if has_shield and not damage_info.is_guard_breaking:
+		return
+		
 	# Calculate knockback direction
 	var knockback_dir = Vector3.ZERO
 	if damage_info.source:

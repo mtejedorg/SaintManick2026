@@ -9,7 +9,7 @@ signal damaged(damage_info: DamageInfo)
 @export var max_health: float = 100.0
 var current_health: float
 
-@export var max_shield: float = 40.0
+@export var max_shield: float = 0.0
 var current_shield: float
 
 @export var shield_regen_rate: float = 12.0

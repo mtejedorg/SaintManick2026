@@ -13,4 +13,5 @@ const HEAVY_THRESHOLD: float = 20.0
 ## Node reference on a Resource (resources are shared/serialized and cannot hold scene nodes).
 var source: Node3D = null
 var is_launcher: bool = false
+var is_guard_breaking: bool = false
 

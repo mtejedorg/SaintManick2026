@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://ui/hud/input_overlay.tscn" id="2_input_overlay"]
 [ext_resource type="PackedScene" path="res://ui/hud/zone_title_card.tscn" id="3_ztc"]
+[ext_resource type="PackedScene" path="res://ui/hud/ability_bar.tscn" id="4_ability_bar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_beat"]
 bg_color = Color(0.08, 0.08, 0.1, 0.8)
@@ -22,6 +23,8 @@ shadow_size = 8
 script = ExtResource("1_hud")
 
 [node name="InputOverlay" parent="." instance=ExtResource("2_input_overlay")]
+
+[node name="AbilityBar" parent="." instance=ExtResource("4_ability_bar")]
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 anchors_preset = 1

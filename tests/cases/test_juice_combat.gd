@@ -50,6 +50,39 @@ func test_player_roll_invincibility() -> void:
 	
 	player.queue_free()
 
+func test_player_dash_invincibility() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	
+	var health_comp = player.health_component
+	assert_not_null(health_comp, "Player should have HealthComponent")
+	assert_false(health_comp.is_invincible, "Should not be invincible initially")
+	
+	var fsm = player.state_machine
+	var dash_state = fsm.get_node("StateDash")
+	assert_not_null(dash_state, "Player should have StateDash node")
+	
+	# Simulate entering dash state
+	dash_state.enter()
+	assert_true(health_comp.is_invincible, "Should be invincible in dash state")
+	
+	# Try applying damage
+	var initial_hp = health_comp.current_health
+	var damage_info = DamageInfo.new()
+	damage_info.amount = 10.0
+	damage_info.is_shield_breaker = true
+	health_comp.take_damage(damage_info)
+	assert_eq(health_comp.current_health, initial_hp, "Invincible player should take no damage")
+	
+	# Exit dash state
+	dash_state.exit()
+	assert_false(health_comp.is_invincible, "Should not be invincible after exiting dash state")
+	
+	# Damage should now apply
+	health_comp.take_damage(damage_info)
+	assert_lt(health_comp.current_health, initial_hp, "Player should take damage after dash state exits")
+	
+	player.queue_free()
 func test_enemy_knockback_and_stun() -> void:
 	var enemy = load("res://characters/enemies/runner/runner.tscn").instantiate()
 	add_child(enemy)
@@ -149,6 +182,59 @@ func test_player_combo_counter() -> void:
 	combo_comp.on_attack_started()
 	combo_comp.on_attack_ended()
 	assert_eq(combo_comp.combo_count, 0, "Combo should drop on attack whiff")
+	
+	player.queue_free()
+
+func test_player_combo_routes() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	
+	var fsm = player.state_machine
+	var attack_state = fsm.get_node("StateAttack")
+	assert_not_null(attack_state, "Should have attack state")
+	
+	player.ability_meter = 100.0 # Ensure enough meter for heavy attacks
+	
+	# Test Tri-Cut (A-A-A)
+	attack_state.enter()
+	assert_eq("".join(attack_state.current_sequence), "A")
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = false
+	attack_state.attack_timer = 0.0 # Force sequence advance
+	attack_state.physics_update(0.0)
+	assert_eq("".join(attack_state.current_sequence), "AA")
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = false
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0)
+	assert_eq("".join(attack_state.current_sequence), "AAA")
+	assert_eq(player.katana_hitbox.damage_info.amount, 20.0, "Tri-cut should set amount to 20")
+	
+	# Test Sweeper (A-B-B)
+	attack_state.enter()
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0)
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0)
+	assert_eq("".join(attack_state.current_sequence), "ABB")
+	assert_eq(player.katana_hitbox.damage_info.amount, 20.0, "Sweeper should set amount to 20")
+	assert_eq(player.katana_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Sweeper should widen hitbox")
+	
+	# Test Battery Ram (B-B)
+	attack_state.enter()
+	attack_state.current_sequence.clear()
+	attack_state._start_attack(true) # First heavy
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0)
+	assert_eq("".join(attack_state.current_sequence), "BB")
+	assert_true(player.katana_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
+	assert_eq(player.katana_hitbox.damage_info.amount, 40.0)
 	
 	player.queue_free()
 

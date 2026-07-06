@@ -18,8 +18,11 @@ const FALL_KILL_Y: float = -15.0
 @export var fall_damage: float = 20.0
 
 var can_double_jump: bool = true
+var double_jump_unlocked: bool = false
 var is_facing_right: bool = true
 var is_jump_enabled: bool = true
+var ability_meter: float = 0.0
+const MAX_ABILITY_METER: float = 100.0
 ## Last grounded position; a fall returns Nick here instead of reloading the level.
 var last_safe_position: Vector3 = Vector3.ZERO
 
@@ -31,6 +34,10 @@ var last_safe_position: Vector3 = Vector3.ZERO
 var combo_component: Node = null
 
 func _ready() -> void:
+	var sm = get_node_or_null("/root/SaveManager")
+	if sm and sm.profile:
+		double_jump_unlocked = sm.profile.double_jump_unlocked
+	can_double_jump = double_jump_unlocked
 	var combo_script = load("res://characters/player/player_combo_component.gd")
 	if combo_script:
 		combo_component = combo_script.new()
@@ -46,11 +53,33 @@ func _ready() -> void:
 		health_component.current_shield = gm.current_shield
 	health_component.died.connect(_on_died)
 	health_component.damaged.connect(_on_damaged)
+	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	last_safe_position = global_position
 
 	# Apply run booster speed multiplier if GameManager set one
 	if gm and gm.run_speed_multiplier != 1.0:
 		max_speed *= gm.run_speed_multiplier
+		
+	# Delay emitting the initial ability meter slightly so HUD is ready
+	call_deferred("_emit_initial_ability_meter")
+
+func _emit_initial_ability_meter() -> void:
+	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
+
+func _on_player_hit_landed(dmg_info: DamageInfo) -> void:
+	if dmg_info.source == self:
+		add_ability_meter(dmg_info.amount * 0.5)
+
+func add_ability_meter(amount: float) -> void:
+	ability_meter = clamp(ability_meter + amount, 0.0, MAX_ABILITY_METER)
+	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
+
+func try_consume_ability_meter(amount: float) -> bool:
+	if ability_meter >= amount:
+		ability_meter -= amount
+		SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
+		return true
+	return false
 
 func _on_died() -> void:
 	if animation_controller:
@@ -78,7 +107,7 @@ func _physics_process(_delta: float) -> void:
 	if global_position.y < FALL_KILL_Y:
 		global_position = last_safe_position
 		velocity = Vector3.ZERO
-		can_double_jump = true
+		can_double_jump = double_jump_unlocked
 		var fall_hit := DamageInfo.new()
 		fall_hit.amount = fall_damage
 		fall_hit.source = self
@@ -88,7 +117,7 @@ func apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * gravity_multiplier * delta
 	else:
-		can_double_jump = true
+		can_double_jump = double_jump_unlocked
 
 func get_movement_input() -> Vector2:
 	return Vector2(

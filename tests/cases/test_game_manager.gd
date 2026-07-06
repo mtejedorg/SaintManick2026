@@ -3,7 +3,7 @@ extends "res://tests/framework/test_case.gd"
 var original_max_hp_upgrades: int
 var original_max_lives_upgrades: int
 var original_shield_upgrades: int
-var original_persistent_scrap: int
+var original_scrap: int
 
 func before_each() -> void:
 	# Backup original profile state if it exists
@@ -11,7 +11,7 @@ func before_each() -> void:
 		original_max_hp_upgrades = SaveManager.profile.max_hp_upgrades
 		original_max_lives_upgrades = SaveManager.profile.max_lives_upgrades
 		original_shield_upgrades = SaveManager.profile.shield_upgrades
-		original_persistent_scrap = SaveManager.profile.persistent_scrap
+		original_scrap = SaveManager.profile.scrap
 	
 	GameManager.is_test = true
 
@@ -21,7 +21,7 @@ func after_each() -> void:
 		SaveManager.profile.max_hp_upgrades = original_max_hp_upgrades
 		SaveManager.profile.max_lives_upgrades = original_max_lives_upgrades
 		SaveManager.profile.shield_upgrades = original_shield_upgrades
-		SaveManager.profile.persistent_scrap = original_persistent_scrap
+		SaveManager.profile.scrap = original_scrap
 		SaveManager.save_profile()
 
 func test_start_new_run_resets_and_applies_upgrades() -> void:
@@ -56,15 +56,15 @@ func test_scrap_modification_and_spending() -> void:
 	assert_eq(GameManager.scrap, 25, "Add scrap should increase volatile run scrap")
 	
 	# Test persistent scrap spending
-	SaveManager.profile.persistent_scrap = 50
+	SaveManager.profile.scrap = 50
 	
-	var spend_success = GameManager.spend_scrap(30)
-	assert_true(spend_success, "Should succeed spending scrap when balance is sufficient")
-	assert_eq(SaveManager.profile.persistent_scrap, 20, "Persistent scrap should decrease")
+	var success = GameManager.spend_scrap(30)
+	assert_true(success, "Should successfully spend scrap")
+	assert_eq(SaveManager.profile.scrap, 20, "Persistent scrap should decrease")
 	
-	spend_success = GameManager.spend_scrap(30)
-	assert_false(spend_success, "Should fail spending scrap when balance is insufficient")
-	assert_eq(SaveManager.profile.persistent_scrap, 20, "Persistent scrap should not change on failure")
+	var fail = GameManager.spend_scrap(30)
+	assert_false(fail, "Should fail when not enough scrap")
+	assert_eq(SaveManager.profile.scrap, 20, "Persistent scrap should not change on failure")
 
 func test_respawn_or_game_over_flow() -> void:
 	if not SaveManager or not SaveManager.profile:
@@ -74,7 +74,7 @@ func test_respawn_or_game_over_flow() -> void:
 	SaveManager.profile.max_hp_upgrades = 0
 	SaveManager.profile.max_lives_upgrades = 0
 	SaveManager.profile.shield_upgrades = 0
-	SaveManager.profile.persistent_scrap = 10
+	SaveManager.profile.scrap = 10
 	
 	GameManager.start_new_run() # 3 lives, 120 HP, 40 Shield, 0 scrap
 	GameManager.scrap = 15 # Gather some run scrap
@@ -98,7 +98,7 @@ func test_respawn_or_game_over_flow() -> void:
 	# Trigger third respawn (dies, triggers game over)
 	GameManager.respawn_or_game_over()
 	assert_eq(GameManager.current_lives, 0, "Lives should decrement to 0 on game over")
-	assert_eq(SaveManager.profile.persistent_scrap, 25, "Run scrap (15) should transfer to persistent scrap (10 + 15 = 25) on game over")
+	assert_eq(SaveManager.profile.scrap, 25, "Run scrap (15) should transfer to persistent scrap (10 + 15 = 25) on game over")
 
 func test_enemies_and_zones_tracking() -> void:
 	# Reconnect signals since the test framework's after_each() disconnects all SignalBus connections

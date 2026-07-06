@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ComboDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://_core/components/combo_def.gd" id="1_xxx"]
+
+[resource]
+script = ExtResource("1_xxx")
+combo_name = "Tri-Cut"
+input_chain = Array[String](["A", "A", "A"])
+damage_multipliers = Array[float]([1.0, 1.0, 1.5])
+stun_time = 0.5

@@ -9,6 +9,8 @@ func _populate_stats() -> void:
 	if not gm:
 		return
 	$CenterBox/StatsContainer/ScrapLabel.text = "SCRAP COLLECTED    %d" % gm.scrap
+	$CenterBox/StatsContainer/CellsLabel.text = "CELLS COLLECTED    %d" % gm.cells
+	$CenterBox/StatsContainer/CoresLabel.text = "CORES COLLECTED    %d" % gm.cores
 	$CenterBox/StatsContainer/EnemiesLabel.text = "ENEMIES DEFEATED   %d" % gm.enemies_defeated
 	$CenterBox/StatsContainer/ZonesLabel.text = "ZONES CLEARED      %d / 10" % gm.zones_cleared
 

@@ -10,3 +10,4 @@ speed = 2.0
 scrap = 300
 knockback = 10.0
 stun = 1.5
+cells = 15

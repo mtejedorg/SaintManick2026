@@ -12,6 +12,9 @@ signal encounter_completed
 
 @export var entry_trigger: Area3D
 @export var target_path: Path3D # Path_Z9
+## Rare Scrap ("cells" in code, GDD §5.1) awarded for clearing the Zone 9 elevator
+## endurance encounter.
+@export var cells_reward: int = 10
 
 var current_wave_index: int = 0
 var is_active: bool = false
@@ -85,5 +88,7 @@ func _check_completion() -> void:
 	
 	if reached_top and all_waves_done:
 		is_active = false
+		if cells_reward > 0:
+			GameManager.add_cells(cells_reward)
 		encounter_completed.emit()
 		print("Elevator encounter completed!")

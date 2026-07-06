@@ -11,3 +11,7 @@ extends Resource
 @export var melee_range: float = 1.8
 ## Starting shield (hyper-armor while > 0; only guard-breaking hits get through). 0 = no shield.
 @export var shield: float = 0.0
+## Rare Scrap ("cells" in code, GDD §5.1) awarded on this enemy's death. 0 = doesn't drop any
+## (most grunts only drop scrap; cells are reserved for stronger mid-journey enemies like
+## the Enforcer miniboss).
+@export var cells: int = 0

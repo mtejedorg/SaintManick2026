@@ -6,6 +6,10 @@ signal escape_completed
 @export var path_z8: Path3D
 @export var kill_wall: Node3D
 @export var end_trigger: Area3D
+## Rare Scrap ("cells" in code, GDD §5.1) awarded for completing the Zone 8 rhythmic
+## escape sequence — one of the "successfully completing the rhythmic/musical sections"
+## rewards called out alongside stronger mid-journey enemy drops.
+@export var cells_reward: int = 10
 
 var is_active: bool = false
 
@@ -29,5 +33,7 @@ func _on_end_trigger_body_entered(body: Node3D) -> void:
 		is_active = false
 		if kill_wall and kill_wall.has_method("stop_moving"):
 			kill_wall.stop_moving()
+		if cells_reward > 0:
+			GameManager.add_cells(cells_reward)
 		escape_completed.emit()
 		print("Escape sequence completed!")

@@ -115,6 +115,8 @@ func _on_health_changed(current: float, max_health: float) -> void:
 
 func _on_died() -> void:
 	GameManager.add_scrap(stats.scrap)
+	if stats.cells > 0:
+		GameManager.add_cells(stats.cells)
 	SignalBus.enemy_died.emit(global_position)
 	SignalBus.miniboss_defeated.emit()
 	SignalBus.boss_died.emit()

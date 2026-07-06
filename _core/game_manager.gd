@@ -1,6 +1,8 @@
 extends Node
 
 signal scrap_changed(new_amount: int)
+signal cells_changed(new_amount: int)
+signal cores_changed(new_amount: int)
 signal lives_changed(new_amount: int)
 
 # Permanent stats cache (loaded from profile upgrades)
@@ -10,6 +12,11 @@ var max_lives: int = 3
 
 # Volatile run state
 var scrap: int = 0
+## Rare Scrap (GDD §5.1 "cells" in code) — Enforcer kill, Zone 8 escape completion,
+## Zone 9 elevator clear.
+var cells: int = 0
+## Data Cores (GDD §5.1 "cores" in code) — district boss kill (Headliner in the slice).
+var cores: int = 0
 var current_lives: int = 3
 var current_hp: float = 120.0
 var current_shield: float = 40.0
@@ -42,6 +49,8 @@ func start_new_run() -> void:
 		max_shield = 40.0
 
 	scrap = 0
+	cells = 0
+	cores = 0
 	current_lives = max_lives
 	current_hp = max_hp
 	current_shield = max_shield
@@ -65,6 +74,8 @@ func start_new_run() -> void:
 				scrap_multiplier = 2
 
 	scrap_changed.emit(scrap)
+	cells_changed.emit(cells)
+	cores_changed.emit(cores)
 	lives_changed.emit(current_lives)
 
 func _apply_tempo_shield() -> void:
@@ -80,6 +91,14 @@ func _apply_tempo_shield() -> void:
 func add_scrap(amount: int) -> void:
 	scrap += amount * scrap_multiplier
 	scrap_changed.emit(scrap)
+
+func add_cells(amount: int) -> void:
+	cells += amount
+	cells_changed.emit(cells)
+
+func add_cores(amount: int) -> void:
+	cores += amount
+	cores_changed.emit(cores)
 
 func spend_scrap(amount: int) -> bool:
 	if SaveManager and SaveManager.profile:
@@ -107,9 +126,11 @@ func respawn_or_game_over() -> void:
 	lives_changed.emit(current_lives)
 	SignalBus.player_life_lost.emit(current_lives)
 
-	# Transfer run scrap to persistent profile
+	# Transfer run currencies to persistent profile
 	if SaveManager and SaveManager.profile:
 		SaveManager.profile.scrap += scrap
+		SaveManager.profile.cells += cells
+		SaveManager.profile.cores += cores
 		SaveManager.save_profile()
 
 	if not is_test:
@@ -118,8 +139,10 @@ func respawn_or_game_over() -> void:
 func complete_run() -> void:
 	if SaveManager and SaveManager.profile:
 		SaveManager.profile.scrap += scrap
+		SaveManager.profile.cells += cells
+		SaveManager.profile.cores += cores
 		SaveManager.save_profile()
-	
+
 	if not is_test:
 		get_tree().change_scene_to_file("res://ui/menus/run_results_screen.tscn")
 

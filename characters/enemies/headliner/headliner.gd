@@ -168,6 +168,8 @@ func _on_died() -> void:
 	SignalBus.enemy_died.emit(global_position)
 	if stats:
 		GameManager.add_scrap(stats.scrap)
+	# Data Cores (GDD §5.1/§4.2): "Defeating one drops a Data Core" — district bosses only.
+	GameManager.add_cores(1)
 	if Conductor:
 		Conductor.target_bpm = 128.0
 	if state_machine:

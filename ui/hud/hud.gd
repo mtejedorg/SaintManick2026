@@ -9,6 +9,8 @@ extends CanvasLayer
 @onready var boss_name_label: Label = $BossBarContainer/BossNameLabel
 @onready var boss_health_bar: ProgressBar = $BossBarContainer/BossHealthBar
 @onready var scrap_label: Label = $ScrapLabel
+@onready var cells_label: Label = $CellsLabel
+@onready var cores_label: Label = $CoresLabel
 
 var beat_tween: Tween
 var combo_tween: Tween
@@ -26,6 +28,8 @@ func _ready() -> void:
 	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
 	SignalBus.boss_died.connect(_on_boss_died)
 	GameManager.scrap_changed.connect(_on_scrap_changed)
+	GameManager.cells_changed.connect(_on_cells_changed)
+	GameManager.cores_changed.connect(_on_cores_changed)
 
 	# Initial UI Setup
 	_setup_textures()
@@ -33,6 +37,8 @@ func _ready() -> void:
 	_update_shield_ui(GameManager.current_shield, GameManager.max_shield)
 	_update_lives_ui(GameManager.current_lives)
 	scrap_label.text = "SCR  %d" % GameManager.scrap
+	cells_label.text = "CELLS  %d" % GameManager.cells
+	cores_label.text = "CORES  %d" % GameManager.cores
 	
 	# Set pivot offset for beat pulse center pulsing
 	beat_pulse_node.pivot_offset = beat_pulse_node.size / 2.0
@@ -152,6 +158,12 @@ func _on_boss_died() -> void:
 
 func _on_scrap_changed(new_amount: int) -> void:
 	scrap_label.text = "SCR  %d" % new_amount
+
+func _on_cells_changed(new_amount: int) -> void:
+	cells_label.text = "CELLS  %d" % new_amount
+
+func _on_cores_changed(new_amount: int) -> void:
+	cores_label.text = "CORES  %d" % new_amount
 
 func _on_combo_reset() -> void:
 	if combo_tween:

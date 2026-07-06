@@ -4,6 +4,8 @@ var original_max_hp_upgrades: int
 var original_max_lives_upgrades: int
 var original_shield_upgrades: int
 var original_scrap: int
+var original_cells: int
+var original_cores: int
 
 func before_each() -> void:
 	# Backup original profile state if it exists
@@ -12,7 +14,9 @@ func before_each() -> void:
 		original_max_lives_upgrades = SaveManager.profile.max_lives_upgrades
 		original_shield_upgrades = SaveManager.profile.shield_upgrades
 		original_scrap = SaveManager.profile.scrap
-	
+		original_cells = SaveManager.profile.cells
+		original_cores = SaveManager.profile.cores
+
 	GameManager.is_test = true
 
 func after_each() -> void:
@@ -22,6 +26,8 @@ func after_each() -> void:
 		SaveManager.profile.max_lives_upgrades = original_max_lives_upgrades
 		SaveManager.profile.shield_upgrades = original_shield_upgrades
 		SaveManager.profile.scrap = original_scrap
+		SaveManager.profile.cells = original_cells
+		SaveManager.profile.cores = original_cores
 		SaveManager.save_profile()
 
 func test_start_new_run_resets_and_applies_upgrades() -> void:
@@ -122,4 +128,64 @@ func test_enemies_and_zones_tracking() -> void:
 	GameManager.start_new_run()
 	assert_eq(GameManager.enemies_defeated, 0, "enemies_defeated should reset to 0 on new run")
 	assert_eq(GameManager.zones_cleared, 0, "zones_cleared should reset to 0 on new run")
+
+func test_cells_and_cores_accumulate_and_reset() -> void:
+	GameManager.start_new_run()
+	assert_eq(GameManager.cells, 0, "cells should start at 0")
+	assert_eq(GameManager.cores, 0, "cores should start at 0")
+
+	GameManager.add_cells(15) # e.g. Enforcer kill
+	GameManager.add_cells(10) # e.g. Zone 8 escape completion
+	assert_eq(GameManager.cells, 25, "cells should accumulate across sources")
+
+	GameManager.add_cores(1) # e.g. Headliner kill
+	assert_eq(GameManager.cores, 1, "cores should accumulate")
+
+	GameManager.start_new_run()
+	assert_eq(GameManager.cells, 0, "cells should reset to 0 on new run")
+	assert_eq(GameManager.cores, 0, "cores should reset to 0 on new run")
+
+func test_full_clear_banks_scrap_cells_and_cores() -> void:
+	# M7b acceptance: a full clear banks scrap + cells + 1 core into the persistent profile.
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	SaveManager.profile.scrap = 0
+	SaveManager.profile.cells = 0
+	SaveManager.profile.cores = 0
+
+	GameManager.start_new_run()
+	GameManager.add_scrap(40)   # grunt kills
+	GameManager.add_cells(15)   # Enforcer kill
+	GameManager.add_cells(10)   # Zone 8 escape
+	GameManager.add_cells(10)   # Zone 9 elevator
+	GameManager.add_cores(1)    # Headliner kill
+
+	GameManager.complete_run()
+
+	assert_eq(SaveManager.profile.scrap, 40, "Run scrap should transfer to persistent scrap on full clear")
+	assert_eq(SaveManager.profile.cells, 35, "Run cells should transfer to persistent cells on full clear")
+	assert_eq(SaveManager.profile.cores, 1, "Run cores should transfer to persistent cores on full clear")
+
+func test_cells_and_cores_transfer_on_game_over_too() -> void:
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	SaveManager.profile.scrap = 0
+	SaveManager.profile.cells = 0
+	SaveManager.profile.cores = 0
+	SaveManager.profile.max_lives_upgrades = 0
+
+	GameManager.start_new_run() # 3 lives
+	GameManager.add_cells(15)
+	GameManager.add_cores(1)
+
+	GameManager.respawn_or_game_over() # lives 3 -> 2
+	GameManager.respawn_or_game_over() # lives 2 -> 1
+	GameManager.respawn_or_game_over() # lives 1 -> 0, game over, transfers to profile
+
+	assert_eq(SaveManager.profile.cells, 15, "Cells should transfer to profile on game over, not just full clear")
+	assert_eq(SaveManager.profile.cores, 1, "Cores should transfer to profile on game over, not just full clear")
 

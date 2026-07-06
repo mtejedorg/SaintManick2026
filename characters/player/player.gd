@@ -27,6 +27,7 @@ var last_safe_position: Vector3 = Vector3.ZERO
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
 @onready var health_component: HealthComponent = $HealthComponent
+@onready var animation_controller: PlayerAnimationController = $PlayerAnimationController
 var combo_component: Node = null
 
 func _ready() -> void:
@@ -44,11 +45,20 @@ func _ready() -> void:
 		health_component.max_shield = gm.max_shield
 		health_component.current_shield = gm.current_shield
 	health_component.died.connect(_on_died)
+	health_component.damaged.connect(_on_damaged)
 	last_safe_position = global_position
 
+	# Apply run booster speed multiplier if GameManager set one
+	if gm and gm.run_speed_multiplier != 1.0:
+		max_speed *= gm.run_speed_multiplier
+
 func _on_died() -> void:
-	# Handled centrally by HealthComponent, but can trigger player-specific visuals here
-	pass
+	if animation_controller:
+		animation_controller.play_once("death")
+
+func _on_damaged(_info) -> void:
+	if animation_controller:
+		animation_controller.play_once("hit_react")
 
 func _physics_process(_delta: float) -> void:
 	if current_path and current_path.curve:

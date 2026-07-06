@@ -4,6 +4,7 @@ extends Node
 signal health_changed(new_health: float, max_health: float)
 signal shield_changed(new_shield: float, max_shield: float)
 signal died()
+signal damaged(damage_info: DamageInfo)
 
 @export var max_health: float = 100.0
 var current_health: float
@@ -61,6 +62,7 @@ func take_damage(damage_info: DamageInfo) -> void:
 		if dmg_amount > 0.0:
 			current_health = max(0.0, current_health - dmg_amount)
 
+	damaged.emit(damage_info)
 	health_changed.emit(current_health, max_health)
 	shield_changed.emit(current_shield, max_shield)
 

@@ -3,6 +3,7 @@ extends Area3D
 
 signal encounter_completed
 
+@export var zone_name: String = ""
 @export var waves: Array[WaveDef] = []
 @export var spawner: WaveSpawner
 @export var is_top_down: bool = false
@@ -25,7 +26,11 @@ func _on_body_entered(body: Node3D) -> void:
 		active = true
 		# Disable detection so it doesn't trigger again
 		set_deferred("monitoring", false)
-		
+
+		# Announce zone entry
+		if zone_name != "":
+			SignalBus.zone_entered.emit(zone_name)
+
 		# Lock gates
 		set_gate_locked(true)
 		

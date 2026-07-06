@@ -107,11 +107,11 @@ func _on_beat(layer: String, beat_index: int) -> void:
 			attack_step = 1
 			mesh_instance.set_surface_override_material(0, telegraph_material)
 
-func _on_health_changed(current: float, _max_health: float) -> void:
-	print("Runner hit! HP: ", current)
+func _on_health_changed(_current: float, _max_health: float) -> void:
+	pass
 
 func _on_died() -> void:
-	print("Runner Died!")
 	GameManager.add_scrap(stats.scrap)
+	SignalBus.enemy_died.emit(global_position)
 	queue_free()
 

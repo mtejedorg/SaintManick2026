@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://3D_Assets/Characters/Nick/nick_body_v2.glb" id="2_body"]
+[ext_resource type="PackedScene" path="res://3D_Assets/Characters/Nick/nick_bionic_arm.glb" id="3_arm"]
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+script = ExtResource("1_visual")
+
+[node name="NickBody" parent="." instance=ExtResource("2_body")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)
+
+[node name="NickBionicArm" parent="." instance=ExtResource("3_arm")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)

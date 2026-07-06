@@ -99,3 +99,27 @@ func test_respawn_or_game_over_flow() -> void:
 	GameManager.respawn_or_game_over()
 	assert_eq(GameManager.current_lives, 0, "Lives should decrement to 0 on game over")
 	assert_eq(SaveManager.profile.persistent_scrap, 25, "Run scrap (15) should transfer to persistent scrap (10 + 15 = 25) on game over")
+
+func test_enemies_and_zones_tracking() -> void:
+	# Reconnect signals since the test framework's after_each() disconnects all SignalBus connections
+	if not SignalBus.enemy_died.is_connected(GameManager._on_enemy_died):
+		SignalBus.enemy_died.connect(GameManager._on_enemy_died)
+	if not SignalBus.zone_entered.is_connected(GameManager._on_zone_entered):
+		SignalBus.zone_entered.connect(GameManager._on_zone_entered)
+
+	GameManager.start_new_run()
+	assert_eq(GameManager.enemies_defeated, 0, "enemies_defeated should start at 0")
+	assert_eq(GameManager.zones_cleared, 0, "zones_cleared should start at 0")
+
+	# Emit signals
+	SignalBus.enemy_died.emit(Vector3.ZERO)
+	assert_eq(GameManager.enemies_defeated, 1, "enemies_defeated should increment on enemy_died")
+
+	SignalBus.zone_entered.emit("Zone 1")
+	assert_eq(GameManager.zones_cleared, 1, "zones_cleared should increment on zone_entered")
+
+	# Start new run should reset
+	GameManager.start_new_run()
+	assert_eq(GameManager.enemies_defeated, 0, "enemies_defeated should reset to 0 on new run")
+	assert_eq(GameManager.zones_cleared, 0, "zones_cleared should reset to 0 on new run")
+

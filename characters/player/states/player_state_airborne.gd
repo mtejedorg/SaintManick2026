@@ -3,11 +3,15 @@ extends PlayerState
 var is_jumping: bool = false
 
 func enter() -> void:
-	if Input.is_action_just_pressed("ui_accept") and player.is_on_floor():
+	if not player and owner:
+		player = owner as PlayerController
+	if Input.is_action_just_pressed("ui_accept") and player and player.is_on_floor():
 		player.velocity.y = player.jump_force
 		is_jumping = true
 	else:
 		is_jumping = false
+	if player and player.animation_controller:
+		player.animation_controller.play("jump" if is_jumping else "fall")
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)

@@ -5,10 +5,15 @@ var dash_timer: float = 0.0
 var dash_direction: Vector2 = Vector2.RIGHT
 
 func enter() -> void:
+	if not player and owner:
+		player = owner as PlayerController
 	dash_timer = dash_duration
-	var input_dir = player.get_movement_input()
-	dash_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)
-	player.velocity.y = 0
+	var input_dir = player.get_movement_input() if player else Vector2.ZERO
+	dash_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player and player.is_facing_right else Vector2.LEFT)
+	if player:
+		player.velocity.y = 0
+	if player and player.animation_controller:
+		player.animation_controller.play("dash")
 
 func physics_update(delta: float) -> void:
 	dash_timer -= delta

@@ -12,8 +12,6 @@ func receive_hit(damage_info: DamageInfo) -> void:
 			# Shield breaks!
 			owner.break_shield()
 		else:
-			# Complete mitigation
-			print("Attack mitigated by Headliner shield!")
 			hit_received.emit(damage_info)
 			return
 	else:

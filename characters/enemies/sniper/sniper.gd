@@ -84,16 +84,15 @@ func _on_beat(layer: String, beat_index: int) -> void:
 			laser_beam.scale = Vector3(1.0, 1.0, 1.0)
 			laser_material.albedo_color.a = 1.0
 			laser_hitbox.is_active = true
-			print("Sniper fires laser on the downbeat!")
 		2:
 			laser_beam.visible = false
 			laser_hitbox.is_active = false
 			is_aim_locked = false
 
-func _on_health_changed(current: float, _max_health: float) -> void:
-	print("Sniper hit! HP: ", current)
+func _on_health_changed(_current: float, _max_health: float) -> void:
+	pass
 
 func _on_died() -> void:
-	print("Sniper Died!")
 	GameManager.add_scrap(stats.scrap)
+	SignalBus.enemy_died.emit(global_position)
 	queue_free()

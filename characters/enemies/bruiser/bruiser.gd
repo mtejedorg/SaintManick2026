@@ -51,6 +51,19 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
+
+	if not combat_comp.is_stunned():
+		if player and is_on_floor():
+			var dist = global_position.distance_to(player.global_position)
+			if dist > stats.melee_range:
+				var dir = (player.global_position - global_position).normalized()
+				dir.y = 0
+				velocity.x = dir.x * stats.speed
+				velocity.z = dir.z * stats.speed
+			else:
+				velocity.x = move_toward(velocity.x, 0, 20 * delta)
+				velocity.z = move_toward(velocity.z, 0, 20 * delta)
+
 	move_and_slide()
 
 func _on_beat(layer: String, beat_index: int) -> void:
@@ -63,10 +76,10 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	tween.tween_property(mesh_instance, "scale", Vector3(1.1, 1.1, 1.1), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(mesh_instance, "scale", Vector3(1.0, 1.0, 1.0), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
-func _on_health_changed(current: float, _max_health: float) -> void:
-	print("Bruiser hit! HP: ", current)
+func _on_health_changed(_current: float, _max_health: float) -> void:
+	pass
 
 func _on_died() -> void:
-	print("Bruiser Died!")
 	GameManager.add_scrap(stats.scrap)
+	SignalBus.enemy_died.emit(global_position)
 	queue_free()

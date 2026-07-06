@@ -7,3 +7,5 @@ extends Resource
 @export var scrap: int = 8
 @export var knockback: float = 5.0
 @export var stun: float = 0.5
+## Distance at which the enemy stops chasing and can melee.
+@export var melee_range: float = 1.8

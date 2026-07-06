@@ -17,6 +17,9 @@ var vulnerable_material: StandardMaterial3D
 
 var is_shield_active: bool = false
 var is_vulnerable: bool = false
+## Scene-placed miniboss: stays dormant (no chase, no boss bar) until the player
+## enters its zone. Activated by SignalBus.zone_entered for SECTOR 07.
+var is_active: bool = false
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -63,13 +66,28 @@ func _ready() -> void:
 	vulnerable_material.emission = Color(0.1, 0.3, 0.8, 1.0)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
-	
+
 	# Initialize state machine
 	state_machine.init(self)
-	
+
 	SignalBus.beat.connect(_on_beat)
+	SignalBus.zone_entered.connect(_on_zone_entered)
+
+func _on_zone_entered(zone_name: String) -> void:
+	if is_active:
+		return
+	if "07" in zone_name or "ENFORCER" in zone_name.to_upper():
+		is_active = true
+		# Announce miniboss presence to HUD only once the fight begins
+		SignalBus.boss_spawned.emit("Enforcer")
+		SignalBus.boss_health_changed.emit(int(health_component.current_health), int(health_component.max_health))
 
 func _physics_process(delta: float) -> void:
+	if not is_active:
+		# Dormant: settle on the floor but don't chase or attack.
+		apply_gravity(delta)
+		move_and_slide()
+		return
 	if combat_comp.is_stunned():
 		apply_gravity(delta)
 		move_and_slide()
@@ -81,21 +99,23 @@ func apply_gravity(delta: float) -> void:
 		velocity += get_gravity() * delta
 
 func _on_beat(layer: String, beat_index: int) -> void:
+	if not is_active:
+		return
 	if combat_comp.is_stunned():
 		return
 	state_machine.handle_beat(layer, beat_index)
 
 
 func break_shield() -> void:
-	print("Enforcer shield broken!")
 	if state_machine.current_state and state_machine.current_state.has_method("on_shield_broken"):
 		state_machine.current_state.on_shield_broken()
 
-func _on_health_changed(current: float, _max_health: float) -> void:
-	print("Enforcer hit! HP: ", current)
+func _on_health_changed(current: float, max_health: float) -> void:
+	SignalBus.boss_health_changed.emit(int(current), int(max_health))
 
 func _on_died() -> void:
-	print("MINI-BOSS DEFEATED!")
 	GameManager.add_scrap(stats.scrap)
+	SignalBus.enemy_died.emit(global_position)
 	SignalBus.miniboss_defeated.emit()
+	SignalBus.boss_died.emit()
 	queue_free()

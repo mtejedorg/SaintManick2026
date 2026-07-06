@@ -31,3 +31,4 @@ func _drop_combo() -> void:
 	combo_count = 0
 	combo_timer = 0.0
 	SignalBus.combo_dropped.emit()
+	SignalBus.combo_reset.emit()

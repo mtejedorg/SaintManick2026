@@ -4,8 +4,14 @@ extends CanvasLayer
 @onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/ShieldBar
 @onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LivesRect
 @onready var beat_pulse_node: Control = $BeatPulse
+@onready var combo_label: Label = $ComboLabel
+@onready var boss_bar_container: VBoxContainer = $BossBarContainer
+@onready var boss_name_label: Label = $BossBarContainer/BossNameLabel
+@onready var boss_health_bar: ProgressBar = $BossBarContainer/BossHealthBar
+@onready var scrap_label: Label = $ScrapLabel
 
 var beat_tween: Tween
+var combo_tween: Tween
 
 func _ready() -> void:
 	# Subscriptions
@@ -14,12 +20,19 @@ func _ready() -> void:
 	GameManager.lives_changed.connect(_on_lives_changed)
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.downbeat.connect(_on_downbeat)
-	
+	SignalBus.combo_increased.connect(_on_combo_increased)
+	SignalBus.combo_reset.connect(_on_combo_reset)
+	SignalBus.boss_spawned.connect(_on_boss_spawned)
+	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
+	SignalBus.boss_died.connect(_on_boss_died)
+	GameManager.scrap_changed.connect(_on_scrap_changed)
+
 	# Initial UI Setup
 	_setup_textures()
 	_update_battery_ui(GameManager.current_hp, GameManager.max_hp)
 	_update_shield_ui(GameManager.current_shield, GameManager.max_shield)
 	_update_lives_ui(GameManager.current_lives)
+	scrap_label.text = "SCR  %d" % GameManager.scrap
 	
 	# Set pivot offset for beat pulse center pulsing
 	beat_pulse_node.pivot_offset = beat_pulse_node.size / 2.0
@@ -115,6 +128,40 @@ func _on_downbeat(layer: String, _measure_index: int) -> void:
 	
 	beat_tween.tween_property(beat_pulse_node, "scale", Vector2(1.0, 1.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	beat_tween.tween_property(beat_pulse_node, "modulate", Color(1.0, 1.0, 1.0, 0.5), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _on_combo_increased(current_combo: int) -> void:
+	combo_label.text = "x%d" % current_combo
+	combo_label.visible = true
+	combo_label.pivot_offset = combo_label.size / 2.0
+	if combo_tween:
+		combo_tween.kill()
+	combo_tween = create_tween()
+	combo_label.scale = Vector2(1.4, 1.4)
+	combo_tween.tween_property(combo_label, "scale", Vector2(1.0, 1.0), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _on_boss_spawned(boss_name: String) -> void:
+	boss_name_label.text = boss_name.to_upper()
+	boss_bar_container.visible = true
+
+func _on_boss_health_changed(current: int, maximum: int) -> void:
+	boss_health_bar.max_value = maximum
+	boss_health_bar.value = current
+
+func _on_boss_died() -> void:
+	boss_bar_container.visible = false
+
+func _on_scrap_changed(new_amount: int) -> void:
+	scrap_label.text = "SCR  %d" % new_amount
+
+func _on_combo_reset() -> void:
+	if combo_tween:
+		combo_tween.kill()
+	combo_tween = create_tween()
+	combo_tween.tween_property(combo_label, "modulate:a", 0.0, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	combo_tween.tween_callback(func():
+		combo_label.visible = false
+		combo_label.modulate.a = 1.0
+	)
 
 # Path Helpers for accented files
 func _get_battery_texture_path(index: int) -> String:

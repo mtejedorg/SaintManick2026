@@ -13,7 +13,7 @@
 ## 1. Game Overview & Identity
 
 ### 1.1. Elevator Pitch
-**Saint Manick** is a retro-inspired 2.5D beat'em up set in a decadent, neon-drenched dystopian future. Players control **Nick**, an android combat unit, fighting through the radial districts of the massive city of Saint Manick. Guided by **Karen** via a surveillance drone, Nick must fight his way to the great central tower to save the last hope of the human species: a little girl.
+**Saint Manick** is a retro-inspired 2.5D beat'em up set in a decadent, neon-drenched dystopian future. Players control **Nick**, a rogue corporate enforcer — bionic arm, katana, and a grudge — fighting through the radial districts of the massive city of Saint Manick. Guided by **Karen** via a surveillance drone, Nick cuts his way to the great central tower to save the last hope of the human species: a little girl.
 
 ### 1.2. Key Information
 - **Genre:** 2.5D Action Roguelite / Beat'em Up
@@ -47,8 +47,11 @@ The city of Saint Manick is structured in a **radial composition**. Buildings in
 ![Dystopian City Concept](images/radial_city.png)
 
 ### 2.3. Characters
-- **Nick (Android):** The main protagonist. A powerful android fighting unit who retains his combat programming and moves with weight and momentum.
-- **Karen:** The deuteragonist and secret antagonist. A ruthless corporate director manipulating Nick with simulated emotions of love and vengeance. She has zero empathy for the surviving commoners and merely wants to test Nick as the definitive combat robot to gain absolute control over the city.
+- **Nick:** The main protagonist. A former mid-level corporate enforcer who went rogue — he knows the system from the inside, which is exactly why he can't let it stand. His right arm is fully bionic/cybernetic from the shoulder: heavy, dangerous, marked with neon along the plating. It is his power hand — hard pushes, charged strikes, and special abilities. His left hand holds a katana: his speed hand, built for fast cuts and slashes. He moves in a beat-up urban hoodie, an underdog against the armored corporate machinery he used to serve. The bionic arm is a lore hook — *why does he have it, and what did it cost him?* — left open for the writer, but it should be visible in every fight. Nick is world-weary, not edgy. He fights because someone has to.
+
+  > **Narrative note (open):** The origin of Nick's bionic arm is not yet written. It is a deliberate blank — the most interesting question the game can ask about him. When the story team fills it in, the answer should connect to his break from the corporation. Whatever it cost him, it should make the arm feel earned, not cosmetic.
+
+- **Karen:** The deuteragonist and secret antagonist. A ruthless corporate director manipulating Nick with simulated emotions of love and vengeance. She has zero empathy for the surviving commoners and merely wants to test Nick as the definitive combat weapon to gain absolute control over the city.
 - **The Drone:** Karen's surveillance drone that serves as the player's camera and hosts the HUD interface.
 
 ---
@@ -64,17 +67,23 @@ Nick moves left and right along the screen with weight and physics-based inertia
 - **Ground & Wall Detection:** Handled by raycast sensors to ensure precise platforming.
 
 ### 3.2. Combat System & Combos
-Nick is equipped with a dual-input attack system (Hit A: Light, Hit B: Heavy). There is **no stamina** — players are free to mash and chain at will.
+Nick fights with two completely different tools that read as one fluid fighter: his **bionic right arm** (power hand — hard pushes, charged strikes) and his **katana in the left hand** (speed hand — fast cuts and slashes). The visual duality is intentional. A combo blends both: you can see the arm when he puts weight behind it, and the blade when he needs to be fast.
+
+Nick uses a dual-input attack system (**Hit A: Light / Katana**, **Hit B: Heavy / Bionic Arm**). There is **no stamina** — players are free to mash and chain at will.
+
 - **Defensive Move — Dash & Roll:** Nick's core survival tool.
   - **Dash (single input):** A short, snappy burst with brief invincibility frames (i-frames ≈ 0.25s). Used to slip a single telegraphed hit or close distance.
   - **Roll (double-tap / hold input):** A longer evasive roll with extended i-frames (≈ 0.45s) and greater reposition distance, at the cost of a longer recovery. The primary way to survive bullet-hell sequences in top-down mode.
   - Because enemy and trap telegraphs pulse to the beat (§1.3), a player who reads the heartbeat instinctively knows *when* to dash/roll — but timing is never strictly enforced.
 - **Initial Combo List:**
-  - **A - A - A (The Tri-Jab):** A fast 3-hit string for quick, safe damage against single targets.
-  - **A - A - B (The Launcher):** Two quick hits followed by a heavy uppercut that knocks enemies into the air, allowing for juggle follow-ups.
-  - **Air-Combo (Jump + A - A):** Basic aerial hits to juggle enemies launched by the A-A-B combo, keeping them airborne.
-  - **A - B - B (The Sweeper):** A quick hit into a wide, heavy spinning strike that hits multiple surrounding enemies and knocks them back (excellent for crowd control).
-  - **B - B (The Battery Ram):** A slow, armor-piercing 2-hit heavy combo that breaks enemy shields but leaves Nick vulnerable if missed.
+
+  *A inputs are katana — fast, light, blade. B inputs are bionic arm — heavy, charged, mechanical.*
+
+  - **A - A - A (The Tri-Cut):** Three fast katana slashes — quick, safe, blade-forward. Built for single targets at range.
+  - **A - A - B (The Launcher):** Two quick blade hits into a bionic uppercut that punches enemies airborne, opening juggle follow-ups. The arm closes the distance the blade opened.
+  - **Air-Combo (Jump + A - A):** Aerial katana hits to keep a launched enemy airborne. Follow the blade, keep the pressure.
+  - **A - B - B (The Sweeper):** Blade draws the first hit, then the bionic arm follows with a wide spinning strike that clears surrounding enemies and knocks them back. Crowd control — use it when you're surrounded.
+  - **B - B (The Battery Ram):** Two slow, charged bionic arm strikes — armor-piercing, shield-breaking. Dangerous if missed; the arm commits. The only pure-arm combo and the one that costs you if it whiffs.
 
 ### 3.3. The Ability Bar (Combat Resource)
 In place of a stamina system, Nick has an **Ability Bar** (occupying the HUD slot where stamina would traditionally sit). The bar is a *reward* meter, not a limiter — nothing Nick does is ever blocked by an empty bar.
@@ -102,7 +111,9 @@ The camera isn't just a viewport; it is Karen's surveillance drone, and it moves
 ## 4. Enemies & Bosses
 
 ### 4.1. The Grunts (Rhythmic Telegraphing)
-Enemies are challenging, bullet-hellish, and hit hard. To compensate, their attack patterns and projectiles are synced to the music, acting as an auditory clue for the player to dodge or parry.
+Enemies are challenging, bullet-hellish, and hit hard. To compensate, their attack patterns and projectiles are synced to the music, acting as an auditory cue for the player to dodge and counter.
+
+> **Design note — Parry (deferred):** A parry mechanic has been discussed but is **not in the vertical slice**. Do not design enemies around it. When it is added, the beat-sync telegraphing makes it a natural fit — enemies broadcast their swings on the beat, the parry window can align to that — but that design work happens after the slice validates core combat feel.
 - **The Runner (Scrap-Punk Junkie):** Fast and squishy. They rush Nick on the upbeat and attempt quick swarms.
 - **The Bruiser (Riot-Shield Enforcer):** Heavy, slow, and shielded. They only attack on the heavy downbeats. Nick must use the B-B combo to break their guard.
 - **The Sniper (Laser-Sight Turret):** A ranged enemy that locks on. The laser changes color to the rhythm, firing exactly when the music drops, giving the player an auditory cue to duck or jump.

@@ -24,6 +24,7 @@ func _ready() -> void:
 	SignalBus.downbeat.connect(_on_downbeat)
 	SignalBus.combo_increased.connect(_on_combo_increased)
 	SignalBus.combo_reset.connect(_on_combo_reset)
+	SignalBus.combo_capped.connect(_on_combo_capped)
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
 	SignalBus.boss_died.connect(_on_boss_died)
@@ -144,6 +145,21 @@ func _on_combo_increased(current_combo: int) -> void:
 	combo_tween = create_tween()
 	combo_label.scale = Vector2(1.4, 1.4)
 	combo_tween.tween_property(combo_label, "scale", Vector2(1.0, 1.0), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+## GDD §6.1: "When maxed out, the multiplier visually glitches and explodes with intense
+## neon colors to reward the player." A short cyan/magenta flicker plus an oversized pop,
+## settling back into the normal combo-increased look.
+func _on_combo_capped() -> void:
+	if combo_tween:
+		combo_tween.kill()
+	combo_tween = create_tween()
+	var neon_colors = [Color(0, 0.949, 1, 1), Color(1, 0, 0.667, 1), Color(1, 1, 1, 1)]
+	combo_label.scale = Vector2(2.2, 2.2)
+	for c in neon_colors:
+		combo_tween.tween_property(combo_label, "modulate", c, 0.06)
+	combo_tween.tween_property(combo_label, "scale", Vector2(1.4, 1.4), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	combo_tween.parallel().tween_property(combo_label, "modulate", Color(1, 1, 1, 1), 0.25)
+	SignalBus.camera_shake_requested.emit(0.15, 0.3)
 
 func _on_boss_spawned(boss_name: String) -> void:
 	boss_name_label.text = boss_name.to_upper()

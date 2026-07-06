@@ -17,6 +17,10 @@ signal ability_meter_changed(current: float, max_meter: float)
 signal combo_increased(current_combo: int)
 signal combo_dropped()
 signal combo_reset()  # Alias emitted alongside combo_dropped for HUD clarity
+## Emitted once when the combo counter hits its cap (M11, GDD §6.1) — HUD celebrates with
+## a glitch/explode flourish. Fires only on the frame the cap is reached, not every
+## subsequent hit while capped.
+signal combo_capped()
 signal hit_stop_requested(duration: float, time_scale: float)
 signal camera_shake_requested(strength: float, duration: float)
 signal player_hit_landed(damage_info: DamageInfo)

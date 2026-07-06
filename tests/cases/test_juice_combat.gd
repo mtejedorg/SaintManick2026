@@ -182,7 +182,69 @@ func test_player_combo_counter() -> void:
 	combo_comp.on_attack_started()
 	combo_comp.on_attack_ended()
 	assert_eq(combo_comp.combo_count, 0, "Combo should drop on attack whiff")
-	
+
+	player.queue_free()
+
+func test_combo_resets_when_player_takes_damage() -> void:
+	# M11 / GDD §6.1: "a combo counter that grows... without taking damage" — a landed
+	# hit on Nick must reset the combo, same as a dropped/whiffed attack.
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+
+	var combo_comp = player.combo_component
+	var damage_info = DamageInfo.new()
+	damage_info.source = player
+	SignalBus.player_hit_landed.emit(damage_info)
+	SignalBus.player_hit_landed.emit(damage_info)
+	SignalBus.player_hit_landed.emit(damage_info)
+	assert_eq(combo_comp.combo_count, 3, "Combo should have built up before taking damage")
+
+	var incoming_hit = DamageInfo.new()
+	incoming_hit.amount = 10.0
+	SignalBus.player_damaged.emit(incoming_hit)
+
+	assert_eq(combo_comp.combo_count, 0, "Combo should reset to 0 when the player takes damage")
+
+	player.queue_free()
+
+func test_combo_does_not_reset_on_damage_if_already_zero() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+
+	var combo_comp = player.combo_component
+	assert_eq(combo_comp.combo_count, 0)
+
+	var incoming_hit = DamageInfo.new()
+	incoming_hit.amount = 10.0
+	SignalBus.player_damaged.emit(incoming_hit)
+
+	assert_eq(combo_comp.combo_count, 0, "Combo should remain 0, not error, when already at 0")
+
+	player.queue_free()
+
+func test_combo_caps_at_50_and_fires_capped_signal_once() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+
+	var combo_comp = player.combo_component
+	var damage_info = DamageInfo.new()
+	damage_info.source = player
+
+	# Array instead of a plain int: GDScript lambdas capture locals by value at closure
+	# creation, so a plain `var capped_count = 0; += 1` inside the lambda would not be
+	# visible to the outer scope. A one-element array is captured by reference.
+	var capped_count = [0]
+	var on_capped = func(): capped_count[0] += 1
+	SignalBus.combo_capped.connect(on_capped)
+
+	for i in range(60):
+		SignalBus.player_hit_landed.emit(damage_info)
+
+	assert_eq(combo_comp.combo_count, combo_comp.MAX_COMBO, "Combo should cap at MAX_COMBO even after more hits")
+	assert_eq(combo_comp.combo_count, 50, "Combo should cap at exactly 50")
+	assert_eq(capped_count[0], 1, "combo_capped should fire exactly once, not on every hit past the cap")
+
+	SignalBus.combo_capped.disconnect(on_capped)
 	player.queue_free()
 
 func test_player_combo_routes() -> void:

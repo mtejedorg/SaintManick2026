@@ -10,10 +10,43 @@ func _ready() -> void:
 func load_profile() -> void:
 	if ResourceLoader.exists(save_path):
 		profile = ResourceLoader.load(save_path) as PlayerProfile
-		
+
 	if not profile:
 		profile = PlayerProfile.new()
 		save_profile()
+		return
+
+	_migrate_legacy_persistent_scrap()
+
+## One-time migration: PlayerProfile used to export `persistent_scrap`; the property was
+## renamed to `scrap` (+ new `cells`/`cores`). ResourceLoader silently drops properties that
+## no longer exist on the script, so an old save file loads with scrap == 0 and the bank is
+## gone unless we recover it. Fix: if scrap is 0, re-read the file as text and look for the
+## legacy key; if found, migrate it once and persist immediately.
+func _migrate_legacy_persistent_scrap() -> void:
+	if profile.scrap != 0:
+		return
+	if not FileAccess.file_exists(save_path):
+		return
+
+	var file = FileAccess.open(save_path, FileAccess.READ)
+	if not file:
+		return
+	var text = file.get_as_text()
+	file.close()
+
+	var regex = RegEx.new()
+	regex.compile("persistent_scrap\\s*=\\s*(\\d+)")
+	var result = regex.search(text)
+	if not result:
+		return
+
+	var legacy_scrap = result.get_string(1).to_int()
+	if legacy_scrap <= 0:
+		return
+
+	profile.scrap = legacy_scrap
+	save_profile()
 
 func save_profile() -> void:
 	if profile:

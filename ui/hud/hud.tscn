@@ -24,8 +24,6 @@ script = ExtResource("1_hud")
 
 [node name="InputOverlay" parent="." instance=ExtResource("2_input_overlay")]
 
-[node name="AbilityBar" parent="." instance=ExtResource("4_ability_bar")]
-
 [node name="MarginContainer" type="MarginContainer" parent="."]
 anchors_preset = 1
 anchor_left = 1.0
@@ -45,18 +43,33 @@ layout_mode = 2
 theme_override_constants/separation = 15
 alignment = 2
 
-[node name="BatteryRect" type="TextureRect" parent="MarginContainer/VBoxContainer/StatusContainer"]
+[node name="BatteryContainer" type="Control" parent="MarginContainer/VBoxContainer/StatusContainer"]
 custom_minimum_size = Vector2(120, 50)
 layout_mode = 2
+
+[node name="BatteryRect" type="TextureRect" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ShieldBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer"]
-custom_minimum_size = Vector2(180, 24)
-layout_mode = 2
-size_flags_vertical = 4
+[node name="ShieldBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+modulate = Color(0.4, 0.85, 1, 0.55)
 value = 100.0
 nine_patch_stretch = true
+
+[node name="AbilityBar" parent="MarginContainer/VBoxContainer/StatusContainer" instance=ExtResource("4_ability_bar")]
+layout_mode = 2
 
 [node name="LivesRect" type="TextureRect" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(100, 40)

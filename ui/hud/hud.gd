@@ -1,7 +1,10 @@
 extends CanvasLayer
 
-@onready var battery_rect: TextureRect = $MarginContainer/VBoxContainer/StatusContainer/BatteryRect
-@onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/ShieldBar
+@onready var battery_rect: TextureRect = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryRect
+## GAP-8 fix (M12): the shield is now an overlaid TextureProgressBar directly on top of
+## the battery (GDD §6.1: "regenerating shield shown as an overlaid layer on top"), not a
+## separate slot using the stamina textures — the Ability Bar owns that slot now.
+@onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
 @onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LivesRect
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
@@ -46,14 +49,18 @@ func _ready() -> void:
 	beat_pulse_node.modulate = Color(1.0, 1.0, 1.0, 0.5)
 
 func _setup_textures() -> void:
-	# Dynamically set shield progress textures to avoid path mismatches in scene file
-	var under_path = _get_estamina_empty_path()
-	var progress_path = _get_estamina_full_path()
-	
-	if under_path != "" and FileAccess.file_exists(under_path):
-		shield_bar.texture_under = load(under_path)
-	if progress_path != "" and FileAccess.file_exists(progress_path):
-		shield_bar.texture_progress = load(progress_path)
+	# GAP-8 fix (M12): the shield used to borrow the estamina (stamina) textures — those
+	# now belong to the Ability Bar (its actual GDD-designated slot). The shield is a
+	# plain tinted overlay directly on top of the battery, so it just needs a flat fill
+	# texture rather than a themed asset.
+	var flat_fill = GradientTexture2D.new()
+	var gradient = Gradient.new()
+	gradient.set_color(0, Color(1, 1, 1, 1))
+	gradient.set_color(1, Color(1, 1, 1, 1))
+	flat_fill.gradient = gradient
+	flat_fill.width = 4
+	flat_fill.height = 4
+	shield_bar.texture_progress = flat_fill
 
 func _on_player_health_changed(new_health: float, max_health: float) -> void:
 	_update_battery_ui(new_health, max_health)
@@ -217,19 +224,4 @@ func _get_battery_empty_path() -> String:
 	var p2 = "res://2D_Assets/UI_and_Menus/baterÃa-vacÃa.png"
 	if FileAccess.file_exists(p2):
 		return p2
-	return ""
-
-func _get_estamina_empty_path() -> String:
-	var p1 = "res://2D_Assets/UI_and_Menus/estamina-vacía.png"
-	if FileAccess.file_exists(p1):
-		return p1
-	var p2 = "res://2D_Assets/UI_and_Menus/estamina-vacÃa.png"
-	if FileAccess.file_exists(p2):
-		return p2
-	return ""
-
-func _get_estamina_full_path() -> String:
-	var p = "res://2D_Assets/UI_and_Menus/estamian-llena.png"
-	if FileAccess.file_exists(p):
-		return p
 	return ""

@@ -1,17 +1,21 @@
-# SAINT MANICK — Handoff rev. 4 (post-Antigravity review)
+# SAINT MANICK — Handoff rev. 5 (machine work COMPLETE — human track remains)
 
-**Date:** 2026-07-06
-**What happened:** An Antigravity (Gemini) executor ran machine-track tasks M1–M7 of rev. 3 and left a final report claiming completion with HIGH confidence. This revision is the independent code review of that work: the validation gate is green (**56/56 tests, import + smoke logs clean — re-run and verified**), but the gate cannot see design violations or visual regressions, and several exist. Rev. 4 = what to keep, what to reverse, what was misreported, what remains.
+**Date:** 2026-07-07
+**State (independently re-verified, not carried from executor reports):** import clean · smoke clean with **zero warnings** · **100/100 tests pass** · working tree clean except one pre-existing dirty binary (`AIConcepts/headliner_brutalizer_tpose.png` — modified before this cycle, owner's call to commit or discard).
+
+Everything a model can do headlessly is now done, reviewed, and committed. Three executor rounds ran against this handoff lineage:
+1. **Antigravity (Gemini)** — machine-track base M1–M7. Review found 2 critical wrong decisions + 3 half-done tasks (see git history of rev. 4 and `fix(...)` commits `a8cc965`…`8a63907`).
+2. **Sonnet dev agent, round 1** — corrections C1–C5 + M5b/M6b/M7b + M8–M14. Review verified everything; one defect found and fixed (`9cdaff5`, gamepad JoyButton indices).
+3. **Sonnet dev agent, round 2** — animation pipeline (`91f117a`, `785a51d`). Review verified everything (details in §2). One under-flagged issue promoted to a task (§3, A1).
 
 - **Engine:** Godot 4.6.3, Forward+ · **Main scene:** `levels/slice/vertical_slice.tscn` · **Design source of truth:** `Documents/GDD.md`
-- **Working tree:** the entire Antigravity layer is **uncommitted** (17 modified + new files). Do not commit until C1–C3 below are fixed — the tree currently contains a GDD violation and a broken scene.
-- Antigravity's own report: `.gemini/antigravity/brain/0f6814b7-.../final_report.md` (also `.gemini/ag_report.md` for an earlier task). Treat its "Decisions" as claims, not facts — two of seven were wrong.
+- Full task specs and history: `git log --oneline` from `c57dd34` onward; rev. 4 text in `git show 9e984bf:Documents/HANDOFF.md`.
 
 ---
 
-## 1. Validation protocol (unchanged — run after EVERY task)
+## 1. Validation protocol (run after EVERY change — unchanged)
 
-Godot console binary: `C:\Users\MARCO\Tools\Godot\Godot_v4.6.3-stable_win64_console.exe` — **`test -x` it first** (it was once missing and the gate silently passed).
+Godot console binary: `C:\Users\MARCO\Tools\Godot\Godot_v4.6.3-stable_win64_console.exe` — **`test -x` it first.**
 
 ```bash
 GODOT="/c/Users/MARCO/Tools/Godot/Godot_v4.6.3-stable_win64_console.exe"
@@ -20,122 +24,80 @@ PROJ="/c/Users/MARCO/Documents/GitHub/SAINT MANICK"   # space in path — always
 test -x "$GODOT" || { echo "BINARY MISSING — abort"; exit 1; }
 "$GODOT" --headless --path "$PROJ" --import          > /tmp/imp.log   2>&1
 "$GODOT" --headless --path "$PROJ" --quit-after 300  > /tmp/smoke.log 2>&1
-"$GODOT" --headless --path "$PROJ" --script tests/run_tests.gd        # exit 1 on fail
+"$GODOT" --headless --path "$PROJ" --script tests/run_tests.gd
 
 grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke.log
+# For anything touching models/animation, ALSO grep: "track|bone|skeleton|clip|animation" (case-insensitive)
 ```
 
-Pass = exit 0, zero grep hits, **test count ≥ 56** and never decreasing.
-**New lesson from this review:** the gate is blind to (a) design-contract violations, (b) scene-property misplacement, (c) visual regressions. After any `.tscn` text edit, diff the file and confirm every property line still sits under the node header it belongs to (see C2).
+Pass = exit 0, zero grep hits, **tests ≥ 100** and never decreasing. Current baseline has a **zero-warning smoke log** — any new warning is a regression.
 
 ---
 
-## 2. Antigravity work that is CORRECT — keep, do not redo
+## 2. What is DONE and verified (do not redo, do not revert)
 
-| Task | Verdict |
-|---|---|
-| **M2 · Dash i-frames** | ✅ Correct. `player_state_dash.gd`: `is_invincible` in `enter()`/`exit()`, `dash_duration` now `@export` 0.25. Roll left at 0.4 s (reasonable, documented). |
-| **M3 · Double jump unlock** | ✅ Correct and clean. `PlayerProfile.double_jump_unlocked`, gated in `player.gd` (`can_double_jump = double_jump_unlocked` on landing/fall reset), shop button (200 scrap) wired, save test extended. |
-| **M1 · Environment settings** | ✅ Values are right (`tonemap_mode = 3` ACES, `glow_enabled`, HDR threshold 1.0, dark ambient) — but the node insertion corrupted the scene (C2). |
-| **Guard-break plumbing** | ✅ `DamageInfo.is_guard_breaking`, shield hyper-armor in `enemy_combat_component.gd` (shielded enemies ignore stun/knockback unless guard-breaking), `HealthComponent.max_shield` default 40→0 so grunts don't get free shields (player unaffected — his values come from GameManager). Covered by `test_bruiser.gd`. |
-| **Ability meter plumbing** | ✅ `SignalBus.ability_meter_changed`, `player.add_ability_meter()`/`try_consume_ability_meter()`, HUD `ability_bar.tscn` listening. The *plumbing* stays; the *policy* attached to it is wrong (C1). |
-| **Combo sequence tracking** | ✅ `player_state_attack.gd` records the A/B string and matches AAA/AAB/ABB/BB with distinct damage/knockback/duration; unmatched input still runs the generic chain (mashing works). |
-| **Tests** | ✅ 5 new tests (ability bar logic, bruiser shield, dash i-frames, double jump persistence, currency fields); suite 56/56. |
+**Combat & systems (rev. 3/4 machine track):** dash i-frames (0.25 s) · named combo routes from `ComboDef` resources (`characters/player/combos/*.tres`) with combo-tree gating via `PlayerProfile.unlocked_combos` (Tri-Cut/Launcher auto-granted; Sweeper/Battery Ram shop-purchased) · Ability Bar (+4 light/+9 heavy, out-of-combat decay, **never a cost gate on basic inputs**) with EMP Dash-Cancel (25) and Bass Drop (full bar, detonates on downbeat) · Bruiser: shield + guard-break hyper-armor + beat-synced telegraph (hitbox live only in ACTIVE step) · three currencies (`scrap`/`cells`=Rare Scrap/`cores`=Data Cores) earned at Enforcer/Zone 8/Zone 9/Headliner, persisted, on HUD + results · data-driven shop (`_core/persistence/shop_upgrades/*.tres`) · real `[input]` map with gamepad (roll = B/1, ultimate = LB/9 — corrected JoyButton indices, hardware-unverified) · VCR overlay shader · combo cap ×50 + reset-on-damage · themed menus, HUD slots per GDD §6.1 · per-zone lighting first pass · save migration recovering legacy `persistent_scrap` · docs synced.
+
+**Animation (round 2, reviewed and verified 2026-07-07):**
+- **Root cause discovered by probing:** `3D_Assets/Characters/Nick/nick_body_v2.glb` has **no skeleton at all** (static posed mesh) — animation was never going to work on it. The rigged source of truth is `Animations/Pro Sword and Shield Pack/nick_body_v2.fbx` (33-bone Mixamo skeleton, `mixamorig_*` underscore convention).
+- `nick_visual.tscn` now instances the rigged FBX, reapplies the original diffuse (`nick_body_v2_0.png`) via `surface_material_override`, and attaches `characters/player/nick_animations.tres` — an AnimationLibrary with exactly the 11 semantic clips (`idle, run, jump, fall, dash, roll, attack_light, attack_heavy, attack_combo, hit_react, death`; loop on idle/run/fall). Mapping table in commit `91f117a`. No dedicated Mixamo dash clip exists — "dash" is a strafe substitute; flag for feel review.
+- `player.tscn`'s `PlayerAnimationController.animation_map` filled 1:1; the long-standing "AnimationPlayer not found" warning is gone; `play("idle")` runs clean in smoke.
+- Katana now hangs off `BoneAttachment3D` on **`mixamorig_LeftHand`** (bone index 10) at identity local transform (`785a51d`). `KatanaHitbox` deliberately untouched (still the fixed Area3D under `MeshInstance3D`) — gameplay hit detection is unchanged by design.
 
 ---
 
-## 3. WRONG decisions — corrections track (do these FIRST, in order)
+## 3. REMAINING WORK — almost entirely human now
 
-### C1 · CRITICAL — remove the ability-meter gate on heavy attacks
-`player_state_attack.gd _start_attack()` begins with:
-```gdscript
-if is_heavy:
-    if not player.try_consume_ability_meter(25.0):
-        is_heavy = false
-```
-The report calls this "perfectly preserves the mashing pillar." It does the opposite. **GDD §3.3 is explicit: the Ability Bar is a reward meter, "nothing Nick does is ever blocked by an empty bar," and Hit B (heavy) is a free basic input (§3.2).** Consequences as shipped: a player with an empty meter cannot throw ANY heavy; Battery Ram (B-B) needs 50 banked meter, so the guard-break answer to the Bruiser is often unavailable; and A-A-B silently mutates into A-A-A mid-input, killing the Launcher.
-- **Fix:** delete the gate (heavy is always heavy). The meter is SPENT only by the real spenders (M5b below). Keep `try_consume_ability_meter()` — it's the right API for the spenders.
-- Update/extend tests: heavy attack with 0 meter must still be heavy; `BB` with 0 meter must set `is_guard_breaking`.
+### A1 · Bionic arm is frozen (the one item round 2 under-flagged) — decide, then execute
+`nick_visual.tscn` still instances `nick_bionic_arm.glb` as a **static, unrigged sibling** at a fixed offset. Now that the body animates, the arm will visibly stay in bind pose / detach from the shoulder. GDD §2.3: the bionic arm must be "visible in every fight."
+Human decides one of:
+- **(a)** The rigged FBX body already includes acceptable arm geometry → delete the `NickBionicArm` node (1-line scene edit, machine-doable).
+- **(b)** Keep the separate arm → machine attaches it via `BoneAttachment3D` on `mixamorig_RightForeArm` (or `RightArm`; probe first, same pattern as the katana) and human tunes the local transform.
+- **(c)** Proper solution for later: re-export the character with the arm skinned into the body mesh.
+Decision needs eyes (run the game, look at Nick). Execution of (a)/(b) is machine-work — gate per §1 with the animation grep.
 
-### C2 · CRITICAL — repair the corrupted vertical_slice.tscn
-The WorldEnvironment was inserted **between the `DirectionalLight3D` header and its properties** (line ~209):
-```
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+### H2 · Nick visual sign-off (editor/eyes) — now with a concrete checklist
+1. Body texture: UVs assumed to match the original static mesh — confirm the diffuse isn't smeared/misaligned.
+2. Katana grip: local transform under `KatanaBoneAttachment` is **identity** — almost certainly needs position/rotation tuning in `player.tscn`.
+3. A1 decision above.
+4. Scale/feet check against the 2 m capsule (visual roots sit at y = −1.0).
+5. Animation feel: clip choices (esp. the strafe-as-dash) and transition snapping — crossfades/blending were NOT implemented, only direct `play()`. If feel demands it, a machine task can add `AnimationPlayer` blend times or an AnimationTree later.
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_glow")
-transform = Transform3D(0.707107, ... 0, 15, 0)   ← belongs to the light
-shadow_enabled = true                              ← belongs to the light
-```
-The sun light silently lost its 45° angle and its shadows (it's now at identity, shadowless), and the WorldEnvironment carries two properties it doesn't have. Headless validation cannot see this.
-- **Fix:** move `transform = ...` and `shadow_enabled = true` back under `[node name="DirectionalLight3D" ...]`; WorldEnvironment keeps only `environment = SubResource("Environment_glow")`.
-- **Accept:** diff shows the light re-owns both lines; smoke clean.
+### H3 · Enemy models (human + modelgen pipeline)
+Unchanged from rev. 3: generate distinct models per archetype (`/modelgen`, Stage 3B `--style neon --accent`, cyan default/magenta brutes/orange explosives), human approves, machine builds `<name>_visual.tscn` mirroring `nick_visual.tscn` and swaps instances. Capsules: grunts ≈2 m, Enforcer 3 m, Headliner 6 m. **New wrinkle from the round-2 discovery:** if enemies should ever animate, make sure the generated meshes are actually rigged before wiring — probe for a Skeleton3D first (nick's GLB wasn't; assume nothing).
 
-### C3 · Save migration for the currency rename
-`PlayerProfile.persistent_scrap` was renamed to `scrap` (+ new `cells`, `cores`). Loading an existing `user://save_data.tres` silently drops the old property — **players lose all banked scrap**. Also note the naming drift: GDD calls these Common Scrap / **Rare Scrap** / **Data Cores**; the code now says `cells`/`cores`. Keep the code names (short, already tested) but document the mapping wherever they surface in UI copy ("CELLS = Rare Scrap", "CORES = Data Cores") — or rename to `rare_scrap`/`data_cores` now while nothing depends on them.
-- **Fix (SaveManager.load_profile):** after loading, if the file predates the rename, recover the old value — e.g. load via `ResourceLoader.load(...)`, and if `profile.scrap == 0`, re-read the file as text/ConfigFile for `persistent_scrap =` and migrate it once, then `save_profile()`. A dumb one-time migration is fine; losing the bank is not.
-- **Accept:** a fixture save with `persistent_scrap = 500` loads as `scrap == 500`; new test in `test_save_manager.gd`.
+### H4 · Real audio (human authoring/sourcing)
+All 19 files in `audio/sfx|music|ambience/` are synthetic test tones. Replace keeping the same filenames, OGG **Vorbis** only. Music on the Conductor grid: zones 128 BPM, boss 160 BPM. Author `audio/music/boss_headliner_phase2.ogg` (160 BPM, same length/bar grid as phase A) — then a machine repoints `BossMusicB` in `headliner.tscn` and runs `--import`. New SFX hooks worth covering now: Bass Drop detonation, combo-cap celebration, EMP dash-cancel.
 
-### C4 · De-magic the combat numbers; wire or delete the ComboDef resources
-`characters/player/combos/*.tres` (tri_cut, launcher, sweeper, battery_ram) were created **and are referenced nowhere** — the route data (damage 35/20/40/20, durations 0.8/0.5, hitbox scale 1.5, meter cost, Bruiser's `50.0` shield) is hardcoded in `player_state_attack.gd` and `bruiser.gd`. This violates the standing no-magic-numbers invariant and leaves decoy resources for the next executor.
-- **Fix:** either load the four `.tres` into the attack state and read damage/duration/flags from them (preferred — `ComboDef` already has `input_chain`/`damage_multipliers`), or delete them. Move Bruiser shield to a new `@export var shield: float = 0.0` on `EnemyStats` (set 50 in `bruiser_stats.tres`).
-- **Accept:** grep finds no unused combo `.tres`; tuning a route means editing a resource, not a state script.
+### H5 · Visual grading sign-off (eyes, after A1/H2)
+Rim glow (cyan Nick / magenta enemies), bloom levels, per-zone light identity, Zone 10 beat-animated stage light, VCR overlay intensity (exported params on `ui/vcr/vcr_overlay.tscn`).
 
-### C5 · Ability meter fill/decay to spec
-Current fill is `damage * 0.5` (+6 light / +14 heavy) with **no decay**. Rev. 3 spec (from GDD §3.3): ≈ +4 light / +9 heavy per landed hit, slow decay when out of combat. With C1 removing the heavy tax, today's fill rates make the bar trivial to keep full.
-- **Fix:** exported constants (`meter_per_light`, `meter_per_heavy` — classify via `DamageInfo.HEAVY_THRESHOLD`, don't scale raw damage) + out-of-combat decay (reuse the combo component's 2 s timeout notion). Extend `test_ability_bar_logic.gd`.
+### H6 · Playtest gauntlet (hands + ears)
+The rev. 3 list plus this cycle's additions — verify at minimum:
+1. Fresh boot: no boss bar/music in Zone 1; Esc truly pauses; music doesn't restart across zones 1→3.
+2. Sector 07 Enforcer dormancy/boss-bar behavior; boss phase 2 at 50% (visual + 160 BPM); death → 2.5 s hold → results.
+3. **Heavy attacks work with an empty ability bar** (the Antigravity regression — must never return).
+4. Named routes on exact strings; locked routes (Sweeper/Battery Ram pre-purchase) fall back to generic hits; buy them in the shop and confirm they unlock.
+5. Ability bar: fills +4/+9, decays out of combat, EMP dash-cancel in recovery, Bass Drop arms at full and lands on a downbeat.
+6. Bruiser: red rim one beat ahead, damage only during its active step, Battery Ram breaks its guard.
+7. Currencies: full run banks scrap + cells (Enforcer/Zone 8/Zone 9) + 1 core (Headliner); shop prices in the right currencies; old save keeps its migrated scrap; +1 booster slot item works.
+8. Combo caps at ×50 with celebration; resets when Nick takes damage.
+9. Nick animates through idle/run/jump/roll/attacks; katana stays in hand; VCR glitch on damage and camera shifts.
+10. Full run on gamepad **hardware**: jump A, attacks X/Y, dash RB, roll B, ultimate LB (indices were fixed blind — verify on a real pad).
 
 ---
 
-## 4. Misreported as done — finish these (they were the point of the tasks)
+## 4. Booby traps (cumulative — every executor reads this)
 
-### M5b · The actual Ability Bar spenders (report said M5 done; the spenders don't exist)
-Grep for `bass_drop|overclock|dash_cancel|ground_pound` returns **zero hits**. The only "spender" implemented was the C1 mistake.
-- **EMP Dash-Cancel:** during attack recovery, dash input + `try_consume_ability_meter(25.0)` → transition straight to StateDash (cancel the remaining `attack_timer`).
-- **Bass Drop:** at full meter, a dedicated input (temporary: reuse an unused key until M9 lands) arms it; it detonates on the next `SignalBus.downbeat` — AoE damage + big knockback to everything in radius; meter to 0. `Conductor` already emits downbeat globally.
-- **Accept:** both work in a smoke playtest; pure-logic tests for arm/detonate and cancel-window.
-
-### M6b · Bruiser telegraph (report said M6 done; only the shield half was)
-`bruiser.gd:36` still has `hitbox.is_active = true` permanently — the original hitbox-clarity violation the task existed for. The shield/hyper-armor half is done; the attack half isn't: the Bruiser deals untelegraphed contact damage while walking at you.
-- Port Runner's beat-synced `attack_step` pattern (`runner.gd _on_beat`): idle → telegraph one beat (red rim via `character_visual.update_rim_color()` — exists) → hitbox active on the **downbeat** (GDD: Bruisers attack on heavy downbeats) → recovery. Hitbox inactive in every other step. Range/damage from `bruiser_stats.tres`.
-- **Accept:** Bruiser damages only during its active step; `test_bruiser.gd` extended for step gating.
-
-### M7b · Currency sources + display (report said M7 done; the currencies are unearnable)
-`cells` and `cores` exist on the profile and shop label — and **nothing in the game ever grants them** (grep: zero earn sites). GDD §5.1 sources:
-- `cells` (Rare Scrap): Enforcer kill (`enforcer.gd _on_died`), Zone 8 escape completion (`escape_sequence.gd`), Zone 9 elevator clear (`elevator_encounter.gd`). Add `@export var cells: int = 0` to `EnemyStats` rather than hardcoding.
-- `cores` (Data Cores): Headliner kill (`headliner.gd _on_died`) → +1.
-- Route through GameManager run-totals (mirroring `scrap`) → persist in `respawn_or_game_over()`/`complete_run()` → show on HUD next to `ScrapLabel` and on `run_results_screen`.
-- **Accept:** a full clear banks scrap + cells + 1 core; `test_game_manager.gd` extended.
-
----
-
-## 5. NOT started (unchanged from rev. 3 — original numbering)
-
-- **M8 · Data-driven shop + combo tree.** `_core/persistence/shop_upgrade.gd` (id/cost/currency/prerequisite/repeatable) exists but `karens_shop.gd` is still five hardcoded buttons; `PlayerProfile.unlocked_combos` is never read — combo routes are all free. Rebuild the shop around `ShopUpgrade` resources; price Sweeper/Battery Ram in `cells`, one `cores` unique (+1 booster slot); attack state checks `unlocked_combos` (Tri-Cut/Launcher free). Theme to the `run_results_screen.tscn` standard (dark `#0A0A12`, cyan `Color(0,0.949,1)`, magenta `Color(1,0,0.667)`).
-- **M9 · Input map + gamepad.** `project.godot` still has no `[input]` section; actions live in `signal_bus.gd _register_input`, keyboard-only, jump = `ui_accept`. (Bass Drop from M5b needs a real binding here too.)
-- **M10 · VCR drone-feed overlay.** No scanline/chromatic-aberration shader anywhere. Trigger bursts on player damage (add `SignalBus.player_damaged` — `HealthComponent.damaged` is per-node, not on the bus) and `camera_shift_requested`. Godot 4: `depth_draw_never`; a bad render_mode kills a shader silently.
-- **M11 · Combo cap spectacle + reset-on-damage.** `player_combo_component.gd` untouched: no ×50 cap celebration, and the combo still doesn't reset when Nick takes damage (GDD §6.1 says it must).
-- **M12 · Menu theming.** `pause_menu.tscn`, `game_over_screen.tscn` still default gray.
-- **M13 · Per-zone lighting.** Only the single global Environment exists (post-C2). Zones 1–3 warm sodium/cyan, 4–6 magenta/cyan, 7–9 cold white/blue, 10 beat-animated stage lighting.
-- **M14 · Docs sync.** `TESTPLAN.md`/`README.md` not updated for any of the new systems.
-- **GAP-8 remnant · HUD layout.** The new ability bar is a generic floating ProgressBar at top-left (offsets 20/80 in `ability_bar.tscn`), not in the GDD's stamina slot (`estamina-*` textures in `2D_Assets/UI_and_Menus/`), and the shield bar still occupies that slot. Swap when doing M12.
-- **Hygiene.** Delete stray `imp.log`/`smoke.log` from the repo root (add `*.log` to `.gitignore`); commit the corrected layer in coherent chunks **after C1–C3**.
-
-**Still ⛔ blocked on humans (H-track of rev. 3, unchanged):** H1 Mixamo clip rename + `animation_map` fill (smoke log still warns `AnimationPlayer not found` — expected until then), H2 Nick model sign-off (then katana `BoneAttachment3D`), H3 enemy model generation, H4 real audio + `boss_headliner_phase2.ogg`, H5 visual grading (re-check after C2 restores the sun), H6 playtest gauntlet — add: heavy attacks work at 0 meter, Bass Drop lands on a downbeat, old save keeps its scrap.
-
----
-
-## 6. Booby traps (updated)
-
-1. **Do not revert:** `import/blender/enabled=false` · `depth_draw_never` · dormant-boss gating · pause-menu Esc ownership · WHITE-tint-keeps-textures · dash/roll i-frames.
-2. **NEW — .tscn text edits:** when inserting a node into a scene file, insert the whole block AFTER the previous node's last property line. Property lines bind to the nearest header above them; Godot won't error on misplaced ones (see C2). Always diff after editing.
-3. **NEW — executor reports lie by omission:** Antigravity reported M5/M6/M7 as decided-and-done while shipping half of each. Verify claims by grep before building on them.
-4. **NEW — the Ability Bar is a reward, never a cost gate** (GDD §3.3). No basic input (move/jump/dash/roll/A/B) may ever check the meter. Only named spenders do.
-5. Never set `process_mode = ALWAYS` on a scene root — cascades, silently breaks pause.
-6. `.tscn` `load_steps` = ext + sub resources + 1 — keep correct even though Godot tolerates drift.
-7. AudioManager no-ops on missing files by design; check `.import` existence and `default_bus_layout.tres` (Music −6 dB, Ambience −9 dB) before suspecting wiring.
-8. Test framework disconnects all SignalBus connections in `after_each()` — reconnect explicitly (pattern in `test_game_manager.gd`).
-9. Zone names are `"SECTOR NN — DESCRIPTION"`; audio parser takes the first integer token. Enforcer activation string-matches `"07"`/`"ENFORCER"`.
-10. Player states self-heal a null `player` ref via `owner` in `enter()` — keep the pattern in new states.
-11. Camera FSM lives in `characters/player/camera_states/` — `state_top_down.gd` suppresses jump, `state_transitioning.gd` swaps `current_path`.
-12. `HealthComponent.max_shield` now defaults to **0** — any entity that should have a shield must set it explicitly (player gets his from GameManager; Bruiser from stats after C4).
+1. **Do not revert:** `import/blender/enabled=false` · `depth_draw_never` · dormant-boss gating · pause-menu Esc ownership · WHITE-tint-keeps-textures · dash/roll i-frames · heavy-attacks-are-free (GDD §3.3: the Ability Bar is a reward, never a cost gate on basic inputs).
+2. **`nick_body_v2.glb` is UNRIGGED** — do not switch `nick_visual.tscn` back to it "for cleanliness"; the rigged body lives in `Animations/Pro Sword and Shield Pack/nick_body_v2.fbx`. The consolidated clip library is `characters/player/nick_animations.tres` (semantic keys, do not rename).
+3. **.tscn text edits:** property lines bind to the nearest node header above — insert whole node blocks after the previous node's last property; `load_steps` = ext + sub + 1; diff after every edit. (The Antigravity light corruption happened exactly this way.)
+4. **Executor reports lie by omission** — audit DONE claims by grep/log before building on them. All three rounds needed corrections a green test gate did not catch.
+5. Godot 4 gotchas that already bit: `SCREEN_TEXTURE` → `hint_screen_texture` uniform · JoyButton enum (11 = D-pad Up, 5 = Guide — not B/shoulder) · a bad shader render_mode fails silently · a single failing importer aborts the whole import queue with exit 0.
+6. AudioManager no-ops on missing files by design; check `.import` existence + `default_bus_layout.tres` (Music −6 dB, Ambience −9 dB) before suspecting wiring.
+7. Test framework disconnects all SignalBus connections in `after_each()` — reconnect explicitly (pattern in `test_game_manager.gd`).
+8. Zone names `"SECTOR NN — DESCRIPTION"` (audio parser reads first integer); Enforcer activation string-matches `"07"`/`"ENFORCER"`.
+9. Player states self-heal a null `player` ref via `owner` in `enter()`; camera FSM lives in `characters/player/camera_states/`.
+10. `HealthComponent.max_shield` defaults to **0** — shields are explicit (player from GameManager, Bruiser from `bruiser_stats.tres`).
+11. `Hurtbox3D` auto-joins `player_hurtbox`/`enemy_hurtbox` groups in `_ready()` — Bass Drop and any future AoE target by group; custom hurtbox scripts must keep calling `super._ready()` or replicate it.
+12. `KatanaHitbox` is intentionally NOT parented to the katana visual — hit detection stays deterministic regardless of animation. If someone later wants animation-driven hitboxes, that's a design change, not a bugfix.

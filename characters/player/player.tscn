@@ -51,6 +51,19 @@ shape = SubResource("BoxShape3D_katana")
 
 [node name="PlayerAnimationController" type="Node" parent="."]
 script = ExtResource("13_pac")
+animation_map = {
+"idle": "idle",
+"run": "run",
+"jump": "jump",
+"fall": "fall",
+"dash": "dash",
+"roll": "roll",
+"attack_light": "attack_light",
+"attack_heavy": "attack_heavy",
+"attack_combo": "attack_combo",
+"hit_react": "hit_react",
+"death": "death"
+}
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("10_xxx")

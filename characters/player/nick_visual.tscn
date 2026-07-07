@@ -1,14 +1,25 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
-[ext_resource type="PackedScene" path="res://3D_Assets/Characters/Nick/nick_body_v2.glb" id="2_body"]
+[ext_resource type="PackedScene" path="res://Animations/Pro Sword and Shield Pack/nick_body_v2.fbx" id="2_body"]
 [ext_resource type="PackedScene" path="res://3D_Assets/Characters/Nick/nick_bionic_arm.glb" id="3_arm"]
+[ext_resource type="Texture2D" path="res://3D_Assets/Characters/Nick/nick_body_v2_0.png" id="4_tex"]
+[ext_resource type="AnimationLibrary" path="res://characters/player/nick_animations.tres" id="5_anims"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_texture = ExtResource("4_tex")
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
 script = ExtResource("1_visual")
 
 [node name="NickBody" parent="." instance=ExtResource("2_body")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)
+
+[node name="Mesh_0" parent="NickBody/Skeleton3D" index="0"]
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="AnimationPlayer" parent="NickBody" index="1"]
+libraries/ = ExtResource("5_anims")
 
 [node name="NickBionicArm" parent="." instance=ExtResource("3_arm")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)

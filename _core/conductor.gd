@@ -59,3 +59,21 @@ func register_layer(layer_name: String, beats_per_measure: int = 4) -> void:
 		"measure_index": 0,
 		"time_accumulator": 0.0
 	}
+
+## Removes a meter layer (e.g. the Headliner's phase-2 polyrhythm once the fight ends).
+## No-op if the layer doesn't exist or is "primary" (never remove the world clock).
+func unregister_layer(layer_name: String) -> void:
+	if layer_name == "primary":
+		return
+	layers.erase(layer_name)
+
+## Distance in seconds from the current position in `layer_name`'s beat cycle to the
+## nearest beat edge (0 or the next beat). Used for reward-only beat-alignment checks
+## (e.g. T1 dodge timing) — never for gating, per the "player is never beat-validated" rule.
+func seconds_to_nearest_beat(layer_name: String = "primary") -> float:
+	if not layers.has(layer_name):
+		return INF
+	var layer = layers[layer_name]
+	var beat_duration = 60.0 / bpm
+	var t = layer.time_accumulator
+	return min(t, beat_duration - t)

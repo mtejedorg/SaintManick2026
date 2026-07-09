@@ -9,6 +9,19 @@ extends CharacterBody3D
 @export var dash_speed: float = 18.0
 @export var roll_speed: float = 18.0
 
+## T1: shared dash/roll cooldown, started when a dodge state EXITS. Prevents chaining
+## dash->roll->dash into permanent i-frames (the defense economy the GDD's "read the
+## heartbeat" pillar depends on). The EMP Dash-Cancel bypasses the can_dodge() check
+## (it transitions straight from StateAttack, never through Idle/Run) but still starts
+## this cooldown on its own StateDash exit.
+@export var dodge_cooldown: float = 0.5
+## Reward-only beat alignment window (GDD §3.3): a dash/roll started within this many
+## seconds of a primary-layer beat edge refunds its cooldown and grants ability meter.
+## Never a gate — the player is never beat-validated, only ever rewarded.
+@export var beat_align_window: float = 0.12
+@export var beat_aligned_dodge_meter: float = 4.0
+var _dodge_cooldown_timer: float = 0.0
+
 @export var current_path: Path3D
 
 ## Y below which the player is considered to have fallen out of the world. Below every
@@ -98,7 +111,28 @@ func add_ability_meter(amount: float) -> void:
 	ability_meter = clamp(ability_meter + amount, 0.0, MAX_ABILITY_METER)
 	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 
+func can_dodge() -> bool:
+	return _dodge_cooldown_timer <= 0.0
+
+func start_dodge_cooldown() -> void:
+	_dodge_cooldown_timer = dodge_cooldown
+
+## Reward-only: if a dash/roll begins within beat_align_window of a primary-layer beat
+## edge, grant ability meter and tell the caller so it can skip starting the cooldown.
+## Returns false (no reward, no side effects) if the Conductor isn't available (tests
+## that build a bare player without the autoload tree still work).
+func try_beat_aligned_dodge_reward() -> bool:
+	var conductor = get_node_or_null("/root/Conductor")
+	if not conductor:
+		return false
+	if conductor.seconds_to_nearest_beat("primary") <= beat_align_window:
+		add_ability_meter(beat_aligned_dodge_meter)
+		return true
+	return false
+
 func _process(delta: float) -> void:
+	if _dodge_cooldown_timer > 0.0:
+		_dodge_cooldown_timer -= delta
 	if ability_meter <= 0.0:
 		return
 	if _meter_decay_timer > 0.0:

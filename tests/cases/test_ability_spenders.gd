@@ -12,6 +12,10 @@ func before_each() -> void:
 		SignalBus.downbeat.connect(player._on_downbeat)
 	if not SignalBus.player_hit_landed.is_connected(player._on_player_hit_landed):
 		SignalBus.player_hit_landed.connect(player._on_player_hit_landed)
+	# T1: a fresh Conductor sits at time_accumulator == 0.0, which reads as beat-aligned.
+	# Push it to mid-beat so entering StateDash here doesn't incidentally trigger the
+	# beat-aligned dodge reward (that behavior has its own coverage in test_dodge_economy.gd).
+	Conductor.layers["primary"].time_accumulator = (60.0 / Conductor.bpm) * 0.5
 
 func after_each() -> void:
 	if is_instance_valid(player):

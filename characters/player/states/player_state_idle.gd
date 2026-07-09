@@ -20,11 +20,11 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAirborne")
 		return
 		
-	if Input.is_action_just_pressed("dash"):
+	if Input.is_action_just_pressed("dash") and player.can_dodge():
 		transition_requested.emit("StateDash")
 		return
-		
-	if Input.is_action_just_pressed("roll"):
+
+	if Input.is_action_just_pressed("roll") and player.can_dodge():
 		transition_requested.emit("StateRoll")
 		return
 		

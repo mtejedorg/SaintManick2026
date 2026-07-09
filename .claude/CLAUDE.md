@@ -86,11 +86,27 @@ Autoloads (`_core/`): `SignalBus` · `Conductor` · `SaveManager` · `GameManage
 
 **Knowledge lookups vs. implementation:** a question ("does X exist", "how does Y connect", "why was Z built this way") is not the same task as changing code. Route knowledge questions to `librarian` before spawning an implementation specialist — it's cheap and often means the specialist doesn't need to spawn at all.
 
-## Knowledge stores (check the right one, don't grep first)
-- **Code structure, signals, dependencies** → Grep/Glob directly over `.gd`/`.tscn` files. graphify was evaluated for this and doesn't work: it has no GDScript or Godot-scene support (confirmed on v0.9.9, no extensibility hook either) — a run captures ~0 actual game code. Don't reintroduce it here without checking upstream added `.gd`/`.tscn` first.
-- **Architecture contracts, patterns, rationale for the rules above** → `Documents/CodeArchitecture.md`
-- **Decisions, rationale, session history** → MemPalace (`mempalace_search`)
-- **Asset inventory** (2D/3D, what exists, in-use vs. superseded) → `ASSETS.md` + per-folder `MANIFEST.md`
-- **Current volatile project state** (zone count, feature status, remaining task list) → `Documents/HANDOFF.md`
-- **Manual test scenarios** → `TESTPLAN.md`; automated suite → `tests/` (`tests/run_tests.gd`, cases in `tests/cases/`)
-- **Design specs** (zone docs, narrative briefs) → `Documents/` (content lives there; MemPalace holds pointers + status, not copies)
+## Knowledge lookup decision tree (when to use what)
+
+**Starting a feature or bugfix:**
+- First: `Documents/HANDOFF.md` §3 for blockers, task status, remaining work
+- Second: `Documents/CodeArchitecture.md` §X for the contract/pattern you're touching
+- Third (if blocked): Search MemPalace for related prior decisions and gotchas
+
+**"Why was X built this way?" / "What was the decision on Y?"**
+→ Search MemPalace (`mempalace_search`). The decision, rationale, date, and session context live there. MemPalace holds pointers to docs, not copies — the design lives in `Documents/GDD.md`; the *why* lives in MemPalace.
+
+**"Does this asset/zone/item exist?" / "What's in-use vs. superseded?"**
+→ `ASSETS.md` (top-level) + per-folder `MANIFEST.md` (2D_Assets/, 3D_Assets/, etc.). Check here before generating duplicates.
+
+**"How does this system work?" (code flow, signals, dependencies)**
+→ Grep/Glob `.gd`/`.tscn` files directly. (graphify doesn't work here: no GDScript/Godot-scene support as of v0.9.9, doesn't extract actual game code.)
+
+**"What should I test?" / "Is this tested?"**
+→ Manual scenarios: `TESTPLAN.md` (by hand, by player feel). Automated: `tests/run_tests.gd` + cases in `tests/cases/`.
+
+**"What was done last session?"**
+→ MemPalace timeline (`mempalace_kg_timeline`) for architectural/design decisions, or `git log --oneline` for implementation commits.
+
+**Design specs, narrative, balance numbers:**
+→ `Documents/` folder (GDD.md, zone docs, etc.). MemPalace holds decision *pointers*, not copies.

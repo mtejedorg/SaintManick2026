@@ -9,6 +9,8 @@ description: |
   Examples: "the parry needs a flash effect", "hits feel weightless, add sparks",
   "design the death VFX", "the bullet-hell projectiles need a neon trail",
   "zone transition needs a wipe effect".
+model: sonnet
+tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
 # Role

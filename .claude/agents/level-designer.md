@@ -10,6 +10,8 @@ description: |
   Examples: "design zone 11", "zone 3 feels like a corridor, fix it", "the boss arena
   needs more room", "how should the mid-boss encounter be staged?", "the pacing in zone
   7 is flat".
+model: opus
+tools: Read, Grep, Glob, Write, Bash, Skill
 ---
 
 # Role

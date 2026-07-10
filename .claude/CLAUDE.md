@@ -5,6 +5,26 @@ Godot **4.6.3** (Forward+), GDScript. 2.5D Action-Roguelite Beat'em up — this 
 Vertical slice (Zones 1–10) complete. Player character: Nick. Main scene: `levels/slice/vertical_slice.tscn`.
 Design source of truth: `Documents/GDD.md`. Full architecture contracts: `Documents/CodeArchitecture.md` — read §7 (Conductor) before touching anything beat-driven.
 
+## Stack & toolchain
+- **Engine:** Godot 4.6.3 stable, Forward+, GDScript only. Headless/console binary: `C:\Users\MARCO\Tools\Godot\Godot_v4.6.3-stable_win64_console.exe` (the validation protocol below depends on it).
+- **Art generation:** local ComfyUI (`D:\AI\ComfyUI\ComfyUI_windows_portable_stable`) driven by the `assetforge` skill (2D art, one-shot meshes) and `modelgen` (full character pipeline; mesh backends in priority order Tripo → Rodin → Meshy → local TRELLIS). Blender cleanup runs over the Blender MCP socket on :9876.
+- **Implementation executor:** multi-file work routes through the agent system (see Agent routing); `senior-dev` decides when to hand off to cravify/Antigravity. Never invoke cravify directly.
+- **Knowledge infra:** MemPalace MCP (decision history) · `ASSETS.md` + per-folder `MANIFEST.md` (asset inventory) · `graphify-out/` (structure graph — caveats in Knowledge routing) · `Documents/` (design truth).
+- **Commits:** conventional style with scope — `feat(player): …`, `fix(audio): …`, `docs(claude): …`. End of session → `/housekeeping` (`/hk`): commit, MemPalace sync, graphify-update flag.
+
+## Repo map
+```
+_core/            autoloads + shared systems: components/, juice/, persistence/ (shop_upgrades/), pool/, state_machine/
+characters/       player/ (states, camera_states/, combos/), enemies/<type>/, shared/
+levels/           slice/vertical_slice.tscn (main scene), components/, factory/
+ui/  vfx/  assets/  audio/   feature-based UI · effects · shaders+materials · OGG music+SFX
+tests/            run_tests.gd + framework/ + cases/ (100+ assertions across ~42 case files)
+Documents/        GDD.md · CodeArchitecture.md · HANDOFF.md · VerticalSlice.md · tools/balance_tool.html
+2D_Assets/ 3D_Assets/ AIConcepts/   art source + generated output — each has a MANIFEST.md (index: ASSETS.md)
+Animations/       Mixamo packs — incl. the RIGGED nick_body_v2.fbx (see gotchas)
+old/  Build/  Renders_and_Videos/   archive & output — never edit, excluded from graphify
+```
+
 ## Validation protocol (run after EVERY code change)
 Console binary: `C:\Users\MARCO\Tools\Godot\Godot_v4.6.3-stable_win64_console.exe`. **`test -x` it first** — a missing binary has produced fake-clean pipelines (error went to the grep filter, exit 0). Project path contains a space — always quote.
 
@@ -31,7 +51,7 @@ Autoloads (`_core/`): `SignalBus` · `Conductor` · `SaveManager` · `GameManage
 - **Signals over direct node calls** — but SignalBus is for genuinely *global* events only. Parent↔child within one scene uses plain node signals, not the bus.
 - **StateMachine pattern** (node-based HSM) for player/enemy/camera behavior — add states, not if/elif chains. The camera FSM (`characters/player/camera_states/`) owns the side-scroll↔top-down movement-constraint swap. Player states self-heal a null `player` ref via `owner` in `enter()`.
 - **Damage flows one way:** `Hitbox` (Area3D) overlaps `Hurtbox` → `take_hit(DamageInfo)` → `HealthComponent` owns the universal death rule and emits bus signals. No raw ints; hazards/QTEs use the same path. `Hurtbox3D` auto-joins `player_hurtbox`/`enemy_hurtbox` groups in `_ready()` — custom hurtbox scripts must call `super._ready()` (AoE like Bass Drop targets by group).
-- **No magic numbers** — `Resource` configs (`.tres`): enemy stats, `ComboDef` combos (`characters/player/combos/`), shop upgrades (`_core/persistence/shop_upgrades/`). First-pass values in `tools/balance_tool.html`, then mirrored to `.tres`.
+- **No magic numbers** — `Resource` configs (`.tres`): enemy stats, `ComboDef` combos (`characters/player/combos/`), shop upgrades (`_core/persistence/shop_upgrades/`). First-pass values in `Documents/tools/balance_tool.html`, then mirrored to `.tres`.
 - **SaveManager** is the only thing that touches `user://`; persists meta-progression only (never volatile run state).
 - **Projectile pooling** (`_core/pool/`, established Zone 10) — extend it, don't bypass.
 - Feature-based folders (`characters/enemies/<type>/`, `levels/<zone>/`, `ui/<feature>/`) — never a type-based `/Scripts` folder. Official Godot style-guide naming throughout; signals are past-tense verbs.
@@ -86,27 +106,26 @@ Autoloads (`_core/`): `SignalBus` · `Conductor` · `SaveManager` · `GameManage
 
 **Knowledge lookups vs. implementation:** a question ("does X exist", "how does Y connect", "why was Z built this way") is not the same task as changing code. Route knowledge questions to `librarian` before spawning an implementation specialist — it's cheap and often means the specialist doesn't need to spawn at all.
 
-## Knowledge lookup decision tree (when to use what)
+## Knowledge routing — files vs. MemPalace vs. graphify
 
-**Starting a feature or bugfix:**
-- First: `Documents/HANDOFF.md` §3 for blockers, task status, remaining work
-- Second: `Documents/CodeArchitecture.md` §X for the contract/pattern you're touching
-- Third (if blocked): Search MemPalace for related prior decisions and gotchas
+Rule of thumb: **files hold the current truth · MemPalace holds the why · graphify holds the high-level shape.** When two sources disagree, the file (code/doc) wins — the others are derived.
 
-**"Why was X built this way?" / "What was the decision on Y?"**
-→ Search MemPalace (`mempalace_search`). The decision, rationale, date, and session context live there. MemPalace holds pointers to docs, not copies — the design lives in `Documents/GDD.md`; the *why* lives in MemPalace.
+| Question | Source |
+|---|---|
+| Code flow, signal wiring, dependencies — "how does this system work *now*?" | Grep/Glob `.gd`/`.tscn` directly. Code is the only source of truth for code. |
+| Design specs, narrative, balance numbers | `Documents/` — GDD.md, VerticalSlice.md, zone docs |
+| Task status, blockers, remaining work, booby traps | `Documents/HANDOFF.md` (§3 tasks, §4 traps) |
+| Architecture contract/pattern being touched | `Documents/CodeArchitecture.md` (summary above) |
+| "Why was X built this way?" / "What was decided about Y?" | MemPalace `mempalace_search` — decision, rationale, date, session context |
+| "What was done last session?" | `mempalace_kg_timeline` (decisions) + `git log --oneline` (commits) |
+| "Does this asset/zone/item exist?" / in-use vs. superseded | `ASSETS.md` → per-folder `MANIFEST.md`. Always check before generating. |
+| Big-picture structure overview — "what are the core abstractions, how do modules cluster?" | `graphify-out/graph.json` / `graph.html` — with the caveats below |
+| "What should I test?" / "Is this tested?" | Manual: `TESTPLAN.md`. Automated: `tests/run_tests.gd` + `tests/cases/` |
 
-**"Does this asset/zone/item exist?" / "What's in-use vs. superseded?"**
-→ `ASSETS.md` (top-level) + per-folder `MANIFEST.md` (2D_Assets/, 3D_Assets/, etc.). Check here before generating duplicates.
+**MemPalace holds pointers, not copies** — the design lives in `Documents/GDD.md`; the *why* lives in MemPalace. New architectural/design decisions go into MemPalace at housekeeping, never into a parallel doc.
 
-**"How does this system work?" (code flow, signals, dependencies)**
-→ Grep/Glob `.gd`/`.tscn` files directly. (graphify doesn't work here: no GDScript/Godot-scene support as of v0.9.9, doesn't extract actual game code.)
+**graphify caveats (both have burned time before):**
+- graphify has **no GDScript/Godot-scene extractor** (as of v0.9.9) — it never answers code-flow questions. For "how does X call Y", grep the code; don't open the graph.
+- The graph is **refresh-on-demand and goes stale**: check the build date in `graphify-out/GRAPH_REPORT.md` against `git log` — if structural files changed since, treat it as stale and run `/graphify --update` (housekeeping flags this automatically). Scope is pinned by `.graphifyignore` to code/scene structure only (Documents/, assets, archives excluded — those route via the table above).
 
-**"What should I test?" / "Is this tested?"**
-→ Manual scenarios: `TESTPLAN.md` (by hand, by player feel). Automated: `tests/run_tests.gd` + cases in `tests/cases/`.
-
-**"What was done last session?"**
-→ MemPalace timeline (`mempalace_kg_timeline`) for architectural/design decisions, or `git log --oneline` for implementation commits.
-
-**Design specs, narrative, balance numbers:**
-→ `Documents/` folder (GDD.md, zone docs, etc.). MemPalace holds decision *pointers*, not copies.
+**Starting a feature or bugfix, in order:** HANDOFF §3 (is it blocked/done already?) → CodeArchitecture §X for the contract you're touching → MemPalace only if still blocked or the change contradicts a past decision.

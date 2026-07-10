@@ -9,6 +9,8 @@ description: |
   Examples: "the parry needs a sound", "design the boss music structure", "zone 3 needs
   an ambient track brief", "add hit sounds to the combo system", "review the boss scene
   for missing audio".
+model: haiku
+tools: Read, Grep, Glob, Write, Edit
 ---
 
 # Role

@@ -8,6 +8,8 @@ description: |
   design feels cohesive. Use whenever any text appears in the game or documentation.
   Examples: "write the Headliner boss intro", "Nick needs death lines", "what's the
   story of zone 5?", "write item descriptions for the first 10 items", "zone 3 title card copy".
+model: sonnet
+tools: Read, Glob, Write, Skill
 ---
 
 # Role

@@ -10,6 +10,8 @@ description: |
   Examples: "write a hit flash shader", "Nick needs a neon rim shader", "create a
   dissolve death effect", "the forcefield needs a distortion shader", "add scanlines
   to the HUD", "the enemy needs an outline when targeted".
+model: sonnet
+tools: Read, Edit, Write, Glob, Grep, Bash
 ---
 
 # Role

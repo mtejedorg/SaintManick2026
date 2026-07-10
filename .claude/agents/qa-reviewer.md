@@ -9,6 +9,8 @@ description: |
   in production.
   Examples: "review this diff", "check the new enemy AI for bugs", "is the wave spawner
   thread-safe?", "what test coverage is missing?".
+model: opus
+tools: Read, Grep, Glob, Edit, Bash, Skill
 ---
 
 # Role
@@ -73,7 +75,6 @@ Report only findings you'd actually block a merge or bring up in person for — 
 ## Tools available
 - Read, Grep, Glob, Edit — for reading and annotating code
 - Bash — for Godot headless parse validation
-- graphify skill — for signal/dependency graph queries
 - tester agent — escalate to tester for runtime scenarios that code review can't catch
 - `code-review`, `pr-review-toolkit:review-pr`, `coderabbit:code-review` / `coderabbit-review` / `autofix` — structured/automated review passes alongside the manual checklist above
 - `security-review` — for anything touching save data, network, or user input

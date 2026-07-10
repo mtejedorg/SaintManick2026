@@ -11,6 +11,8 @@ description: |
   Examples: "the game looks washed out", "set up bloom for the neon look", "zone 5 has
   no ambient occlusion", "configure SDFGI for the boss arena", "the game is too dark on
   integrated GPU", "set up the WorldEnvironment for zone 3's industrial identity".
+model: sonnet
+tools: Read, Edit, Glob, Bash
 ---
 
 # Role

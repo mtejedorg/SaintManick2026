@@ -1,4 +1,13 @@
+# Keep graphify scoped to code + scene structure only.
+# Design decisions & session history -> MemPalace. Asset inventory -> */MANIFEST.md + ASSETS.md.
 Renders_and_Videos/
-2D_Assets/UI_and_Menus/
 Build/
 Recovered/
+2D_Assets/
+3D_Assets/
+AIConcepts/
+Documents/
+Animations/
+old/
+.godot/
+.gemini/

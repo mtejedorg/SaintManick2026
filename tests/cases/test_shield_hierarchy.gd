@@ -20,9 +20,9 @@ func test_generic_heavy_pressures_but_does_not_zero_a_shield() -> void:
 	attack_state.current_sequence.clear()
 	attack_state._start_attack(true) # unmatched/generic heavy
 
-	assert_false(player.katana_hitbox.damage_info.is_shield_breaker, "Generic heavy should not be a shield breaker")
+	assert_false(player.bionic_arm_hitbox.damage_info.is_shield_breaker, "Generic heavy should not be a shield breaker")
 
-	health.take_damage(player.katana_hitbox.damage_info)
+	health.take_damage(player.bionic_arm_hitbox.damage_info)
 
 	assert_gt(health.current_shield, 0.0, "A single generic heavy should not zero a 90 shield")
 	assert_eq(health.current_health, 100.0, "Shield should still be absorbing; HP should be untouched")
@@ -53,9 +53,9 @@ func test_battery_ram_zeroes_the_shield() -> void:
 	attack_state.attack_timer = 0.0
 	attack_state.physics_update(0.0) # BB (Battery Ram)
 
-	assert_true(player.katana_hitbox.damage_info.is_shield_breaker, "Battery Ram should be a shield breaker")
+	assert_true(player.bionic_arm_hitbox.damage_info.is_shield_breaker, "Battery Ram should be a shield breaker")
 
-	health.take_damage(player.katana_hitbox.damage_info)
+	health.take_damage(player.bionic_arm_hitbox.damage_info)
 
 	assert_eq(health.current_shield, 0.0, "Battery Ram should zero the Bruiser's shield")
 	assert_lt(health.current_health, bruiser.stats.max_health, "Battery Ram's full damage should carry through to HP")
@@ -74,7 +74,7 @@ func test_generic_heavy_no_longer_launches() -> void:
 	attack_state.current_sequence.clear()
 	attack_state._start_attack(true) # unmatched/generic heavy
 
-	assert_false(player.katana_hitbox.damage_info.is_launcher, "Generic heavy no longer launches — that's the Launcher route's identity")
+	assert_false(player.bionic_arm_hitbox.damage_info.is_launcher, "Generic heavy no longer launches — that's the Launcher route's identity")
 
 	player.queue_free()
 

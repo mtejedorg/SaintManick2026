@@ -86,8 +86,11 @@ func _start_attack(is_heavy: bool) -> void:
 	attack_timer = combo_def.duration if combo_def else attack_durations[combo_step]
 	current_hit_duration = attack_timer
 
-	# Widen hitbox per-route (Sweeper's ComboDef carries a wider hitbox_scale).
-	player.katana_hitbox.scale = combo_def.hitbox_scale if combo_def else Vector3.ONE
+	var active_hitbox: Area3D = player.bionic_arm_hitbox if is_heavy else player.katana_hitbox
+	var inactive_hitbox: Area3D = player.katana_hitbox if is_heavy else player.bionic_arm_hitbox
+
+	active_hitbox.scale = combo_def.hitbox_scale if combo_def else Vector3.ONE
+	inactive_hitbox.scale = Vector3.ONE
 
 	player.velocity.x = 0
 	player.velocity.z = 0
@@ -100,37 +103,39 @@ func _start_attack(is_heavy: bool) -> void:
 			anim = "attack_combo"
 		player.animation_controller.play_once(anim)
 
-	if not player.katana_hitbox.damage_info:
-		player.katana_hitbox.damage_info = DamageInfo.new()
+	if not active_hitbox.damage_info:
+		active_hitbox.damage_info = DamageInfo.new()
 
 	if combo_def:
 		# Full route matched (Tri-Cut/Launcher/Sweeper/Battery Ram) — route data wins,
 		# including whether this route is a genuine shield-breaker (only Battery Ram is).
-		player.katana_hitbox.damage_info.amount = combo_def.damage
-		player.katana_hitbox.damage_info.knockback = combo_def.knockback
-		player.katana_hitbox.damage_info.stun = combo_def.stun_time
-		player.katana_hitbox.damage_info.is_launcher = combo_def.is_launcher
-		player.katana_hitbox.damage_info.is_guard_breaking = combo_def.is_guard_breaking
-		player.katana_hitbox.damage_info.is_shield_breaker = combo_def.is_shield_breaker
-		player.katana_hitbox.damage_info.shield_damage_multiplier = 1.0
+		active_hitbox.damage_info.amount = combo_def.damage
+		active_hitbox.damage_info.knockback = combo_def.knockback
+		active_hitbox.damage_info.stun = combo_def.stun_time
+		active_hitbox.damage_info.is_launcher = combo_def.is_launcher
+		active_hitbox.damage_info.is_guard_breaking = combo_def.is_guard_breaking
+		active_hitbox.damage_info.is_shield_breaker = combo_def.is_shield_breaker
+		active_hitbox.damage_info.shield_damage_multiplier = 1.0
 	else:
 		# Unmatched/generic hit (mashing) — plain light/heavy basic-input values. A generic
 		# heavy is NOT a shield-breaker (that's Battery Ram's identity alone); it only
 		# pressures shields harder via shield_damage_multiplier, and it doesn't launch
 		# (launching is the Launcher route's identity).
-		player.katana_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
-		player.katana_hitbox.damage_info.is_shield_breaker = false
-		player.katana_hitbox.damage_info.shield_damage_multiplier = generic_heavy_shield_multiplier if is_heavy else 1.0
-		player.katana_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
-		player.katana_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
-		player.katana_hitbox.damage_info.is_launcher = false
-		player.katana_hitbox.damage_info.is_guard_breaking = false
+		active_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
+		active_hitbox.damage_info.is_shield_breaker = false
+		active_hitbox.damage_info.shield_damage_multiplier = generic_heavy_shield_multiplier if is_heavy else 1.0
+		active_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
+		active_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
+		active_hitbox.damage_info.is_launcher = false
+		active_hitbox.damage_info.is_guard_breaking = false
 
-	player.katana_hitbox.damage_info.source = player
-	player.katana_hitbox.is_active = true
+	active_hitbox.damage_info.source = player
+	inactive_hitbox.is_active = false
+	active_hitbox.is_active = true
 
 func exit() -> void:
 	player.katana_hitbox.is_active = false
+	player.bionic_arm_hitbox.is_active = false
 	if player.combo_component:
 		player.combo_component.on_attack_ended()
 
@@ -155,8 +160,9 @@ func physics_update(delta: float) -> void:
 	# switches off and the EMP Dash-Cancel window opens.
 	var active_window_end = current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
 	var in_recovery = attack_timer <= active_window_end
-	if in_recovery and player.katana_hitbox.is_active:
+	if in_recovery and (player.katana_hitbox.is_active or player.bionic_arm_hitbox.is_active):
 		player.katana_hitbox.is_active = false
+		player.bionic_arm_hitbox.is_active = false
 
 	if in_recovery and Input.is_action_just_pressed("dash"):
 		if _try_emp_dash_cancel():
@@ -177,6 +183,7 @@ func physics_update(delta: float) -> void:
 
 	if attack_timer <= 0:
 		player.katana_hitbox.is_active = false
+		player.bionic_arm_hitbox.is_active = false
 		if not player.is_on_floor():
 			transition_requested.emit("StateAirborne")
 		else:

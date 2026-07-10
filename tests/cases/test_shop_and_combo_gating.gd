@@ -77,8 +77,8 @@ func test_unpurchased_sweeper_falls_back_to_generic_damage() -> void:
 	attack_state.physics_update(0.0) # ABB
 
 	assert_eq("".join(attack_state.current_sequence), "ABB")
-	assert_eq(player.katana_hitbox.damage_info.amount, 28.0, "Locked Sweeper should fall back to generic heavy damage")
-	assert_eq(player.katana_hitbox.scale, Vector3.ONE, "Locked Sweeper should not widen the hitbox")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 28.0, "Locked Sweeper should fall back to generic heavy damage")
+	assert_eq(player.bionic_arm_hitbox.scale, Vector3.ONE, "Locked Sweeper should not widen the hitbox")
 
 	player.queue_free()
 
@@ -103,8 +103,8 @@ func test_purchased_sweeper_uses_route_data() -> void:
 	attack_state.physics_update(0.0)
 
 	assert_eq("".join(attack_state.current_sequence), "ABB")
-	assert_eq(player.katana_hitbox.damage_info.amount, 20.0, "Unlocked Sweeper should use its tuned route damage")
-	assert_eq(player.katana_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Unlocked Sweeper should widen the hitbox")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 20.0, "Unlocked Sweeper should use its tuned route damage")
+	assert_eq(player.bionic_arm_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Unlocked Sweeper should widen the hitbox")
 
 	player.queue_free()
 

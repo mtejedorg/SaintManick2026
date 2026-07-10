@@ -291,8 +291,8 @@ func test_player_combo_routes() -> void:
 	attack_state.attack_timer = 0.0
 	attack_state.physics_update(0.0)
 	assert_eq("".join(attack_state.current_sequence), "ABB")
-	assert_eq(player.katana_hitbox.damage_info.amount, 20.0, "Sweeper should set amount to 20")
-	assert_eq(player.katana_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Sweeper should widen hitbox")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 20.0, "Sweeper should set amount to 20")
+	assert_eq(player.bionic_arm_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Sweeper should widen hitbox")
 	
 	# Test Battery Ram (B-B)
 	attack_state.enter()
@@ -303,8 +303,8 @@ func test_player_combo_routes() -> void:
 	attack_state.attack_timer = 0.0
 	attack_state.physics_update(0.0)
 	assert_eq("".join(attack_state.current_sequence), "BB")
-	assert_true(player.katana_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
-	assert_eq(player.katana_hitbox.damage_info.amount, 40.0)
+	assert_true(player.bionic_arm_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 40.0)
 
 	SaveManager.profile.unlocked_combos.erase("ABB")
 	SaveManager.profile.unlocked_combos.erase("BB")
@@ -334,10 +334,10 @@ func test_combo_routes_are_resource_driven() -> void:
 	attack_state.physics_update(0.0) # AAB (Launcher)
 
 	assert_eq("".join(attack_state.current_sequence), "AAB")
-	assert_eq(player.katana_hitbox.damage_info.amount, launcher_def.damage, "Launcher damage should match the ComboDef resource")
-	assert_eq(player.katana_hitbox.damage_info.knockback, launcher_def.knockback, "Launcher knockback should match the ComboDef resource")
-	assert_eq(player.katana_hitbox.damage_info.stun, launcher_def.stun_time, "Launcher stun should match the ComboDef resource")
-	assert_true(player.katana_hitbox.damage_info.is_launcher, "Launcher route should set is_launcher")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, launcher_def.damage, "Launcher damage should match the ComboDef resource")
+	assert_eq(player.bionic_arm_hitbox.damage_info.knockback, launcher_def.knockback, "Launcher knockback should match the ComboDef resource")
+	assert_eq(player.bionic_arm_hitbox.damage_info.stun, launcher_def.stun_time, "Launcher stun should match the ComboDef resource")
+	assert_true(player.bionic_arm_hitbox.damage_info.is_launcher, "Launcher route should set is_launcher")
 	assert_almost_eq(attack_state.attack_timer, launcher_def.duration, 0.001, "Attack timer should match the ComboDef duration")
 
 	player.queue_free()
@@ -375,3 +375,75 @@ func test_hit_stop_time_scale_recovery() -> void:
 	hit_stop._process(0.003) # real_delta = 0.003 / 0.05 = 0.06
 	assert_eq(Engine.time_scale, 1.0, "Time scale should recover to 1.0")
 	assert_eq(hit_stop.hit_stop_timer, 0.0)
+
+func test_heavy_attack_activates_arm_hitbox_and_not_katana() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var attack_state = player.state_machine.get_node("StateAttack")
+	attack_state.enter()
+	attack_state.current_sequence.clear()
+	attack_state._start_attack(true) # unmatched/generic heavy
+	
+	assert_true(player.bionic_arm_hitbox.is_active, "Bionic arm hitbox should be active for heavy attack")
+	assert_false(player.katana_hitbox.is_active, "Katana hitbox should be inactive for heavy attack")
+	player.queue_free()
+
+func test_light_attack_activates_katana_and_not_arm() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var attack_state = player.state_machine.get_node("StateAttack")
+	attack_state.enter() # no heavy input -> light
+	
+	assert_true(player.katana_hitbox.is_active, "Katana hitbox should be active for light attack")
+	assert_false(player.bionic_arm_hitbox.is_active, "Bionic arm hitbox should be inactive for light attack")
+	player.queue_free()
+
+func test_combo_b_finisher_writes_damage_and_flags_into_arm_hitbox() -> void:
+	assert_not_null(SaveManager.profile, "SaveManager profile should exist")
+	var was_unlocked = SaveManager.profile.unlocked_combos.has("BB")
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.append("BB")
+		
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var attack_state = player.state_machine.get_node("StateAttack")
+	attack_state.enter()
+	attack_state.current_sequence.clear()
+	attack_state._start_attack(true) # First heavy (B)
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0) # Second heavy (BB)
+	
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 40.0, "Battery Ram damage should be written to arm hitbox")
+	assert_true(player.bionic_arm_hitbox.damage_info.is_guard_breaking, "Battery Ram guard breaking should be written to arm hitbox")
+	
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.erase("BB")
+	player.queue_free()
+
+func test_hitbox_scale_applies_to_arm_hitbox_on_combo_matched_heavy() -> void:
+	assert_not_null(SaveManager.profile, "SaveManager profile should exist")
+	var was_unlocked = SaveManager.profile.unlocked_combos.has("ABB")
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.append("ABB")
+		
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var attack_state = player.state_machine.get_node("StateAttack")
+	attack_state.enter() # A
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0) # AB
+	attack_state.buffered_attack = true
+	attack_state.buffered_heavy = true
+	attack_state.attack_timer = 0.0
+	attack_state.physics_update(0.0) # ABB (Sweeper)
+	
+	assert_eq(player.bionic_arm_hitbox.scale, Vector3(1.5, 1.0, 1.5), "Sweeper scale should apply to arm hitbox")
+	assert_eq(player.katana_hitbox.scale, Vector3.ONE, "Katana hitbox scale should be reset")
+	
+	if not was_unlocked:
+		SaveManager.profile.unlocked_combos.erase("ABB")
+	player.queue_free()

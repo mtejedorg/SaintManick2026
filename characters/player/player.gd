@@ -63,6 +63,7 @@ var bass_drop_armed: bool = false
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
+@onready var bionic_arm_hitbox: Area3D = $MeshInstance3D/BionicArmHitbox
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var animation_controller: PlayerAnimationController = $PlayerAnimationController
 var combo_component: Node = null

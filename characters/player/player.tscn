@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://characters/player/player.gd" id="1_xxx"]
 [ext_resource type="Script" path="res://_core/state_machine/state_machine.gd" id="2_xxx"]
@@ -26,6 +26,9 @@ height = 2.0
 [sub_resource type="BoxShape3D" id="BoxShape3D_katana"]
 size = Vector3(2.5, 1.5, 1.5)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_bionic_arm"]
+size = Vector3(1.6, 3.0, 3.0)
+
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_xxx")
 
@@ -51,6 +54,15 @@ script = ExtResource("9_xxx")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/KatanaHitbox"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 0, 0)
 shape = SubResource("BoxShape3D_katana")
+
+[node name="BionicArmHitbox" type="Area3D" parent="MeshInstance3D"]
+collision_layer = 512
+collision_mask = 4096
+script = ExtResource("9_xxx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/BionicArmHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, 0)
+shape = SubResource("BoxShape3D_bionic_arm")
 
 [node name="PlayerAnimationController" type="Node" parent="."]
 script = ExtResource("13_pac")

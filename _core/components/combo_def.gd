@@ -3,10 +3,9 @@ extends Resource
 
 @export var combo_name: String = "Basic Combo"
 @export var input_chain: Array[String] = []
-@export var damage_multipliers: Array[float] = []
 @export var stun_time: float = 0.5
 
-## Base damage the final hit of the route deals before damage_multipliers are applied.
+## Base damage the final hit of the route deals.
 ## (Route-specific values replace the generic light/heavy damage once the full
 ## input_chain matches — see player_state_attack.gd.)
 @export var damage: float = 20.0

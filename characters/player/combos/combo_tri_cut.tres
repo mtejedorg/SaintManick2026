@@ -6,7 +6,6 @@
 script = ExtResource("1_xxx")
 combo_name = "Tri-Cut"
 input_chain = Array[String](["A", "A", "A"])
-damage_multipliers = Array[float]([1.0, 1.0, 1.5])
 stun_time = 0.4
 damage = 20.0
 duration = 0.6

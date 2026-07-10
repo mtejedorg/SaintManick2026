@@ -20,6 +20,9 @@ var intensity_controller: Node = null
 
 func _ready() -> void:
 	target_bpm = bpm
+	var intensity_controller_script = load("res://_core/intensity_controller.gd")
+	intensity_controller = intensity_controller_script.new()
+	add_child(intensity_controller)
 
 func _process(delta: float) -> void:
 	# Smoothly ramp BPM towards target BPM

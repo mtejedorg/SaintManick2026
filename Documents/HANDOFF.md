@@ -48,13 +48,9 @@ Pass = exit 0, zero grep hits, **tests ≥ 100** and never decreasing. Current b
 
 ## 3. REMAINING WORK — almost entirely human now
 
-### A1 · Bionic arm is frozen (the one item round 2 under-flagged) — decide, then execute
-`nick_visual.tscn` still instances `nick_bionic_arm.glb` as a **static, unrigged sibling** at a fixed offset. Now that the body animates, the arm will visibly stay in bind pose / detach from the shoulder. GDD §2.3: the bionic arm must be "visible in every fight."
-Human decides one of:
-- **(a)** The rigged FBX body already includes acceptable arm geometry → delete the `NickBionicArm` node (1-line scene edit, machine-doable).
-- **(b)** Keep the separate arm → machine attaches it via `BoneAttachment3D` on `mixamorig_RightForeArm` (or `RightArm`; probe first, same pattern as the katana) and human tunes the local transform.
-- **(c)** Proper solution for later: re-export the character with the arm skinned into the body mesh.
-Decision needs eyes (run the game, look at Nick). Execution of (a)/(b) is machine-work — gate per §1 with the animation grep.
+### A1 · Bionic arm — RESOLVED via option (a) (2026-07-11, `fe254a4` + `7232e70`)
+A headless render probe settled the decision without eyes-on-game: `nick_bionic_arm.glb` was **degenerate geometry** (flat untextured ~2.5 m blob floating through Nick's head, frozen while the body animates), so option (b) would have bone-attached garbage. The `NickBionicArm` node is deleted; the rigged body's own right arm carries the look. Mechanically the arm now exists as `BionicArmHitbox` — heavy (B) attacks fire a punch hitbox (x 0.8 offset, 2× cross-section) distinct from the katana's blade (`7232e70`).
+**Still open as option (c), folded into H2:** re-export the character with a proper bionic arm skinned into the body mesh — the visual duality (GDD §2.3) currently reads only through the body mesh's own arm.
 
 ### H2 · Nick visual sign-off (editor/eyes) — now with a concrete checklist
 1. Body texture: UVs assumed to match the original static mesh — confirm the diffuse isn't smeared/misaligned.

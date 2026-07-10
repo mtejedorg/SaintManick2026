@@ -20,6 +20,11 @@ const EMP_DASH_CANCEL_COST: float = 25.0
 ## remainder is recovery, during which the EMP Dash-Cancel window is open.
 const ACTIVE_WINDOW_FRACTION: float = 0.6
 
+## T2: generic (unmatched/mashed) heavy hits pressure a shield at this multiple of their
+## base amount instead of shattering it outright — only Battery Ram (ComboDef.is_shield_breaker)
+## and Bass Drop actually zero a shield.
+@export var generic_heavy_shield_multiplier: float = 2.0
+
 var attack_timer: float = 0.0
 var current_hit_duration: float = 0.0
 var combo_step: int = 0
@@ -99,20 +104,26 @@ func _start_attack(is_heavy: bool) -> void:
 		player.katana_hitbox.damage_info = DamageInfo.new()
 
 	if combo_def:
-		# Full route matched (Tri-Cut/Launcher/Sweeper/Battery Ram) — route data wins.
+		# Full route matched (Tri-Cut/Launcher/Sweeper/Battery Ram) — route data wins,
+		# including whether this route is a genuine shield-breaker (only Battery Ram is).
 		player.katana_hitbox.damage_info.amount = combo_def.damage
 		player.katana_hitbox.damage_info.knockback = combo_def.knockback
 		player.katana_hitbox.damage_info.stun = combo_def.stun_time
 		player.katana_hitbox.damage_info.is_launcher = combo_def.is_launcher
 		player.katana_hitbox.damage_info.is_guard_breaking = combo_def.is_guard_breaking
-		player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+		player.katana_hitbox.damage_info.is_shield_breaker = combo_def.is_shield_breaker
+		player.katana_hitbox.damage_info.shield_damage_multiplier = 1.0
 	else:
-		# Unmatched/generic hit (mashing) — plain light/heavy basic-input values.
+		# Unmatched/generic hit (mashing) — plain light/heavy basic-input values. A generic
+		# heavy is NOT a shield-breaker (that's Battery Ram's identity alone); it only
+		# pressures shields harder via shield_damage_multiplier, and it doesn't launch
+		# (launching is the Launcher route's identity).
 		player.katana_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
-		player.katana_hitbox.damage_info.is_shield_breaker = is_heavy
+		player.katana_hitbox.damage_info.is_shield_breaker = false
+		player.katana_hitbox.damage_info.shield_damage_multiplier = generic_heavy_shield_multiplier if is_heavy else 1.0
 		player.katana_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
 		player.katana_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
-		player.katana_hitbox.damage_info.is_launcher = is_heavy
+		player.katana_hitbox.damage_info.is_launcher = false
 		player.katana_hitbox.damage_info.is_guard_breaking = false
 
 	player.katana_hitbox.damage_info.source = player

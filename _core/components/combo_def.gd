@@ -18,6 +18,10 @@ extends Resource
 @export var hitbox_scale: Vector3 = Vector3.ONE
 @export var is_launcher: bool = false
 @export var is_guard_breaking: bool = false
+## T2: only the routes that should genuinely shatter a boss/enemy shield (currently just
+## Battery Ram) set this true. Every other route pressures shields via DamageInfo's
+## shield_damage_multiplier instead of zeroing them outright.
+@export var is_shield_breaker: bool = false
 ## Ability meter cost to perform this route's finishing hit. 0 = free (all current routes
 ## are free basic inputs per GDD §3.3 — reserved for future paid routes).
 @export var meter_cost: float = 0.0

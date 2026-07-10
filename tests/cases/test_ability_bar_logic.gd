@@ -30,7 +30,11 @@ func test_heavy_attack_free_at_zero_meter() -> void:
 
 	assert_eq(player.ability_meter, 0.0, "Heavy attack must not consume ability meter")
 	assert_eq("".join(attack_state.current_sequence), "B", "Heavy attack registered as heavy even at 0 meter")
-	assert_true(player.katana_hitbox.damage_info.is_shield_breaker, "Heavy hit should still be a shield breaker")
+	# T2: a generic (unmatched) heavy no longer shatters shields outright — only Battery
+	# Ram (ComboDef.is_shield_breaker) and Bass Drop do. It still pressures shields harder
+	# than a light via shield_damage_multiplier.
+	assert_false(player.katana_hitbox.damage_info.is_shield_breaker, "Generic heavy hit should NOT be a shield breaker (Battery Ram's identity alone)")
+	assert_eq(player.katana_hitbox.damage_info.shield_damage_multiplier, attack_state.generic_heavy_shield_multiplier, "Generic heavy should pressure shields at the configured multiplier")
 
 func test_battery_ram_sets_guard_breaking_at_zero_meter() -> void:
 	# BB (Battery Ram) must be reachable with an empty meter and must set is_guard_breaking —

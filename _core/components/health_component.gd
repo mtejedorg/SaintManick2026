@@ -51,14 +51,21 @@ func take_damage(damage_info: DamageInfo) -> void:
 		current_shield = 0.0
 		current_health = max(0.0, current_health - dmg_amount)
 	else:
+		# T2: shield takes amount*multiplier (generic heavies pressure shields at 2x)
+		# rather than the raw hit amount; any leftover that breaks through carries to
+		# HP scaled back down to the base amount, so HP damage tuning stays untouched
+		# by the shield multiplier.
+		var mult = damage_info.shield_damage_multiplier if damage_info.shield_damage_multiplier > 0.0 else 1.0
 		if current_shield > 0.0:
-			if current_shield >= dmg_amount:
-				current_shield -= dmg_amount
+			var shield_dmg = dmg_amount * mult
+			if current_shield >= shield_dmg:
+				current_shield -= shield_dmg
 				dmg_amount = 0.0
 			else:
-				dmg_amount -= current_shield
+				var leftover_shield_dmg = shield_dmg - current_shield
 				current_shield = 0.0
-		
+				dmg_amount = leftover_shield_dmg / mult
+
 		if dmg_amount > 0.0:
 			current_health = max(0.0, current_health - dmg_amount)
 

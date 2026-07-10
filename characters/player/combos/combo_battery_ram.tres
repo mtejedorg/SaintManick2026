@@ -14,4 +14,5 @@ knockback = 8.0
 hitbox_scale = Vector3(1, 1, 1)
 is_launcher = false
 is_guard_breaking = true
+is_shield_breaker = true
 meter_cost = 0.0

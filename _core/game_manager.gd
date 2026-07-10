@@ -26,9 +26,19 @@ var run_speed_multiplier: float = 1.0
 var scrap_multiplier: int = 1
 var enemies_defeated: int = 0
 var zones_cleared: int = 0
-# Zone names already counted this run — a death reload re-enters earlier zones
+# Zone names already counted this run — a checkpoint respawn re-enters earlier zones
 # and must not count them twice.
 var _zones_seen: Dictionary = {}
+
+# T3: checkpoint respawn. Losing a life teleports Nick back to the last zone entry
+# instead of reloading the whole slice (which respawned every enemy and let re-kills
+# re-drop scrap — death was economically rewarded).
+var checkpoint_zone: String = ""
+var checkpoint_position: Vector3 = Vector3.ZERO
+var has_checkpoint: bool = false
+## Seconds of post-respawn invincibility grace so Nick isn't hit on the exact frame
+## he reappears.
+var respawn_grace_duration: float = 1.0
 
 var is_test: bool = false
 
@@ -111,14 +121,17 @@ func spend_scrap(amount: int) -> bool:
 func respawn_or_game_over() -> void:
 	if current_lives > 0:
 		current_lives -= 1
-		# Reset volatile HP/shield for the reload
+		# Refill volatile HP/shield for the respawn
 		current_hp = max_hp
 		current_shield = max_shield
 		if current_lives > 0:
 			lives_changed.emit(current_lives)
 			SignalBus.player_life_lost.emit(current_lives)
-			if not is_test:
-				get_tree().reload_current_scene()
+			# T3: checkpoint respawn instead of a full scene reload. Cleared encounters
+			# stay cleared (dead enemies never respawn — no death-farming); uncleared
+			# fights and activated bosses reset via player_respawned listeners.
+			_respawn_at_checkpoint()
+			SignalBus.player_respawned.emit()
 			return
 
 	# No lives left – game over (single emission for the terminal state)
@@ -146,10 +159,51 @@ func complete_run() -> void:
 	if not is_test:
 		get_tree().change_scene_to_file("res://ui/menus/run_results_screen.tscn")
 
+## Null-safe player lookup — tests run with a dummy current_scene that has no Player,
+## so every caller must tolerate null.
+func _find_player() -> Node:
+	if not get_tree() or not get_tree().current_scene:
+		return null
+	return get_tree().current_scene.get_node_or_null("Player")
+
+## T3: applies the refilled HP/shield to the live player, teleports him to the last
+## checkpoint, and grants a short invincibility grace. No-ops cleanly when no player
+## node exists (headless tests).
+func _respawn_at_checkpoint() -> void:
+	var player = _find_player()
+	if not player:
+		return
+	var hc: HealthComponent = player.get_node_or_null("HealthComponent")
+	if hc:
+		hc.current_health = current_hp
+		hc.current_shield = current_shield
+		hc.health_changed.emit(hc.current_health, hc.max_health)
+		hc.shield_changed.emit(hc.current_shield, hc.max_shield)
+		SignalBus.player_health_changed.emit(hc.current_health, hc.max_health)
+		SignalBus.player_shield_changed.emit(hc.current_shield, hc.max_shield)
+		# Grace window: timer-based, then off.
+		hc.is_invincible = true
+		get_tree().create_timer(respawn_grace_duration).timeout.connect(func():
+			if is_instance_valid(hc):
+				hc.is_invincible = false
+		)
+	if has_checkpoint:
+		player.global_position = checkpoint_position
+	if "velocity" in player:
+		player.velocity = Vector3.ZERO
+	if "last_safe_position" in player:
+		player.last_safe_position = player.global_position
+
 func _on_enemy_died(_position: Vector3) -> void:
 	enemies_defeated += 1
 
 func _on_zone_entered(zone_name: String) -> void:
+	# T3: every zone entry is a checkpoint — store where Nick was when he crossed in.
+	var player = _find_player()
+	if player:
+		checkpoint_zone = zone_name
+		checkpoint_position = player.global_position
+		has_checkpoint = true
 	if _zones_seen.has(zone_name):
 		return
 	_zones_seen[zone_name] = true

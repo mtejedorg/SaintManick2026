@@ -72,6 +72,28 @@ func _ready() -> void:
 
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.zone_entered.connect(_on_zone_entered)
+	SignalBus.player_respawned.connect(_on_player_respawned)
+
+## T3: the player lost a life mid-fight — return to dormant at full HP. The SECTOR 07
+## ZoneTrigger re-arms itself on the same signal, so re-entering the zone re-activates
+## the fight naturally via _on_zone_entered.
+func _on_player_respawned() -> void:
+	if not is_active:
+		return
+	if health_component.current_health <= 0.0:
+		return # Defeated bosses stay defeated.
+	is_active = false
+	health_component.current_health = health_component.max_health
+	health_component.health_changed.emit(health_component.current_health, health_component.max_health)
+	velocity = Vector3.ZERO
+	is_vulnerable = false
+	if combat_comp:
+		combat_comp.stun_timer = 0.0
+	# Back to the fresh-boot state (initial_state = StateShield, which re-raises the
+	# shield exactly like a new fight).
+	if state_machine and state_machine.initial_state:
+		state_machine.transition_to(state_machine.initial_state.name)
+	SignalBus.boss_reset.emit()
 
 func _on_zone_entered(zone_name: String) -> void:
 	if is_active:

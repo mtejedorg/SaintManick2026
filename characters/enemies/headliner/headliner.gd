@@ -28,6 +28,9 @@ var is_shield_active: bool = false
 var is_vulnerable: bool = false
 var speed_multiplier: float = 1.0
 var phase_2_triggered: bool = false
+## T3: pristine pre-fight material — _on_health_changed overwrites base_material with
+## phase_2_material at 50% HP, so a respawn reset needs this untouched copy to restore.
+var _pristine_material: StandardMaterial3D
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -64,6 +67,7 @@ func _ready() -> void:
 		else:
 			base_material = StandardMaterial3D.new()
 		mesh_instance.set_surface_override_material(0, base_material)
+		_pristine_material = base_material
 
 		telegraph_material = base_material.duplicate()
 		telegraph_material.albedo_color = Color(1.0, 0.3, 0.0, 1.0)
@@ -89,8 +93,45 @@ func _ready() -> void:
 		state_machine.init(self)
 
 	SignalBus.beat.connect(_on_beat)
+	SignalBus.player_respawned.connect(_on_player_respawned)
 
 	AudioManager.register_boss_music_players(boss_music_a, boss_music_b)
+
+## T3: the player lost a life mid-fight — full reset back to the dormant pre-fight
+## state. The Zone10_Trigger (a ZoneTrigger) re-arms itself on the same signal, so
+## walking back into the arena restarts the fight via activate_boss.
+func _on_player_respawned() -> void:
+	if not is_active_boss:
+		return
+	if health_component.current_health <= 0.0:
+		return # A defeated Headliner stays defeated.
+	health_component.current_health = health_component.max_health
+	health_component.health_changed.emit(health_component.current_health, health_component.max_health)
+	velocity = Vector3.ZERO
+	is_vulnerable = false
+	phase_2_triggered = false
+	speed_multiplier = 1.0
+	if combat_comp:
+		combat_comp.stun_timer = 0.0
+	# Restore the pre-phase-2 look (phase 2 permanently swapped base_material).
+	if _pristine_material:
+		base_material = _pristine_material
+		if mesh_instance:
+			mesh_instance.set_surface_override_material(0, _pristine_material)
+			mesh_instance.scale = Vector3.ONE
+	if Conductor:
+		Conductor.target_bpm = 128.0
+	# Re-open the LeftGate so the player can walk back in.
+	var gate = get_parent().get_node_or_null("LeftGate")
+	if gate:
+		var col = gate.get_node_or_null("CollisionShape3D")
+		if col:
+			col.set_deferred("disabled", true)
+	# StateDormant.enter() clears is_active_boss/is_shield_active and hides the bubble.
+	if state_machine:
+		state_machine.transition_to("StateDormant")
+	is_active_boss = false
+	SignalBus.boss_reset.emit()
 
 func _announce_boss() -> void:
 	SignalBus.boss_spawned.emit("Headliner")

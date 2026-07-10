@@ -12,12 +12,16 @@ signal encounter_completed
 
 var current_wave_index: int = 0
 var active: bool = false
+## T3: set once all waves are beaten. A completed encounter NEVER resets on respawn —
+## dead enemies stay dead (kills the death-farming loop where reloads re-dropped scrap).
+var completed: bool = false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	set_gate_locked(false)
 	if spawner:
 		spawner.wave_cleared.connect(_on_wave_cleared)
+	SignalBus.player_respawned.connect(_on_player_respawned)
 
 func _on_body_entered(body: Node3D) -> void:
 	if active:
@@ -58,10 +62,24 @@ func _on_wave_cleared() -> void:
 	_spawn_current_wave()
 
 func _complete_encounter() -> void:
+	completed = true
 	set_gate_locked(false)
 	if is_top_down:
 		SignalBus.camera_shift_requested.emit(false, target_camera_path, 1.5)
 	encounter_completed.emit()
+
+## T3: the player lost a life mid-fight — despawn the remaining wave silently (no
+## enemy_died, no scrap) and re-arm the trigger so he refights it from wave 1.
+## Completed encounters are untouched.
+func _on_player_respawned() -> void:
+	if completed or not active:
+		return
+	if spawner:
+		spawner.reset()
+	active = false
+	current_wave_index = 0
+	set_gate_locked(false)
+	set_deferred("monitoring", true)
 
 func set_gate_locked(locked: bool) -> void:
 	for gate in gates:

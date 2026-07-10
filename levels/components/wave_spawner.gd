@@ -44,7 +44,23 @@ func spawn_wave(wave_def: WaveDef) -> void:
 		enemy.tree_exited.connect(_on_enemy_defeated.bind(enemy))
 
 func _on_enemy_defeated(enemy: Node) -> void:
-	if enemy in active_enemies:
-		active_enemies.erase(enemy)
+	# Only tracked enemies count toward wave completion — reset() silently frees its
+	# enemies AFTER clearing this list, and those frees must not emit wave_cleared
+	# (which would advance the encounter mid-reset).
+	if enemy not in active_enemies:
+		return
+	active_enemies.erase(enemy)
 	if active_enemies.is_empty():
 		wave_cleared.emit()
+
+## T3: silently despawn every still-alive spawned enemy — no enemy_died, no scrap,
+## no wave_cleared. Used when the player loses a life mid-encounter so the refight
+## starts clean.
+func reset() -> void:
+	var doomed = active_enemies.duplicate()
+	active_enemies.clear()
+	for enemy in doomed:
+		if is_instance_valid(enemy):
+			if enemy.tree_exited.is_connected(_on_enemy_defeated.bind(enemy)):
+				enemy.tree_exited.disconnect(_on_enemy_defeated.bind(enemy))
+			enemy.queue_free()

@@ -119,6 +119,7 @@ func _connect_signals() -> void:
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
 	SignalBus.boss_died.connect(_on_boss_died)
+	SignalBus.boss_reset.connect(_on_boss_reset)
 
 
 func _on_player_hit_landed(damage_info: DamageInfo) -> void:
@@ -200,6 +201,11 @@ func _on_boss_died() -> void:
 		_boss_music_a.stop()
 	if _boss_music_b:
 		_boss_music_b.stop()
+
+## T3: a checkpoint respawn returned the boss to dormant — silence the boss track the
+## same way a kill does (guarded, so an Enforcer reset leaves zone music alone).
+func _on_boss_reset() -> void:
+	_on_boss_died()
 
 # ---------------------------------------------------------------------------
 # Internal helpers

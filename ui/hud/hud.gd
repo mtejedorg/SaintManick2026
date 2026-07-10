@@ -31,6 +31,7 @@ func _ready() -> void:
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
 	SignalBus.boss_died.connect(_on_boss_died)
+	SignalBus.boss_reset.connect(_on_boss_reset)
 	GameManager.scrap_changed.connect(_on_scrap_changed)
 	GameManager.cells_changed.connect(_on_cells_changed)
 	GameManager.cores_changed.connect(_on_cores_changed)
@@ -177,6 +178,11 @@ func _on_boss_health_changed(current: int, maximum: int) -> void:
 	boss_health_bar.value = current
 
 func _on_boss_died() -> void:
+	boss_bar_container.visible = false
+
+## T3: a checkpoint respawn returned the boss to dormant — clear the bar without any
+## victory side effects.
+func _on_boss_reset() -> void:
 	boss_bar_container.visible = false
 
 func _on_scrap_changed(new_amount: int) -> void:

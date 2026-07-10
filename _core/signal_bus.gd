@@ -11,6 +11,9 @@ signal player_shield_changed(new_shield: float, max_shield: float)
 signal player_damaged(damage_info: DamageInfo)
 signal player_died()
 signal player_life_lost(current_lives: int)
+## T3: emitted after a checkpoint respawn (life lost with lives remaining — NOT game over).
+## Bosses reset to dormant, uncleared encounters despawn+re-arm, zone triggers re-arm.
+signal player_respawned()
 signal ability_meter_changed(current: float, max_meter: float)
 
 # --- Combat Events ---
@@ -46,6 +49,10 @@ signal zone_entered(zone_name: String)
 signal boss_spawned(boss_name: String)
 signal boss_health_changed(current: int, maximum: int)
 signal boss_died()
+## T3: a boss returned to dormant because the player lost a life (checkpoint respawn).
+## HUD hides the boss bar; AudioManager stops boss music. Distinct from boss_died so
+## nothing awards/celebrates on a reset.
+signal boss_reset()
 
 # Input actions (jump/dash/roll/attack_light/attack_heavy/ability_ultimate) are now real
 # entries in project.godot's [input] section (M9) with keyboard + gamepad bindings —

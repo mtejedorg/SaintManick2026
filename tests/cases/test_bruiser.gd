@@ -90,11 +90,11 @@ func test_bruiser_hitbox_active_only_on_downbeat_then_recovers() -> void:
 	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.ACTIVE, "Bruiser should become ACTIVE on the downbeat")
 	assert_true(bruiser.hitbox.is_active, "Hitbox should be active only during the ACTIVE step")
 
-	bruiser._on_downbeat("primary", 2) # next downbeat -> recovery, hitbox off
-	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.RECOVERY, "Bruiser should move to RECOVERY after its active downbeat")
+	bruiser._on_beat("primary", 2) # very next beat -> recovery, hitbox off (one-beat active window)
+	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.RECOVERY, "Bruiser should move to RECOVERY on the beat after its active downbeat")
 	assert_false(bruiser.hitbox.is_active, "Hitbox should switch off once recovery starts")
 
-	bruiser._on_beat("primary", 1) # any subsequent beat while in recovery returns to idle
+	bruiser._on_beat("primary", 3) # any subsequent beat while in recovery returns to idle
 	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.IDLE, "Bruiser should return to IDLE after recovery")
 
 	bruiser.queue_free()

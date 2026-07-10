@@ -92,6 +92,15 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		if dist <= stats.melee_range * 1.5:
 			attack_step = AttackStep.TELEGRAPH
 			character_visual.update_rim_color(Color(1.0, 0.0, 0.0))
+	elif attack_step == AttackStep.ACTIVE:
+		# T4: the swing lands ON the downbeat and lasts exactly ONE beat — the very next
+		# primary beat (beat 2) switches the hitbox off. This transition used to live in
+		# _on_downbeat, which left the hitbox live for a full measure (~1.9s @128), i.e.
+		# contact damage with extra steps. (Conductor emits beat before downbeat, so on
+		# the downbeat itself this runs while still TELEGRAPH — no same-beat cancel.)
+		attack_step = AttackStep.RECOVERY
+		hitbox.is_active = false
+		character_visual.update_rim_color(character_visual.get_faction_rim_color())
 	elif attack_step == AttackStep.RECOVERY:
 		attack_step = AttackStep.IDLE
 
@@ -104,10 +113,6 @@ func _on_downbeat(layer: String, _measure_index: int) -> void:
 	if attack_step == AttackStep.TELEGRAPH:
 		attack_step = AttackStep.ACTIVE
 		hitbox.is_active = true
-	elif attack_step == AttackStep.ACTIVE:
-		attack_step = AttackStep.RECOVERY
-		hitbox.is_active = false
-		character_visual.update_rim_color(character_visual.get_faction_rim_color())
 
 func _on_health_changed(_current: float, _max_health: float) -> void:
 	pass

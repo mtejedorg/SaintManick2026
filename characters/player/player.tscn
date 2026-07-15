@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://characters/player/player.gd" id="1_xxx"]
 [ext_resource type="Script" path="res://_core/state_machine/state_machine.gd" id="2_xxx"]
@@ -13,7 +13,6 @@
 [ext_resource type="Script" path="res://_core/components/hurtbox_3d.gd" id="11_xxx"]
 [ext_resource type="PackedScene" path="res://characters/player/nick_visual.tscn" id="12_visual"]
 [ext_resource type="Script" path="res://characters/player/player_animation_controller.gd" id="13_pac"]
-[ext_resource type="PackedScene" path="res://3D_Assets/Props_and_Misc/nick_katana.glb" id="14_katana"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xxx"]
 radius = 0.5
@@ -39,12 +38,6 @@ shape = SubResource("CapsuleShape3D_xxx")
 
 [node name="CharacterVisual" parent="MeshInstance3D" instance=ExtResource("12_visual")]
 faction = 0
-
-[node name="KatanaBoneAttachment" type="BoneAttachment3D" parent="MeshInstance3D/CharacterVisual/NickBody/Skeleton3D"]
-bone_name = "mixamorig_LeftHand"
-
-[node name="NickKatana" parent="MeshInstance3D/CharacterVisual/NickBody/Skeleton3D/KatanaBoneAttachment" instance=ExtResource("14_katana")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="KatanaHitbox" type="Area3D" parent="MeshInstance3D"]
 collision_layer = 512

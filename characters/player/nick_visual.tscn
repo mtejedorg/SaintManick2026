@@ -12,7 +12,7 @@ albedo_texture = ExtResource("4_tex")
 script = ExtResource("1_visual")
 
 [node name="NickBody" parent="." instance=ExtResource("2_body")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)
+transform = Transform3D(2.045, 0, 0, 0, 2.045, 0, 0, 0, 2.045, 0, 0.368, 0)
 
 [node name="Mesh_0" parent="NickBody/Skeleton3D" index="0"]
 surface_material_override/0 = SubResource("StandardMaterial3D_body")

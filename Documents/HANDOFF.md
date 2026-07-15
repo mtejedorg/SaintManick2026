@@ -1,7 +1,7 @@
-# SAINT MANICK — Handoff rev. 5 (machine work COMPLETE — human track remains)
+# SAINT MANICK — Handoff rev. 6 (machine work COMPLETE — human track remains)
 
-**Date:** 2026-07-07
-**State (independently re-verified, not carried from executor reports):** import clean · smoke clean with **zero warnings** · **100/100 tests pass** · working tree clean except one pre-existing dirty binary (`AIConcepts/headliner_brutalizer_tpose.png` — modified before this cycle, owner's call to commit or discard).
+**Date:** 2026-07-11 (rev. 5: 2026-07-07)
+**State (independently re-verified, not carried from executor reports):** import clean · smoke clean with **zero warnings** · **123/123 tests pass** (baseline raised from 100 by the T1–T7 improvement cycle — the ≥100 floor in §1 is now ≥123) · working tree clean (the previously dirty `headliner_brutalizer_tpose.png` was superseded by `_v2` and committed with the mesh-gen output in `f745b39`).
 
 Everything a model can do headlessly is now done, reviewed, and committed. Three executor rounds ran against this handoff lineage:
 1. **Antigravity (Gemini)** — machine-track base M1–M7. Review found 2 critical wrong decisions + 3 half-done tasks (see git history of rev. 4 and `fix(...)` commits `a8cc965`…`8a63907`).
@@ -30,7 +30,7 @@ grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Fai
 # For anything touching models/animation, ALSO grep: "track|bone|skeleton|clip|animation" (case-insensitive)
 ```
 
-Pass = exit 0, zero grep hits, **tests ≥ 100** and never decreasing. Current baseline has a **zero-warning smoke log** — any new warning is a regression.
+Pass = exit 0, zero grep hits, **tests ≥ 123** and never decreasing. Current baseline has a **zero-warning smoke log** — any new warning is a regression.
 
 ---
 
@@ -42,7 +42,16 @@ Pass = exit 0, zero grep hits, **tests ≥ 100** and never decreasing. Current b
 - **Root cause discovered by probing:** `3D_Assets/Characters/Nick/nick_body_v2.glb` has **no skeleton at all** (static posed mesh) — animation was never going to work on it. The rigged source of truth is `Animations/Pro Sword and Shield Pack/nick_body_v2.fbx` (33-bone Mixamo skeleton, `mixamorig_*` underscore convention).
 - `nick_visual.tscn` now instances the rigged FBX, reapplies the original diffuse (`nick_body_v2_0.png`) via `surface_material_override`, and attaches `characters/player/nick_animations.tres` — an AnimationLibrary with exactly the 11 semantic clips (`idle, run, jump, fall, dash, roll, attack_light, attack_heavy, attack_combo, hit_react, death`; loop on idle/run/fall). Mapping table in commit `91f117a`. No dedicated Mixamo dash clip exists — "dash" is a strafe substitute; flag for feel review.
 - `player.tscn`'s `PlayerAnimationController.animation_map` filled 1:1; the long-standing "AnimationPlayer not found" warning is gone; `play("idle")` runs clean in smoke.
-- Katana now hangs off `BoneAttachment3D` on **`mixamorig_LeftHand`** (bone index 10) at identity local transform (`785a51d`). `KatanaHitbox` deliberately untouched (still the fixed Area3D under `MeshInstance3D`) — gameplay hit detection is unchanged by design.
+- Katana attachment (`785a51d`) was **superseded 2026-07-11**: the glb proved degenerate and the body mesh has its own baked-in sword — see H2. `KatanaHitbox` deliberately untouched throughout (still the fixed Area3D under `MeshInstance3D`) — gameplay hit detection unchanged by design.
+
+**Improvement cycle T1–T7 (2026-07-09→11, reviewed and verified):**
+- **T1 dodge economy** (`99f9750`): dash/roll i-frames end at ~60% of duration (vulnerable recovery tail) + dash cooldown; beat-aligned dodges grant an ability-meter bonus and skip the cooldown. Tests: `test_dodge_economy.gd`.
+- **T2 shield hierarchy** (`047f34c`): only Battery Ram / Bass Drop are true shield-breakers (`is_shield_breaker`); generic heavies apply `shield_damage_multiplier = 2.0` with overflow-to-HP instead of insta-popping guards. Tests: `test_shield_hierarchy.gd`.
+- **T3 checkpoint respawn** (`00b310d`): life loss teleports to the last zone trigger via GameManager checkpoint tracking — no full-run reload. Tests: `test_checkpoint_respawn.gd`.
+- **T4 IntensityController** (`6e962a4`): child of Conductor; `target_bpm = 128 + min(active_enemies × 2, 16)`, sampled on primary beats, suspended during boss fights. **Dormancy contract:** scene-placed dormant bosses are excluded via `owner.is_active` / `owner.is_active_boss` — any future dormant enemy must expose one of these or it will inflate the tempo count. Tests: `test_intensity_controller.gd`.
+- **T5 Bruiser window** (`0cc2abf`): swing hitbox deactivates on the next primary *beat* (~0.47 s), not the next downbeat (~1.9 s).
+- **T6 bionic-arm hitbox** (`fe254a4` + `7232e70`): see A1 below.
+- **T7 dead data** (`6e962a4`): unused `damage_multipliers` removed from `ComboDef` and all combo `.tres`.
 
 ---
 
@@ -52,12 +61,16 @@ Pass = exit 0, zero grep hits, **tests ≥ 100** and never decreasing. Current b
 A headless render probe settled the decision without eyes-on-game: `nick_bionic_arm.glb` was **degenerate geometry** (flat untextured ~2.5 m blob floating through Nick's head, frozen while the body animates), so option (b) would have bone-attached garbage. The `NickBionicArm` node is deleted; the rigged body's own right arm carries the look. Mechanically the arm now exists as `BionicArmHitbox` — heavy (B) attacks fire a punch hitbox (x 0.8 offset, 2× cross-section) distinct from the katana's blade (`7232e70`).
 **Still open as option (c), folded into H2:** re-export the character with a proper bionic arm skinned into the body mesh — the visual duality (GDD §2.3) currently reads only through the body mesh's own arm.
 
-### H2 · Nick visual sign-off (editor/eyes) — now with a concrete checklist
-1. Body texture: UVs assumed to match the original static mesh — confirm the diffuse isn't smeared/misaligned.
-2. Katana grip: local transform under `KatanaBoneAttachment` is **identity** — almost certainly needs position/rotation tuning in `player.tscn`.
-3. A1 decision above.
-4. Scale/feet check against the 2 m capsule (visual roots sit at y = −1.0).
-5. Animation feel: clip choices (esp. the strafe-as-dash) and transition snapping — crossfades/blending were NOT implemented, only direct `play()`. If feel demands it, a machine task can add `AnimationPlayer` blend times or an AnimationTree later.
+### H2 · Nick visual sign-off (editor/eyes) — render-probe pass done 2026-07-11; three items resolved
+Machine render probes (evidence PNGs were generated headless; findings independently re-verified):
+1. ~~Body texture UVs~~ **RESOLVED** — diffuse reads correctly (hooded figure, glowing circuit panels), no smearing.
+2. ~~Katana grip~~ **RESOLVED by removal** — `nick_katana.glb` turned out to be degenerate geometry (a flat ~56 m ribbon rendering as a giant glow-plane in-game). The attachment was removed; the rigged body FBX (Mixamo Sword & Shield pack) has its **own sword baked into the skinned mesh**, matched to every animation clip. `KatanaHitbox` untouched.
+3. A1 decision above (resolved earlier).
+4. ~~Scale/feet~~ **RESOLVED** — the rigged body rendered at 0.98 m with feet 0.67 m below the capsule. `nick_visual.tscn` now scales `NickBody` ×2.045 at y +0.368; bone-measured span is exactly −1.0 … +1.0 vs the 2 m capsule.
+5. Animation feel (still human): clip choices (esp. strafe-as-dash) and transition snapping — only direct `play()`, no crossfades.
+6. **NEW (probe findings for the eyes-on pass):**
+   - Nick's accent panels and baked sword glow **magenta**, but canon is cyan Nick / magenta enemies (H5) — decide whether to retint the texture or accept it.
+   - The body mesh has extra baked geometry: a scabbard-like stick at the back shoulder and the sword. Check they read fine in motion.
 
 ### H3 · Enemy models (human + modelgen pipeline)
 Unchanged from rev. 3: generate distinct models per archetype (`/modelgen`, Stage 3B `--style neon --accent`, cyan default/magenta brutes/orange explosives), human approves, machine builds `<name>_visual.tscn` mirroring `nick_visual.tscn` and swaps instances. Capsules: grunts ≈2 m, Enforcer 3 m, Headliner 6 m. **New wrinkle from the round-2 discovery:** if enemies should ever animate, make sure the generated meshes are actually rigged before wiring — probe for a Skeleton3D first (nick's GLB wasn't; assume nothing).

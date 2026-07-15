@@ -10,12 +10,12 @@ Maintained by `artist-3d`. Check this before generating a new mesh — most dupl
 |---|---|---|---|---|
 | `Characters/Nick/NickProto.fbx` | — | `characters/shared/character_visual.tscn` | unverified | unverified |
 | `Characters/Nick/nick_body_v2_0.png` | — | `characters/player/nick_visual.tscn` (texture) | n/a | unverified |
-| `Props_and_Misc/nick_katana.glb` | 8.6 KB | `characters/player/player.tscn` | unverified | unverified |
 
 ## Characters/ — not currently wired (check before assuming stale)
 
 | File | Size | Notes |
 |---|---|---|
+| `Props_and_Misc/nick_katana.glb` | 8.6 KB | **Orphaned 2026-07-11** — render probe found the mesh is degenerate: 172 verts forming a flat ~56 m × 0.85 m × 8.7 m ribbon centered on its origin (p50 vertex distance 19.5 m). In-game it rendered as a giant glow-plane across the zone. The `NickKatana`/`KatanaBoneAttachment` nodes were removed from `player.tscn`; the rigged body FBX (Mixamo Sword & Shield pack) has its **own sword baked into the skinned mesh**, which the animation clips were authored for — that is now the weapon visual. `KatanaHitbox` unaffected (never parented to the visual, by design). |
 | `Characters/Nick/nick_bionic_arm.glb` | 24.6 KB | **Orphaned 2026-07-11** (commit `fe254a4`) — was instanced as a static, unrigged sibling in `nick_visual.tscn`; probe showed the geometry is degenerate (flat, untextured ~2.5m blob detached from the shoulder). Node deleted. Kept on disk pending HANDOFF option (c): a proper bionic arm skinned into the body mesh. The arm's *mechanical* identity now lives in `_core/components/hitbox_3d.gd`-driven `BionicArmHitbox` (commit `7232e70`), independent of this visual. |
 | `Characters/Nick/nick_body.glb` | 13.4 KB | Same name/size as `generated/nick_body.glb` — likely the canonical copy of that pipeline output. Not referenced by any `.tscn` found. |
 | `Characters/Nick/nick_body_v2.glb` | 1.24 MB | Larger revision of `nick_body.glb`. Not referenced directly (only its `_0.png` texture is). Confirm with senior-dev whether the mesh itself is pending integration or the texture-only reference is intentional. |
@@ -60,9 +60,9 @@ Not referenced by any scene. This looks like the raw output trail from multiple 
 | `nick_bionic_arm_comfyui.glb` | 1.9 MB |
 | `nick_katana.glb` | 8.6 KB — duplicate of `Props_and_Misc/nick_katana.glb` |
 | `nick_katana_comfyui.glb` | 918 KB |
-| `headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | Raw mesh-gen output from the refined `AIConcepts/headliner_brutalizer_tpose_v2.png`. Pre-cleanup. |
-| `headliner_brutalizer_rigged.glb` | 19.7 KB | Rigged pass over the raw mesh. |
-| `headliner_brutalizer.glb` | 10.2 KB | Final polished output of this pipeline run. **Not yet wired into any scene** — the Headliner boss scene still references `Characters/Headliner/boss_brutalizer_base.glb`. Confirm with senior-dev/level-designer whether this is meant to replace that base mesh before treating it as spare. |
+| `headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | Raw mesh-gen output from `AIConcepts/headliner_brutalizer_tpose_v2.png`. **Probe 2026-07-11: this is the GOOD one** — 8892 verts, detailed textured mech with glowing accents. Needs scale (normalized ~1 m, lying horizontal) but is sound source material. |
+| `headliner_brutalizer_rigged.glb` | 19.7 KB | Rigged pass (22 bones) — **probe 2026-07-11: geometry destroyed**; decimated to 209 verts, a flat blob. Rig salvageable only as reference. |
+| `headliner_brutalizer.glb` | 10.2 KB | "Polished" output — **probe 2026-07-11: unusable**. Same 209-vert flat blob as `_rigged`, AND the skeleton was stripped (no Skeleton3D). Same failure class as `nick_bionic_arm.glb`. **Do NOT wire this into the Headliner scene.** The pipeline must be re-run from `_raw` with a sane decimation target for a 6 m boss. (Boss scene currently uses no mesh at all — capsule + shared `character_visual.tscn`.) |
 
 ## Root-level
 

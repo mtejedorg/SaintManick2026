@@ -1,0 +1,49 @@
+Saint Manick Source-Available License v1.0
+
+Copyright (c) 2026 Marco Tejedor. All rights reserved.
+
+This repository's contents (source code, assets, art, audio, and documentation —
+the "Software") are made publicly viewable under the following terms.
+
+1. PERMITTED USES
+
+   You are granted a limited, non-exclusive, non-transferable license to:
+
+   a. View, read, and study the Software for educational or evaluation purposes.
+   b. Clone or fork the repository and build/run the Software locally for your
+      own personal, non-commercial entertainment (i.e. to play the game).
+   c. Submit Pull Requests, issues, and patches back to this repository.
+      By submitting a contribution, you grant the copyright holder a perpetual,
+      worldwide, royalty-free, irrevocable license to use, modify, sublicense,
+      and relicense that contribution as part of the Software, with no
+      obligation of attribution, payment, or credit beyond what the copyright
+      holder chooses to give.
+
+2. PROHIBITED USES
+
+   Except with prior written permission from the copyright holder, you may NOT:
+
+   a. Use the Software, in whole or in part, in any other project, product,
+      game, or service — commercial or non-commercial.
+   b. Copy, modify, merge, publish, distribute, sublicense, sell, rent, or
+      create derivative works from the Software outside of contributing back
+      to this repository.
+   c. Use the Software's characters, names, narrative, art style, audio, or
+      other creative assets in any other work.
+   d. Remove or alter this license or any copyright/attribution notices.
+   e. Represent the Software, or any derivative of it, as your own.
+
+3. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+4. TERMINATION
+
+   Any use in violation of this license automatically terminates your rights
+   under it. The copyright holder may grant additional permissions on a
+   case-by-case basis (e.g. a separate commercial license) at their sole
+   discretion.

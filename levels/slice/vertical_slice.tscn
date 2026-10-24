@@ -344,15 +344,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 1.0, -3.5)
 [node name="Runner3" parent="Z2_Enemies" instance=ExtResource("3_runner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 1.0, 0)
 
-[node name="Runner4" parent="Z2_Enemies" unique_id=410000042 instance=ExtResource("3_runner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 1, 0)
-
-[node name="Runner5" parent="Z2_Enemies" unique_id=410000043 instance=ExtResource("3_runner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 1, 0)
-
-[node name="Bruiser1" parent="Z2_Enemies" unique_id=410000044 instance=ExtResource("4_bruiser")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 1, 0)
-
 ; ================= ZONE 3: Security Room (Top-Down) =================
 [node name="Z3_Room" type="Node3D" parent="."]
 

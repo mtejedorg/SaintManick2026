@@ -119,3 +119,28 @@ func test_player_walking_the_zone8_rail_boards_the_elevator() -> void:
 	assert_true(player.global_position.x > 345.0, "The Zone 8 rail must carry Nick to the elevator (x=%.1f)" % player.global_position.x)
 	assert_true(elevator.is_active, "Reaching the end of the Zone 8 rail must start the elevator encounter")
 	slice.free()
+
+# C11: scene-placed enemies must stand on collidable geometry, not hang over a gap and fall forever.
+func test_scene_placed_enemies_stand_on_solid_ground() -> void:
+	var slice := _spawn_slice()
+	var boxes: Array[CSGBox3D] = []
+	for node in slice.find_children("*", "CSGBox3D", true, false):
+		if node.use_collision:
+			boxes.append(node)
+	var checked := 0
+	for group_name in ["Z2_Enemies", "Z7_Enemies", "Z8_Enemies"]:
+		for enemy in slice.get_node(group_name).get_children():
+			checked += 1
+			var p: Vector3 = enemy.global_position
+			var supported := false
+			for box in boxes:
+				var c := box.global_position
+				var h := box.size * 0.5
+				var top := c.y + h.y
+				if absf(p.x - c.x) <= h.x and absf(p.z - c.z) <= h.z and p.y >= top - 0.01 and p.y - top < 3.0:
+					supported = true
+					break
+			assert_true(supported, "%s/%s at %s has no collidable ground beneath it" % [group_name, enemy.name, str(p)])
+	assert_gt(checked, 5, "Expected to check the Zone 2/7/8 scene-placed enemies")
+	assert_eq(slice.get_node("Z2_Enemies").get_child_count(), 3, "Zone 2 is three Runners (VerticalSlice.md)")
+	slice.free()

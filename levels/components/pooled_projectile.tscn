@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://levels/components/pooled_projectile.gd" id="1_proj"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="2_hitbox"]
@@ -9,6 +9,13 @@ radius = 0.4
 [sub_resource type="SphereMesh" id="SphereMesh_proj"]
 radius = 0.4
 height = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bullet"]
+shading_mode = 0
+albedo_color = Color(1, 0, 0.666667, 1)
+emission_enabled = true
+emission = Color(1, 0, 0.666667, 1)
+emission_energy_multiplier = 3.0
 
 [node name="PooledProjectile" type="Area3D"]
 collision_layer = 0
@@ -25,3 +32,4 @@ shape = SubResource("SphereShape3D_proj")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_proj")
+surface_material_override/0 = SubResource("StandardMaterial3D_bullet")

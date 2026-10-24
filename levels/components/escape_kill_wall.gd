@@ -15,11 +15,18 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	SignalBus.beat.connect(_on_beat)
 
+## Starts the chase and arms the damage area (it is authored with monitoring off so it
+## cannot hurt Nick before the escape begins). Deferred: start_moving can be reached from
+## inside a physics callback (the Enforcer's death), where monitoring changes are blocked.
 func start_moving() -> void:
 	is_moving = true
+	set_deferred("monitoring", true)
 
 func stop_moving() -> void:
 	is_moving = false
+	set_deferred("monitoring", false)
+	is_player_inside = false
+	player_health = null
 
 func _physics_process(delta: float) -> void:
 	if is_moving:
@@ -49,3 +56,4 @@ func _deal_damage() -> void:
 		damage_info.amount = damage
 		damage_info.source = self
 		player_health.take_damage(damage_info)
+		SignalBus.camera_shake_requested.emit(0.1, 0.2)

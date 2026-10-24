@@ -747,6 +747,7 @@ end_trigger = NodePath("EscapeEndTrigger")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 275, -4, 0)
 collision_layer = 0
 collision_mask = 2
+monitoring = false
 script = ExtResource("15_kill_wall")
 speed = 3.0
 damage = 15.0

@@ -105,6 +105,9 @@ func _ready() -> void:
 ## state. The Zone10_Trigger (a ZoneTrigger) re-arms itself on the same signal, so
 ## walking back into the arena restarts the fight via activate_boss.
 func _on_player_respawned() -> void:
+	# In-flight bullets would otherwise keep flying through the respawn grace window.
+	if pool:
+		pool.release_all()
 	if not is_active_boss:
 		return
 	if health_component.current_health <= 0.0:

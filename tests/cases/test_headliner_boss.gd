@@ -320,3 +320,27 @@ func test_boss_death_complete_run() -> void:
 	# Clean up
 	gm.is_test = initial_is_test
 	boss.queue_free()
+
+func test_player_respawn_releases_every_in_flight_bullet() -> void:
+	# D10: a respawn mid-bullet-hell must clear the Headliner's live projectiles.
+	var boss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	add_child(boss)
+	boss.activate_boss()
+	var pool: ObjectPool = boss.pool
+	var total: int = pool.get_child_count()
+	var live: Array[Node] = []
+	for i in 5:
+		live.append(pool.acquire())
+	assert_eq(pool.inactive_pool.size(), total - 5, "Precondition: five bullets in flight")
+
+	boss._on_player_respawned()
+
+	assert_eq(pool.inactive_pool.size(), total, "Respawn should release every in-flight bullet")
+	for b in live:
+		assert_false(b.visible, "Released bullets should be hidden")
+		assert_false(b.is_physics_processing(), "Released bullets should stop moving")
+
+	# release_all is idempotent — nothing is double-listed.
+	pool.release_all()
+	assert_eq(pool.inactive_pool.size(), total, "release_all must not duplicate pool entries")
+	boss.queue_free()

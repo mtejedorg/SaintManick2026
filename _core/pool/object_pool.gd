@@ -42,6 +42,14 @@ func acquire() -> Node:
 			
 	return obj
 
+## Returns every live (acquired) object to the pool at once — e.g. clearing in-flight
+## bullets when the player respawns so none hit him during the respawn grace.
+func release_all() -> void:
+	for child in get_children():
+		if child.is_queued_for_deletion() or inactive_pool.has(child):
+			continue
+		release(child)
+
 func release(obj: Node) -> void:
 	if not obj:
 		return

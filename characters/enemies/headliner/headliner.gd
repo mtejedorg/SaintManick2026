@@ -31,6 +31,9 @@ var phase_2_triggered: bool = false
 ## T3: pristine pre-fight material — _on_health_changed overwrites base_material with
 ## phase_2_material at 50% HP, so a respawn reset needs this untouched copy to restore.
 var _pristine_material: StandardMaterial3D
+## Authored scale of the visual (headliner.tscn sets MeshInstance3D to scale 3). The beat
+## pulse and the respawn reset are relative to this, never to Vector3.ONE.
+var _base_scale: Vector3 = Vector3.ONE
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -57,6 +60,7 @@ func _ready() -> void:
 
 	# Setup materials
 	if mesh_instance:
+		_base_scale = mesh_instance.scale
 		base_material = mesh_instance.get_surface_override_material(0)
 		if not base_material:
 			var active_mesh = mesh_instance.mesh
@@ -118,7 +122,7 @@ func _on_player_respawned() -> void:
 		base_material = _pristine_material
 		if mesh_instance:
 			mesh_instance.set_surface_override_material(0, _pristine_material)
-			mesh_instance.scale = Vector3.ONE
+			mesh_instance.scale = _base_scale
 	if Conductor:
 		Conductor.target_bpm = 128.0
 	# Re-open the LeftGate so the player can walk back in.
@@ -186,8 +190,8 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	if phase_2_triggered and mesh_instance:
 		# Pulse albedo/scale on beat
 		var tween = create_tween()
-		tween.tween_property(mesh_instance, "scale", Vector3(1.1, 1.1, 1.1), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(mesh_instance, "scale", Vector3(1.0, 1.0, 1.0), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_property(mesh_instance, "scale", _base_scale * 1.05, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(mesh_instance, "scale", _base_scale, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 	if state_machine:
 		state_machine.handle_beat(layer, beat_index)

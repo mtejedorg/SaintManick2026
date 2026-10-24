@@ -265,6 +265,28 @@ func test_boss_bullet_hell_overheats_after_max_beats() -> void:
 	SignalBus.camera_shift_requested.disconnect(camera_connection)
 	boss.queue_free()
 
+func test_phase_2_beat_pulse_returns_to_authored_scale() -> void:
+	var boss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	add_child(boss)
+	var authored: Vector3 = boss.mesh_instance.scale
+	assert_gt(authored.x, 1.0, "headliner.tscn authors the visual above unit scale")
+
+	boss.activate_boss()
+	boss.phase_2_triggered = true
+	boss._on_beat("primary", 1)
+
+	await get_tree().create_timer(0.05).timeout
+	assert_gt(boss.mesh_instance.scale.x, authored.x * 0.99, "Beat pulse should never shrink the visual below its authored scale")
+	await get_tree().create_timer(0.4).timeout
+	assert_true(boss.mesh_instance.scale.is_equal_approx(authored), "Beat pulse should settle back to the authored scale, got %s" % boss.mesh_instance.scale)
+
+	# Respawn reset restores the authored scale, not Vector3.ONE.
+	boss.mesh_instance.scale = authored * 2.0
+	boss._on_player_respawned()
+	assert_true(boss.mesh_instance.scale.is_equal_approx(authored), "Respawn reset should restore the authored scale")
+
+	boss.queue_free()
+
 func test_boss_death_complete_run() -> void:
 	var boss_scene = load("res://characters/enemies/headliner/headliner.tscn")
 	var boss = boss_scene.instantiate()

@@ -228,3 +228,32 @@ func test_elevator_completion() -> void:
 	elevator.queue_free()
 	platform.queue_free()
 	spawner.queue_free()
+
+# C6: the door telegraphs its slam with a one-beat emission flash.
+func test_door_flashes_one_beat_before_closing() -> void:
+	var door = EscapeDoorHazard.new()
+	door.close_beat_interval = 4
+	var body := CSGBox3D.new()
+	body.name = "DoorBody"
+	var mat := StandardMaterial3D.new()
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.352941, 0.0)
+	mat.emission_energy_multiplier = 2.0
+	body.material = mat
+	door.add_child(body)
+	add_child(door)
+
+	door._on_beat("primary", 1) # counter 1
+	door._on_beat("primary", 2) # counter 2
+	assert_false(door.is_warning, "No flash early in the cycle")
+	door._on_beat("primary", 3) # counter 3 == interval - 1: the pre-close beat
+	assert_true(door.is_warning, "The beat before the slam flashes the door")
+	var live: StandardMaterial3D = body.material
+	assert_eq(live.emission, door.warn_color, "Flash colour is #FF1E5A")
+	assert_almost_eq(live.emission_energy_multiplier, 3.0, 0.001, "Flash energy is x3")
+	assert_eq(mat.emission_energy_multiplier, 2.0, "The shared source material is never mutated")
+	door._on_beat("primary", 4) # counter 0: slam
+	assert_false(door.is_warning, "The flash ends when the door closes")
+	assert_true(door.is_closed, "The door closes right after the flash beat")
+	assert_almost_eq(live.emission_energy_multiplier, 2.0, 0.001, "Glow returns to rest")
+	door.queue_free()

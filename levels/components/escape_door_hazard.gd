@@ -7,6 +7,9 @@ extends Node3D
 @export var close_duration: float = 0.1
 @export var open_duration: float = 0.3
 @export var damage: float = 12.0
+## Pre-close telegraph: the beat before the door slams it flashes this colour (C6).
+@export var warn_color: Color = Color(1.0, 0.117647, 0.352941, 1.0)
+@export var warn_emission_energy: float = 3.0
 
 @onready var door_body: Node3D = get_node_or_null("DoorBody")
 @onready var hitbox: Hitbox3D = get_node_or_null("DoorBody/Hitbox3D")
@@ -15,6 +18,10 @@ var initial_y: float
 var tween: Tween
 var local_beat_counter: int = 0
 var is_closed: bool = false
+var is_warning: bool = false
+var _material: StandardMaterial3D
+var _rest_color: Color
+var _rest_energy: float = 0.0
 
 func _ready() -> void:
 	if not door_body:
@@ -32,6 +39,13 @@ func _ready() -> void:
 
 	initial_y = door_body.position.y
 	hitbox.is_active = false
+
+	# The door's glow material is a shared resource: flash a private copy.
+	if door_body is CSGPrimitive3D and door_body.material is StandardMaterial3D:
+		_material = (door_body.material as StandardMaterial3D).duplicate() as StandardMaterial3D
+		door_body.material = _material
+		_rest_color = _material.emission
+		_rest_energy = _material.emission_energy_multiplier
 	
 	hitbox.collision_layer = 8192
 	hitbox.collision_mask = 1024
@@ -59,6 +73,10 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		
 	local_beat_counter = (local_beat_counter + 1) % close_beat_interval
 	
+	# One beat before the slam: flash the warning colour.
+	if local_beat_counter == (close_beat_interval - 1) % close_beat_interval and not is_closed:
+		_set_warning(true)
+
 	if local_beat_counter == 0:
 		close_door()
 	elif local_beat_counter == closed_duration_beats % close_beat_interval:
@@ -67,6 +85,7 @@ func _on_beat(layer: String, beat_index: int) -> void:
 func close_door() -> void:
 	if tween:
 		tween.kill()
+	_set_warning(false)
 	is_closed = true
 	tween = create_tween()
 	tween.tween_property(door_body, "position:y", initial_y - slide_distance, close_duration)\
@@ -86,3 +105,12 @@ func open_door() -> void:
 	tween.tween_property(door_body, "position:y", initial_y, open_duration)\
 		.set_trans(Tween.TRANS_QUAD)\
 		.set_ease(Tween.EASE_OUT)
+
+## Warning flash on/off (no-op when the door has no StandardMaterial3D to drive).
+func _set_warning(active: bool) -> void:
+	is_warning = active
+	if _material == null:
+		return
+	_material.emission_enabled = true
+	_material.emission = warn_color if active else _rest_color
+	_material.emission_energy_multiplier = warn_emission_energy if active else _rest_energy

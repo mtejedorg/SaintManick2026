@@ -10,8 +10,9 @@ func enter() -> void:
 		is_jumping = true
 	else:
 		is_jumping = false
-	if player and player.animation_controller:
-		player.animation_controller.play("jump" if is_jumping else "fall")
+	var anim := _anim()
+	if anim:
+		anim.play("jump" if is_jumping else "fall")
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)

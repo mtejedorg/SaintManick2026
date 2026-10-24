@@ -105,14 +105,15 @@ func _start_attack(is_heavy: bool) -> void:
 	player.velocity.x = 0
 	player.velocity.z = 0
 
-	if player.animation_controller:
+	var anim_ctrl := _anim()
+	if anim_ctrl:
 		var anim = "attack_light"
 		if is_heavy:
 			anim = "attack_heavy"
 		elif combo_step > 0:
 			anim = "attack_combo"
 		# Fit the clip to this hit's gameplay duration (clips run 1.0-3.5 s, hits 0.3-0.8 s).
-		player.animation_controller.play_fitted(anim, attack_timer)
+		anim_ctrl.play_fitted(anim, attack_timer)
 
 	if not active_hitbox.damage_info:
 		active_hitbox.damage_info = DamageInfo.new()

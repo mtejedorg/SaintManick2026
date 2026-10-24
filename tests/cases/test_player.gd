@@ -167,3 +167,27 @@ func test_play_fitted_stretches_the_clip_to_the_state_duration() -> void:
 	assert_eq(String(ctrl.anim_player.current_animation), "dash")
 	assert_almost_eq(ctrl.anim_player.get_playing_speed(), length / 0.25, 0.01, "Clip speed should fit the 0.25 s dash")
 	player.queue_free()
+
+func test_idle_plays_on_spawn() -> void:
+	# D12: StateIdle.enter() runs from the StateMachine's _ready, before
+	# player.animation_controller is assigned — it must still start the idle clip.
+	var floor_body := StaticBody3D.new()
+	var floor_shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(20.0, 1.0, 20.0)
+	floor_shape.shape = box
+	floor_body.add_child(floor_shape)
+	floor_body.position = Vector3(0.0, -1.5, 5000.0) # top at y=-1 = capsule bottom
+	add_child(floor_body)
+
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	player.position = Vector3(0.0, 0.0, 5000.0)
+	add_child(player)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var anim_player: AnimationPlayer = player.animation_controller.anim_player
+	assert_not_null(anim_player, "Nick's AnimationPlayer should be found")
+	assert_eq(player.state_machine.current_state.name, "StateIdle", "Precondition: Nick is standing idle")
+	assert_eq(String(anim_player.current_animation), "idle", "Nick should play idle on spawn, not sit in the bind pose")
+	player.queue_free()
+	floor_body.queue_free()

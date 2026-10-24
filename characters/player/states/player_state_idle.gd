@@ -3,8 +3,9 @@ extends PlayerState
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
-	if player and player.animation_controller:
-		player.animation_controller.play("idle")
+	var anim := _anim()
+	if anim:
+		anim.play("idle")
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)

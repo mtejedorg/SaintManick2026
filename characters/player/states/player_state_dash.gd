@@ -17,8 +17,9 @@ func enter() -> void:
 	dash_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player and player.is_facing_right else Vector2.LEFT)
 	if player:
 		player.velocity.y = 0
-	if player and player.animation_controller:
-		player.animation_controller.play_fitted("dash", dash_duration)
+	var anim := _anim()
+	if anim:
+		anim.play_fitted("dash", dash_duration)
 	_skip_cooldown = player.try_beat_aligned_dodge_reward() if player else false
 
 func exit() -> void:

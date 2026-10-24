@@ -1,4 +1,4 @@
-[gd_scene load_steps=84 format=3]
+[gd_scene load_steps=85 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -207,6 +207,12 @@ size = Vector3(6, 4, 5)
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("5_sniper"), ExtResource("5_sniper"), ExtResource("5_sniper")])
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_toxic_edge"]
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+emission = Color(0.0980392, 1, 0.352941, 1)
+emission_energy_multiplier = 2.5
+
 [sub_resource type="BoxMesh" id="BoxMesh_killwall"]
 size = Vector3(2, 10, 10)
 
@@ -218,7 +224,7 @@ transparency = 1
 blend_mode = 1
 shading_mode = 0
 cull_mode = 2
-albedo_color = Color(1, 0.117647, 0.352941, 0.6)
+albedo_color = Color(1, 0.117647, 0.352941, 0.45)
 emission_enabled = true
 emission = Color(1, 0.117647, 0.352941, 1)
 emission_energy_multiplier = 3.0
@@ -427,6 +433,12 @@ material = ExtResource("50_floor_wet")
 [node name="ToxicPit" parent="." instance=ExtResource("13_toxic_pit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -2.5, -2)
 pit_size = Vector3(60, 2, 12)
+
+[node name="ToxicPitEdge" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -1.44, 4.06)
+size = Vector3(60, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_toxic_edge")
+cast_shadow = 0
 
 [node name="ToxicPitFloor" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -4.5, -2)
@@ -1559,21 +1571,21 @@ omni_range = 20
 light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
-light_energy = 1.2
+light_energy = 0.6
 omni_range = 16
 
 [node name="Z2_PitLight2" type="OmniLight3D" parent="ZoneLights"]
 light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
-light_energy = 1.2
+light_energy = 0.6
 omni_range = 16
 
 [node name="Z2_PitLight3" type="OmniLight3D" parent="ZoneLights"]
 light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
-light_energy = 1.2
+light_energy = 0.6
 omni_range = 16
 
 [node name="Z2_PistonLight1" type="OmniLight3D" parent="ZoneLights"]

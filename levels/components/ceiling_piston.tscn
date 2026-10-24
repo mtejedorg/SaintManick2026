@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://levels/components/ceiling_piston.gd" id="1_zzzzz"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="2_zzzzz"]
+[ext_resource type="Material" path="res://assets/materials/hazard_orange.tres" id="3_band"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.5, 3.0, 1.5)
@@ -11,12 +12,12 @@ size = Vector3(1.5, 3.0, 1.5)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
 resource_local_to_scene = true
-albedo_color = Color(0.290196, 0.290196, 0.333333, 1)
-metallic = 0.15
-roughness = 0.4
+albedo_color = Color(0.164706, 0.164706, 0.2, 1)
+metallic = 0.3
+roughness = 0.5
 emission_enabled = true
 emission = Color(1, 0.352941, 0, 1)
-emission_energy_multiplier = 0.6
+emission_energy_multiplier = 0.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_damage"]
 size = Vector3(1.6, 1.0, 1.6)
@@ -35,6 +36,12 @@ shape = SubResource("BoxShape3D_body")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="PistonBody"]
 mesh = SubResource("BoxMesh_body")
 surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="GlowBand" type="CSGBox3D" parent="PistonBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)
+size = Vector3(1.56, 0.1, 1.56)
+material = ExtResource("3_band")
+cast_shadow = 0
 
 [node name="Hitbox3D" type="Area3D" parent="PistonBody"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)

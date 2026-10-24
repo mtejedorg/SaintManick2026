@@ -23,6 +23,10 @@ var current_shield: float = 40.0
 
 ## GDD §5.3 "Overshield": Tempo Shield raises max shield by 50% for the run.
 const TEMPO_SHIELD_MULTIPLIER: float = 1.5
+## GDD §5.3 Adrenaline: run-wide movement speed multiplier.
+const ADRENALINE_SPEED_MULTIPLIER: float = 1.2
+## GDD §5.3 Scrap Magnet: scrap pickup multiplier.
+const SCRAP_MAGNET_MULTIPLIER: int = 2
 
 # Run booster modifiers — reset each run in start_new_run()
 var run_speed_multiplier: float = 1.0
@@ -61,18 +65,19 @@ func start_new_run() -> void:
 		max_lives = 3
 		max_shield = 40.0
 
-	# Reset booster modifiers, then apply the equipped run booster on top of the
-	# profile upgrades (before the volatile pools are filled from the maxima).
+	# Reset booster modifiers, then apply every distinct equipped run booster on top of
+	# the profile upgrades (before the volatile pools are filled from the maxima).
 	run_speed_multiplier = 1.0
 	scrap_multiplier = 1
 	if SaveManager and SaveManager.profile:
-		match SaveManager.profile.equipped_run_booster:
-			"Tempo Shield":
-				max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
-			"Adrenaline":
-				run_speed_multiplier = 1.2
-			"Scrap Magnet":
-				scrap_multiplier = 2
+		for booster in SaveManager.profile.get_active_run_boosters():
+			match booster:
+				"Tempo Shield":
+					max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
+				"Adrenaline":
+					run_speed_multiplier = ADRENALINE_SPEED_MULTIPLIER
+				"Scrap Magnet":
+					scrap_multiplier = SCRAP_MAGNET_MULTIPLIER
 
 	scrap = 0
 	cells = 0

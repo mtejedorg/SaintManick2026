@@ -105,3 +105,52 @@ double_jump_unlocked = true
 	SaveManager.profile = null
 	SaveManager.load_profile()
 	assert_eq(SaveManager.profile.scrap, 500, "Migrated scrap should be persisted, not just recovered in-memory")
+
+func test_multiple_run_boosters_persist_through_save_round_trip() -> void:
+	SaveManager.load_profile()
+	SaveManager.profile.booster_slots = 2
+	SaveManager.profile.equipped_run_boosters = ["Tempo Shield", "Scrap Magnet"]
+	SaveManager.save_profile()
+
+	SaveManager.profile = null
+	SaveManager.load_profile()
+
+	assert_eq(SaveManager.profile.booster_slots, 2, "booster_slots should persist")
+	assert_eq(SaveManager.profile.equipped_run_boosters.size(), 2, "Both equipped boosters should persist")
+	assert_eq(SaveManager.profile.equipped_run_boosters[0], "Tempo Shield", "Slot 1 booster should persist")
+	assert_eq(SaveManager.profile.equipped_run_boosters[1], "Scrap Magnet", "Slot 2 booster should persist")
+
+func _write_legacy_booster_fixture(value: String) -> void:
+	var fixture_text := "[gd_resource type=\"Resource\" script_class=\"PlayerProfile\" load_steps=2 format=3]\n\n" \
+		+ "[ext_resource type=\"Script\" path=\"res://_core/persistence/player_profile.gd\" id=\"1_legacy\"]\n\n" \
+		+ "[resource]\nscript = ExtResource(\"1_legacy\")\nscrap = 5\n" \
+		+ "equipped_run_booster = \"%s\"\n" % value
+	var file = FileAccess.open(SaveManager.save_path, FileAccess.WRITE)
+	assert_not_null(file, "Should be able to write legacy booster fixture save")
+	file.store_string(fixture_text)
+	file.close()
+
+func test_legacy_single_run_booster_migrates_to_array() -> void:
+	_write_legacy_booster_fixture("Adrenaline")
+
+	SaveManager.profile = null
+	SaveManager.load_profile()
+
+	assert_eq(SaveManager.profile.equipped_run_boosters.size(), 1, "Legacy booster should migrate into the array")
+	assert_eq(SaveManager.profile.equipped_run_boosters[0], "Adrenaline", "Migrated booster should keep its value")
+	assert_eq(SaveManager.profile.equipped_run_booster, "", "Legacy string should be cleared after migration")
+
+	# Persisted, and migrates only once (no duplicate on the next load).
+	SaveManager.profile = null
+	SaveManager.load_profile()
+	assert_eq(SaveManager.profile.equipped_run_boosters.size(), 1, "Migration should persist and not re-run")
+	assert_eq(SaveManager.profile.equipped_run_booster, "", "Legacy string should stay cleared")
+
+func test_legacy_none_run_booster_is_not_migrated() -> void:
+	_write_legacy_booster_fixture("None")
+
+	SaveManager.profile = null
+	SaveManager.load_profile()
+
+	assert_true(SaveManager.profile.equipped_run_boosters.is_empty(), "Legacy None placeholder should not migrate as a booster")
+	assert_eq(SaveManager.profile.equipped_run_booster, "", "Legacy string should be cleared")

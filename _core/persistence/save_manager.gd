@@ -23,6 +23,7 @@ func load_profile() -> void:
 		return
 
 	_migrate_legacy_persistent_scrap()
+	_migrate_legacy_run_booster()
 	_grant_starter_combos()
 
 ## Ensures the basic combo chains are always present, even on saves created before this
@@ -65,6 +66,18 @@ func _migrate_legacy_persistent_scrap() -> void:
 		return
 
 	profile.scrap = legacy_scrap
+	save_profile()
+
+## One-time migration: the single `equipped_run_booster` string became the multi-slot
+## `equipped_run_boosters` array. Move a legacy value in once (unless the array is already
+## populated or the old shop stored the "None" placeholder), clear the string, persist.
+func _migrate_legacy_run_booster() -> void:
+	var legacy: String = profile.equipped_run_booster
+	if legacy == "":
+		return
+	if profile.equipped_run_boosters.is_empty() and legacy != "None":
+		profile.equipped_run_boosters.append(legacy)
+	profile.equipped_run_booster = ""
 	save_profile()
 
 func save_profile() -> void:

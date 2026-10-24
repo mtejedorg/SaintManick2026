@@ -11,6 +11,7 @@ func before_each() -> void:
 			"cores": p.cores,
 			"unlocked_combos": p.unlocked_combos.duplicate(),
 			"booster_slots": p.booster_slots,
+			"equipped_run_boosters": p.equipped_run_boosters.duplicate(),
 			"double_jump_unlocked": p.double_jump_unlocked,
 			"max_hp_upgrades": p.max_hp_upgrades,
 			"shield_upgrades": p.shield_upgrades,
@@ -19,8 +20,9 @@ func before_each() -> void:
 		p.scrap = 0
 		p.cells = 0
 		p.cores = 0
-		p.unlocked_combos = ["AAA", "AAB"]
+		p.unlocked_combos.assign(["AAA", "AAB"])
 		p.booster_slots = 1
+		p.equipped_run_boosters.clear()
 		p.double_jump_unlocked = false
 		p.max_hp_upgrades = 0
 		p.shield_upgrades = 0
@@ -34,6 +36,7 @@ func after_each() -> void:
 		p.cores = original_profile_state["cores"]
 		p.unlocked_combos = original_profile_state["unlocked_combos"]
 		p.booster_slots = original_profile_state["booster_slots"]
+		p.equipped_run_boosters.assign(original_profile_state["equipped_run_boosters"])
 		p.double_jump_unlocked = original_profile_state["double_jump_unlocked"]
 		p.max_hp_upgrades = original_profile_state["max_hp_upgrades"]
 		p.shield_upgrades = original_profile_state["shield_upgrades"]
@@ -156,4 +159,56 @@ func test_cannot_buy_locked_prerequisite_combo() -> void:
 	assert_eq(SaveManager.profile.cells, 100, "Should not spend cells when prerequisite is unmet")
 	assert_false(SaveManager.profile.unlocked_combos.has("ABB"), "Should not unlock Sweeper without its prerequisite")
 
+	shop.queue_free()
+
+func _booster_shop() -> Node:
+	var shop = load("res://ui/shop/karens_shop.tscn").instantiate()
+	add_child(shop)
+	return shop
+
+func test_single_slot_shop_has_one_booster_button() -> void:
+	var shop = _booster_shop()
+	assert_eq(shop._booster_slot_buttons().size(), 1, "One slot -> only the scene BoosterButton")
+	shop._cycle_booster_slot(0)
+	assert_eq(SaveManager.profile.equipped_run_boosters.size(), 1, "Cycling slot 1 should equip a booster")
+	assert_eq(SaveManager.profile.equipped_run_boosters[0], "Tempo Shield", "First cycle from None should be Tempo Shield")
+	shop._cycle_booster_slot(1) # no second slot -> ignored
+	assert_eq(SaveManager.profile.equipped_run_boosters.size(), 1, "A slot beyond booster_slots should be ignored")
+	shop.queue_free()
+
+func test_two_booster_slots_equip_two_distinct_boosters() -> void:
+	SaveManager.profile.booster_slots = 2
+	var shop = _booster_shop()
+
+	var buttons: Array = shop._booster_slot_buttons()
+	assert_eq(buttons.size(), 2, "Two slots -> BoosterButton + one code-created slot button")
+	assert_eq(buttons[1].get_index(), shop.booster_button.get_index() + 1, "Extra slot button should sit right after BoosterButton")
+
+	shop._cycle_booster_slot(0) # slot 1 -> Tempo Shield
+	shop._cycle_booster_slot(1) # slot 2 -> skips Tempo Shield (taken) -> Adrenaline
+
+	var equipped: Array[String] = SaveManager.profile.equipped_run_boosters
+	assert_eq(equipped.size(), 2, "Both slots should be filled")
+	assert_eq(equipped[0], "Tempo Shield", "Slot 1 should hold Tempo Shield")
+	assert_eq(equipped[1], "Adrenaline", "Slot 2 should skip the duplicate and hold Adrenaline")
+	shop.queue_free()
+
+func test_booster_cycle_rejects_duplicates_and_none_stores_nothing() -> void:
+	SaveManager.profile.booster_slots = 2
+	SaveManager.profile.equipped_run_boosters = ["Adrenaline", "Scrap Magnet"]
+	var shop = _booster_shop()
+
+	# Slot 1: Adrenaline -> (Scrap Magnet taken in slot 2) -> None, which stores nothing.
+	shop._cycle_booster_slot(0)
+	var equipped: Array[String] = SaveManager.profile.equipped_run_boosters
+	assert_eq(equipped.size(), 1, "Cycling to None should remove the entry")
+	assert_eq(equipped[0], "Scrap Magnet", "Remaining booster should be kept")
+	assert_false(equipped.has("None"), "None must never be stored")
+
+	# A stored array with duplicates/overflow is trimmed to distinct boosters <= slots.
+	SaveManager.profile.equipped_run_boosters = ["Tempo Shield", "Tempo Shield", "Adrenaline", "Scrap Magnet"]
+	var active: Array[String] = SaveManager.profile.get_active_run_boosters()
+	assert_eq(active.size(), 2, "Active boosters should be trimmed to booster_slots")
+	assert_eq(active[0], "Tempo Shield")
+	assert_eq(active[1], "Adrenaline", "Duplicate Tempo Shield should be skipped")
 	shop.queue_free()

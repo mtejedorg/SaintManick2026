@@ -32,8 +32,12 @@ const CURRENCY_LABELS = ["Scrap", "Cells", "Cores"]
 @onready var booster_button: Button = $Background/Margin/VBox/BoosterButton
 @onready var start_button: Button = $Background/Margin/VBox/StartRunButton
 
+## Slot 1 is the scene's BoosterButton; slots 2..N are created in code, in order, right
+## after it (see _sync_booster_slot_buttons).
+var _extra_booster_buttons: Array[Button] = []
+
 func _ready() -> void:
-	booster_button.pressed.connect(_on_cycle_booster)
+	booster_button.pressed.connect(_cycle_booster_slot.bind(0))
 	start_button.pressed.connect(_on_start_run)
 	_rebuild_ui()
 
@@ -41,7 +45,8 @@ func _rebuild_ui() -> void:
 	_update_currency_label()
 	_populate_upgrade_list(cumulative_list, CUMULATIVE_UPGRADE_PATHS)
 	_populate_upgrade_list(combo_list, COMBO_UPGRADE_PATHS)
-	_update_booster_button()
+	_sync_booster_slot_buttons()
+	_update_booster_buttons()
 
 func _update_currency_label() -> void:
 	if not (SaveManager and SaveManager.profile):
@@ -175,26 +180,70 @@ func _style_upgrade_button(button: Button) -> void:
 	button.add_theme_color_override("font_color", Color(0, 0.949, 1, 1))
 	button.add_theme_color_override("font_disabled_color", Color(0.4, 0.4, 0.45, 1))
 
-func _update_booster_button() -> void:
+## Mirrors slot 1 (BoosterButton) so extra slots match however the scene styles it.
+func _style_booster_slot_button(button: Button) -> void:
+	button.theme = booster_button.theme
+	button.custom_minimum_size = booster_button.custom_minimum_size
+	button.size_flags_horizontal = booster_button.size_flags_horizontal
+
+## Keeps one extra slot button per booster slot beyond the first.
+func _sync_booster_slot_buttons() -> void:
+	var slots: int = SaveManager.profile.booster_slots if SaveManager and SaveManager.profile else 1
+	var wanted: int = maxi(slots - 1, 0)
+	while _extra_booster_buttons.size() > wanted:
+		var stale: Button = _extra_booster_buttons.pop_back()
+		stale.queue_free()
+	while _extra_booster_buttons.size() < wanted:
+		var button := Button.new()
+		_style_booster_slot_button(button)
+		button.pressed.connect(_cycle_booster_slot.bind(_extra_booster_buttons.size() + 1))
+		var anchor: Button = _extra_booster_buttons.back() if not _extra_booster_buttons.is_empty() else booster_button
+		anchor.add_sibling(button)
+		_extra_booster_buttons.append(button)
+
+func _booster_slot_buttons() -> Array[Button]:
+	var buttons: Array[Button] = [booster_button]
+	buttons.append_array(_extra_booster_buttons)
+	return buttons
+
+func _update_booster_buttons() -> void:
 	if not (SaveManager and SaveManager.profile):
 		return
-	var p = SaveManager.profile
-	booster_button.text = "Equipped Booster: %s  (Slots: %d)" % [
-		(p.equipped_run_booster if p.equipped_run_booster != "" else "None"),
-		p.booster_slots
-	]
+	var p: PlayerProfile = SaveManager.profile
+	var equipped: Array[String] = p.get_active_run_boosters()
+	var buttons := _booster_slot_buttons()
+	for slot in buttons.size():
+		var booster: String = equipped[slot] if slot < equipped.size() else "None"
+		buttons[slot].text = "Booster Slot %d/%d: %s" % [slot + 1, p.booster_slots, booster]
 
-func _on_cycle_booster() -> void:
-	if SaveManager and SaveManager.profile:
-		var p = SaveManager.profile
-		var current = p.equipped_run_booster
-		var idx = BOOSTERS.find(current)
-		if idx == -1:
-			idx = 0
-		var next_idx = (idx + 1) % BOOSTERS.size()
-		p.equipped_run_booster = BOOSTERS[next_idx]
-		SaveManager.save_profile()
-		_update_booster_button()
+## Cycles one slot through None/Tempo Shield/Adrenaline/Scrap Magnet, skipping boosters
+## already equipped in another slot. "None" stores nothing (the array stays compact), and
+## the stored array is always trimmed to booster_slots.
+func _cycle_booster_slot(slot: int) -> void:
+	if not (SaveManager and SaveManager.profile):
+		return
+	var p: PlayerProfile = SaveManager.profile
+	if slot >= p.booster_slots:
+		return
+	var equipped: Array[String] = p.get_active_run_boosters()
+	var current: String = equipped[slot] if slot < equipped.size() else "None"
+	var idx: int = maxi(BOOSTERS.find(current), 0)
+	var next: String = "None"
+	for step in range(1, BOOSTERS.size() + 1):
+		var candidate: String = BOOSTERS[(idx + step) % BOOSTERS.size()]
+		if candidate == "None" or not equipped.has(candidate):
+			next = candidate
+			break
+	if slot < equipped.size():
+		if next == "None":
+			equipped.remove_at(slot)
+		else:
+			equipped[slot] = next
+	elif next != "None":
+		equipped.append(next)
+	p.equipped_run_boosters = equipped
+	SaveManager.save_profile()
+	_update_booster_buttons()
 
 func _on_start_run() -> void:
 	if GameManager:

@@ -6,7 +6,7 @@ var original_shield_upgrades: int
 var original_scrap: int
 var original_cells: int
 var original_cores: int
-var original_booster: String
+var original_boosters: Array[String] = []
 
 func before_each() -> void:
 	# Backup original profile state if it exists
@@ -17,9 +17,9 @@ func before_each() -> void:
 		original_scrap = SaveManager.profile.scrap
 		original_cells = SaveManager.profile.cells
 		original_cores = SaveManager.profile.cores
-		original_booster = SaveManager.profile.equipped_run_booster
-		# Isolate from whatever booster the local save has equipped.
-		SaveManager.profile.equipped_run_booster = ""
+		original_boosters = SaveManager.profile.equipped_run_boosters.duplicate()
+		# Isolate from whatever boosters the local save has equipped.
+		SaveManager.profile.equipped_run_boosters.clear()
 
 	GameManager.is_test = true
 
@@ -32,7 +32,7 @@ func after_each() -> void:
 		SaveManager.profile.scrap = original_scrap
 		SaveManager.profile.cells = original_cells
 		SaveManager.profile.cores = original_cores
-		SaveManager.profile.equipped_run_booster = original_booster
+		SaveManager.profile.equipped_run_boosters = original_boosters
 		SaveManager.save_profile()
 	GameManager.start_new_run() # don't leak booster modifiers into later tests
 
@@ -202,9 +202,33 @@ func test_tempo_shield_booster_is_an_overshield() -> void:
 		return
 
 	SaveManager.profile.shield_upgrades = 0
-	SaveManager.profile.equipped_run_booster = "Tempo Shield"
+	SaveManager.profile.equipped_run_boosters = ["Tempo Shield"]
 
 	GameManager.start_new_run()
 
 	assert_eq(GameManager.max_shield, 60.0, "Tempo Shield should raise max shield by 50% (40 -> 60)")
 	assert_eq(GameManager.current_shield, 60.0, "Run should start with the overshield full")
+
+func test_every_distinct_equipped_booster_applies() -> void:
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	var original_slots: int = SaveManager.profile.booster_slots
+	SaveManager.profile.shield_upgrades = 0
+	SaveManager.profile.booster_slots = 2
+	SaveManager.profile.equipped_run_boosters = ["Tempo Shield", "Scrap Magnet"]
+
+	GameManager.start_new_run()
+
+	assert_eq(GameManager.max_shield, 60.0, "Slot 1 Tempo Shield should apply")
+	assert_eq(GameManager.scrap_multiplier, 2, "Slot 2 Scrap Magnet should apply")
+	assert_eq(GameManager.run_speed_multiplier, 1.0, "Unequipped Adrenaline should not apply")
+
+	# Boosters beyond booster_slots are trimmed, never applied.
+	SaveManager.profile.booster_slots = 1
+	GameManager.start_new_run()
+	assert_eq(GameManager.max_shield, 60.0, "Slot 1 booster still applies with one slot")
+	assert_eq(GameManager.scrap_multiplier, 1, "A booster past booster_slots should not apply")
+
+	SaveManager.profile.booster_slots = original_slots

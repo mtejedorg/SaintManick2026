@@ -137,24 +137,36 @@ func respawn_or_game_over() -> void:
 	SignalBus.player_life_lost.emit(current_lives)
 
 	# Transfer run currencies to persistent profile
-	if SaveManager and SaveManager.profile:
-		SaveManager.profile.scrap += scrap
-		SaveManager.profile.cells += cells
-		SaveManager.profile.cores += cores
-		SaveManager.save_profile()
+	_bank_run_currencies()
 
 	if not is_test:
 		get_tree().change_scene_to_file("res://ui/menus/game_over_screen.tscn")
 
 func complete_run() -> void:
+	_bank_run_currencies()
+
+	if not is_test:
+		get_tree().change_scene_to_file("res://ui/menus/run_results_screen.tscn")
+
+## Pause menu "ABANDON RUN": banks the run's scrap/cells/cores exactly like a game
+## over, then clears the volatile run currencies. Does NOT change scene — the caller does.
+func abandon_run() -> void:
+	_bank_run_currencies()
+	scrap = 0
+	cells = 0
+	cores = 0
+	scrap_changed.emit(scrap)
+	cells_changed.emit(cells)
+	cores_changed.emit(cores)
+
+## Transfers the run's currencies into the persistent profile and saves. Shared by
+## game over, full clear and abandon.
+func _bank_run_currencies() -> void:
 	if SaveManager and SaveManager.profile:
 		SaveManager.profile.scrap += scrap
 		SaveManager.profile.cells += cells
 		SaveManager.profile.cores += cores
 		SaveManager.save_profile()
-
-	if not is_test:
-		get_tree().change_scene_to_file("res://ui/menus/run_results_screen.tscn")
 
 ## Null-safe player lookup — tests run with a dummy current_scene that has no Player,
 ## so every caller must tolerate null.

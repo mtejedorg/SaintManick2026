@@ -232,3 +232,26 @@ func test_every_distinct_equipped_booster_applies() -> void:
 	assert_eq(GameManager.scrap_multiplier, 1, "A booster past booster_slots should not apply")
 
 	SaveManager.profile.booster_slots = original_slots
+
+func test_abandon_run_banks_currencies_and_clears_run_state() -> void:
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	SaveManager.profile.scrap = 10
+	SaveManager.profile.cells = 0
+	SaveManager.profile.cores = 0
+
+	GameManager.start_new_run()
+	GameManager.scrap = 50
+	GameManager.cells = 5
+	GameManager.cores = 1
+
+	GameManager.abandon_run()
+
+	assert_eq(SaveManager.profile.scrap, 60, "Abandon should bank the run's 50 scrap (10 + 50)")
+	assert_eq(SaveManager.profile.cells, 5, "Abandon should bank the run's cells")
+	assert_eq(SaveManager.profile.cores, 1, "Abandon should bank the run's cores")
+	assert_eq(GameManager.scrap, 0, "Run scrap should be cleared after abandoning")
+	assert_eq(GameManager.cells, 0, "Run cells should be cleared after abandoning")
+	assert_eq(GameManager.cores, 0, "Run cores should be cleared after abandoning")

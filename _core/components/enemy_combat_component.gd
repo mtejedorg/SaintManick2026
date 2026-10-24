@@ -39,6 +39,12 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 		
 	if enemy.health_component and enemy.health_component.is_invincible:
 		return
+
+	# Boss-style state shields (Enforcer/Headliner `is_shield_active`) absorb the hit
+	# entirely — no knockback, no stun — unless it breaks the guard/shield. Otherwise
+	# mashing the shield would stun-lock the boss state machine (_on_beat skips while stunned).
+	if enemy.get("is_shield_active") == true and not (damage_info.is_guard_breaking or damage_info.is_shield_breaker):
+		return
 		
 	var has_shield = enemy.get("health_component") and enemy.health_component.current_shield > 0.0
 	if has_shield and not damage_info.is_guard_breaking:

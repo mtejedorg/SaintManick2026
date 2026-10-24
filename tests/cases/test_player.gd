@@ -191,3 +191,11 @@ func test_idle_plays_on_spawn() -> void:
 	assert_eq(String(anim_player.current_animation), "idle", "Nick should play idle on spawn, not sit in the bind pose")
 	player.queue_free()
 	floor_body.queue_free()
+
+func test_nick_faces_right_before_first_move() -> void:
+	# E0: is_facing_right starts true, so the visual must already face +X on spawn —
+	# an attack before the first move must not swing toward the camera (+Z).
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	assert_almost_eq(player.mesh.rotation.y, PI / 2.0, 0.001, "Nick's visual should face right (+X) from spawn")
+	player.queue_free()

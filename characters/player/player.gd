@@ -90,6 +90,9 @@ func _ready() -> void:
 		combo_component.name = "PlayerComboComponent"
 		add_child(combo_component)
 	health_component.is_player = true
+	# Face right from frame 1 (is_facing_right starts true): the visual's authored yaw is 0
+	# (+Z, toward the camera), so an attack before the first move used to swing at the lens.
+	mesh.rotation.y = PI / 2.0
 
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:

@@ -71,6 +71,10 @@ func test_bruiser_telegraphs_one_beat_before_downbeat() -> void:
 
 	assert_eq(bruiser.attack_step, BruiserEnemy.AttackStep.TELEGRAPH, "Bruiser should enter TELEGRAPH one beat before the downbeat")
 	assert_false(bruiser.hitbox.is_active, "Hitbox should still be inactive during telegraph")
+	var visual: CharacterVisual = bruiser.character_visual
+	assert_eq(visual.get_current_rim_color(), CharacterVisual.TELEGRAPH_RIM_COLOR, "Telegraph flashes the rim white-hot")
+	assert_almost_eq(visual.get_current_rim_strength(), CharacterVisual.TELEGRAPH_RIM_STRENGTH, 0.01, "Telegraph rim strength is 6")
+	assert_eq(visual.get_base_rim_color(), CharacterVisual.ENEMY_RIM_COLOR, "The flash returns to the magenta faction rim")
 
 	bruiser.queue_free()
 	player_stub.queue_free()

@@ -6,15 +6,12 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+@onready var character_visual: CharacterVisual = $MeshInstance3D
 @onready var shield_bubble: MeshInstance3D = $ShieldBubble
 @onready var state_machine: EnforcerStateMachine = $StateMachine
 var combat_comp: Node = null
 
 var player: Node3D
-var base_material: StandardMaterial3D
-var telegraph_material: StandardMaterial3D
-var vulnerable_material: StandardMaterial3D
-
 var is_shield_active: bool = false
 var is_vulnerable: bool = false
 ## Scene-placed miniboss: stays dormant (no chase, no boss bar) until the player
@@ -42,28 +39,6 @@ func _ready() -> void:
 	hitbox.damage_info.stun = stats.stun
 	hitbox.damage_info.source = self
 	hitbox.is_active = false
-
-	# Setup materials
-	base_material = mesh_instance.get_surface_override_material(0)
-	if not base_material:
-		var active_mesh = mesh_instance.mesh
-		if active_mesh and active_mesh.material:
-			base_material = active_mesh.material
-	if base_material:
-		base_material = base_material.duplicate()
-	else:
-		base_material = StandardMaterial3D.new()
-	mesh_instance.set_surface_override_material(0, base_material)
-
-	telegraph_material = base_material.duplicate()
-	telegraph_material.albedo_color = Color(1.0, 0.3, 0.0, 1.0)
-	telegraph_material.emission_enabled = true
-	telegraph_material.emission = Color(1.0, 0.3, 0.0, 1.0)
-
-	vulnerable_material = base_material.duplicate()
-	vulnerable_material.albedo_color = Color(0.2, 0.6, 1.0, 1.0)
-	vulnerable_material.emission_enabled = true
-	vulnerable_material.emission = Color(0.1, 0.3, 0.8, 1.0)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 

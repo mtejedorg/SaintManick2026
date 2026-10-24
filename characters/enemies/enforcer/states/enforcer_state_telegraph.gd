@@ -4,12 +4,9 @@ func enter() -> void:
 	enforcer.is_shield_active = false
 	if enforcer.shield_bubble:
 		enforcer.shield_bubble.visible = false
-	enforcer.mesh_instance.set_surface_override_material(0, enforcer.telegraph_material)
+	enforcer.character_visual.flash_telegraph()
 	enforcer.velocity.x = 0
 	enforcer.velocity.z = 0
-
-func exit() -> void:
-	enforcer.mesh_instance.set_surface_override_material(0, enforcer.base_material)
 
 func physics_update(delta: float) -> void:
 	enforcer.apply_gravity(delta)

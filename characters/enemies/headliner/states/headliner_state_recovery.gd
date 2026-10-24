@@ -7,14 +7,14 @@ func enter() -> void:
 	boss.is_vulnerable = true
 	boss.velocity.x = 0
 	boss.velocity.z = 0
-	if boss.mesh_instance:
-		boss.mesh_instance.set_surface_override_material(0, boss.vulnerable_material)
+	if boss.character_visual:
+		boss.character_visual.update_rim_color(CharacterVisual.VULNERABLE_RIM_COLOR)
 	beat_counter = 0
 
 func exit() -> void:
 	boss.is_vulnerable = false
-	if boss.mesh_instance:
-		boss.mesh_instance.set_surface_override_material(0, boss.base_material)
+	if boss.character_visual:
+		boss.character_visual.update_rim_color(boss.get_resting_rim_color())
 	is_from_shield_break = false
 
 func physics_update(delta: float) -> void:

@@ -6,6 +6,7 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var laser_beam: MeshInstance3D = $LaserBeam
 @onready var laser_hitbox: Hitbox3D = $LaserHitbox
+@onready var character_visual: CharacterVisual = $MeshInstance3D
 var combat_comp: Node = null
 
 var player: Node3D
@@ -85,6 +86,8 @@ func _on_beat(layer: String, beat_index: int) -> void:
 			laser_material.albedo_color.a = 0.3
 		4:
 			is_aim_locked = true
+			# Lock = one beat before the shot: the shared white-hot telegraph.
+			character_visual.flash_telegraph()
 			laser_beam.scale = Vector3(0.15, 0.15, 1.0)
 			laser_material.albedo_color.a = 0.6
 		1:

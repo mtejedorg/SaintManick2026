@@ -6,11 +6,10 @@ extends CharacterBody3D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+@onready var character_visual: CharacterVisual = $MeshInstance3D
 var combat_comp: Node = null
 
 var player: Node3D
-var base_material: StandardMaterial3D
-var telegraph_material: StandardMaterial3D
 var attack_step: int = 0 # 0 = idle, 1 = telegraph, 2 = active, 3 = recovery
 ## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
 ## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
@@ -37,23 +36,6 @@ func _ready() -> void:
 	hitbox.damage_info.stun = stats.stun
 	hitbox.damage_info.source = self
 	hitbox.is_active = false
-
-	# Setup materials
-	base_material = mesh_instance.get_surface_override_material(0)
-	if not base_material:
-		var active_mesh = mesh_instance.mesh
-		if active_mesh and active_mesh.material:
-			base_material = active_mesh.material
-	if base_material:
-		base_material = base_material.duplicate()
-	else:
-		base_material = StandardMaterial3D.new()
-	mesh_instance.set_surface_override_material(0, base_material)
-
-	telegraph_material = base_material.duplicate()
-	telegraph_material.albedo_color = Color(1.0, 0.0, 0.0, 1.0)
-	telegraph_material.emission_enabled = true
-	telegraph_material.emission = Color(1.0, 0.0, 0.0, 1.0)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 	SignalBus.beat.connect(_on_beat)
@@ -109,7 +91,6 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	elif attack_step == 2:
 		attack_step = 3
 		hitbox.is_active = false
-		mesh_instance.set_surface_override_material(0, base_material)
 	elif attack_step == 3:
 		attack_step = 0
 		
@@ -117,7 +98,8 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		var dist = global_position.distance_to(player.global_position)
 		if dist <= 2.5:
 			attack_step = 1
-			mesh_instance.set_surface_override_material(0, telegraph_material)
+			# White-hot rim for the telegraph beat; it fades back on its own.
+			character_visual.flash_telegraph()
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.

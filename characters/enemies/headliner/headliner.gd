@@ -8,6 +8,7 @@ extends CharacterBody3D
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var hurtbox: Hurtbox3D = $Hurtbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+@onready var character_visual: CharacterVisual = $MeshInstance3D
 @onready var shield_bubble: MeshInstance3D = $ShieldBubble
 @onready var state_machine: HeadlinerStateMachine = $StateMachine
 @onready var emitter: ProjectileEmitter = $ProjectileEmitter
@@ -18,19 +19,13 @@ extends CharacterBody3D
 var combat_comp: Node = null
 var player: Node3D
 
-var base_material: StandardMaterial3D
-var telegraph_material: StandardMaterial3D
-var vulnerable_material: StandardMaterial3D
-var phase_2_material: StandardMaterial3D
-
 var is_active_boss: bool = false
 var is_shield_active: bool = false
 var is_vulnerable: bool = false
 var speed_multiplier: float = 1.0
 var phase_2_triggered: bool = false
-## T3: pristine pre-fight material — _on_health_changed overwrites base_material with
-## phase_2_material at 50% HP, so a respawn reset needs this untouched copy to restore.
-var _pristine_material: StandardMaterial3D
+## Phase 2 swaps the resting rim to magenta (phase 1 rests at the authored amber).
+const PHASE_2_RIM_COLOR := CharacterVisual.ENEMY_RIM_COLOR
 ## Authored scale of the visual (headliner.tscn sets MeshInstance3D to scale 3). The beat
 ## pulse and the respawn reset are relative to this, never to Vector3.ONE.
 var _base_scale: Vector3 = Vector3.ONE
@@ -58,35 +53,8 @@ func _ready() -> void:
 		hitbox.damage_info.source = self
 		hitbox.is_active = false
 
-	# Setup materials
 	if mesh_instance:
 		_base_scale = mesh_instance.scale
-		base_material = mesh_instance.get_surface_override_material(0)
-		if not base_material:
-			var active_mesh = mesh_instance.mesh
-			if active_mesh and active_mesh.material:
-				base_material = active_mesh.material
-		if base_material:
-			base_material = base_material.duplicate()
-		else:
-			base_material = StandardMaterial3D.new()
-		mesh_instance.set_surface_override_material(0, base_material)
-		_pristine_material = base_material
-
-		telegraph_material = base_material.duplicate()
-		telegraph_material.albedo_color = Color(1.0, 0.3, 0.0, 1.0)
-		telegraph_material.emission_enabled = true
-		telegraph_material.emission = Color(1.0, 0.3, 0.0, 1.0)
-
-		vulnerable_material = base_material.duplicate()
-		vulnerable_material.albedo_color = Color(0.2, 0.6, 1.0, 1.0)
-		vulnerable_material.emission_enabled = true
-		vulnerable_material.emission = Color(0.1, 0.3, 0.8, 1.0)
-
-		phase_2_material = base_material.duplicate()
-		phase_2_material.albedo_color = Color(1.0, 0.0, 1.0, 1.0)
-		phase_2_material.emission_enabled = true
-		phase_2_material.emission = Color(0.8, 0.0, 0.8, 1.0)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 	if not player:
@@ -120,12 +88,11 @@ func _on_player_respawned() -> void:
 	speed_multiplier = 1.0
 	if combat_comp:
 		combat_comp.stun_timer = 0.0
-	# Restore the pre-phase-2 look (phase 2 permanently swapped base_material).
-	if _pristine_material:
-		base_material = _pristine_material
-		if mesh_instance:
-			mesh_instance.set_surface_override_material(0, _pristine_material)
-			mesh_instance.scale = _base_scale
+	# Restore the pre-phase-2 look (phase 2 swapped the resting rim).
+	if character_visual:
+		character_visual.update_rim_color(character_visual.get_default_rim_color())
+	if mesh_instance:
+		mesh_instance.scale = _base_scale
 	if Conductor:
 		Conductor.target_bpm = 128.0
 	# Re-open the LeftGate so the player can walk back in.
@@ -139,6 +106,12 @@ func _on_player_respawned() -> void:
 		state_machine.transition_to("StateDormant")
 	is_active_boss = false
 	SignalBus.boss_reset.emit()
+
+## The rim the boss rests at in its current phase (vulnerable windows return here).
+func get_resting_rim_color() -> Color:
+	if phase_2_triggered:
+		return PHASE_2_RIM_COLOR
+	return character_visual.get_default_rim_color() if character_visual else CharacterVisual.ENEMY_RIM_COLOR
 
 func _announce_boss() -> void:
 	SignalBus.boss_spawned.emit("Headliner")
@@ -203,9 +176,8 @@ func _on_health_changed(current: float, max_health: float) -> void:
 	SignalBus.boss_health_changed.emit(int(current), int(max_health))
 	if current <= stats.max_health * 0.5 and not phase_2_triggered:
 		phase_2_triggered = true
-		base_material = phase_2_material
-		if mesh_instance:
-			mesh_instance.set_surface_override_material(0, phase_2_material)
+		if character_visual:
+			character_visual.update_rim_color(PHASE_2_RIM_COLOR)
 		if Conductor:
 			Conductor.target_bpm = 160.0
 		if state_machine:

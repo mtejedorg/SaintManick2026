@@ -7,12 +7,12 @@ func enter() -> void:
 	enforcer.is_vulnerable = true
 	enforcer.velocity.x = 0
 	enforcer.velocity.z = 0
-	enforcer.mesh_instance.set_surface_override_material(0, enforcer.vulnerable_material)
+	enforcer.character_visual.update_rim_color(CharacterVisual.VULNERABLE_RIM_COLOR)
 	beat_counter = 0
 
 func exit() -> void:
 	enforcer.is_vulnerable = false
-	enforcer.mesh_instance.set_surface_override_material(0, enforcer.base_material)
+	enforcer.character_visual.update_rim_color(enforcer.character_visual.get_default_rim_color())
 	is_from_shield_break = false
 
 func physics_update(delta: float) -> void:

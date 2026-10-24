@@ -4,14 +4,10 @@ func enter() -> void:
 	boss.is_shield_active = false
 	if boss.shield_bubble:
 		boss.shield_bubble.visible = false
-	if boss.mesh_instance:
-		boss.mesh_instance.set_surface_override_material(0, boss.telegraph_material)
+	if boss.character_visual:
+		boss.character_visual.flash_telegraph()
 	boss.velocity.x = 0
 	boss.velocity.z = 0
-
-func exit() -> void:
-	if boss.mesh_instance:
-		boss.mesh_instance.set_surface_override_material(0, boss.base_material)
 
 func physics_update(delta: float) -> void:
 	boss.apply_gravity(delta)

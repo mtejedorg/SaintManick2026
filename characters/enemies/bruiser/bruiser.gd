@@ -3,7 +3,7 @@ extends CharacterBody3D
 
 ## Beat-synced attack step, ported from Runner's attack_step pattern (runner.gd _on_beat)
 ## but gated to downbeats only, per GDD §4.1: "They only attack on the heavy downbeats."
-## 0 = idle/chase, 1 = telegraph (one beat before the downbeat, red rim), 2 = active
+## 0 = idle/chase, 1 = telegraph (one beat before the downbeat, white-hot rim), 2 = active
 ## (hitbox live on the downbeat), 3 = recovery (hitbox off, cooling down).
 enum AttackStep { IDLE, TELEGRAPH, ACTIVE, RECOVERY }
 
@@ -105,7 +105,7 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		var dist = global_position.distance_to(player.global_position) if player else INF
 		if dist <= stats.melee_range * 1.5:
 			attack_step = AttackStep.TELEGRAPH
-			character_visual.update_rim_color(Color(1.0, 0.0, 0.0))
+			character_visual.flash_telegraph()
 	elif attack_step == AttackStep.ACTIVE:
 		# T4: the swing lands ON the downbeat and lasts exactly ONE beat — the very next
 		# primary beat (beat 2) switches the hitbox off. This transition used to live in
@@ -114,7 +114,6 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		# the downbeat itself this runs while still TELEGRAPH — no same-beat cancel.)
 		attack_step = AttackStep.RECOVERY
 		hitbox.is_active = false
-		character_visual.update_rim_color(character_visual.get_faction_rim_color())
 	elif attack_step == AttackStep.RECOVERY:
 		attack_step = AttackStep.IDLE
 

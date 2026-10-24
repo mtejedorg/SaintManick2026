@@ -103,3 +103,29 @@ func test_bomb_grid_only_runs_during_its_live_encounter() -> void:
 	enc.completed = true
 	grid._on_downbeat("primary", 2)
 	assert_eq(indicators_visible.call(), 0, "A cleared encounter silences the grid")
+
+# C4: geometry/readability defects.
+func test_zone4_vista_is_not_hidden_by_a_background_wall() -> void:
+	assert_null(_slice.get_node_or_null("Z4_Catwalk/BackgroundWall"), "BackgroundWall hid the Central Tower and must stay deleted")
+	var towers := _slice.get_node("Z4_BackgroundTowers")
+	var bg := 0
+	for n in towers.get_children():
+		if n.name.begins_with("BgTower") and not n.name.contains("Strip"):
+			bg += 1
+			assert_false((n as CSGBox3D).use_collision, "Background towers are scenery: no collision")
+	assert_eq(bg, 6, "Six background towers frame the skyline")
+
+func test_zone10_near_wall_is_a_low_holo_rail_the_camera_can_see_over() -> void:
+	var rail := _box("Zone10_Dock/NearWall")
+	assert_almost_eq(rail.size.y, 0.6, 0.001, "The near wall is a 0.6 m rail")
+	assert_true(rail.use_collision, "...that still collides")
+
+func test_falling_hazard_warning_mesh_is_wired() -> void:
+	var fall: EscapeFallingHazard = _slice.get_node("EscapeFallingHazard")
+	assert_not_null(fall.warning_mesh, "warning_mesh must be assigned so the telegraph is visible")
+	assert_eq(fall.warning_mesh.name, &"Warning")
+
+func test_escape_kill_wall_has_a_visible_body() -> void:
+	var wall := _slice.get_node("EscapeSequence/EscapeKillWall")
+	var meshes := wall.find_children("*", "MeshInstance3D", false, false)
+	assert_eq(meshes.size(), 2, "Glow body + white-hot core")

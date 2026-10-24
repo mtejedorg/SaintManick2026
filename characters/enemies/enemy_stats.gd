@@ -1,6 +1,11 @@
 class_name EnemyStats
 extends Resource
 
+## Grunts that fall below this Y are out of the world (lowest slice floor ~ -4.5, the
+## player's own fall kill sits at -15). They despawn silently — no scrap, no enemy_died —
+## and a WaveSpawner's tree_exited tracking counts them as cleared.
+const KILL_PLANE_Y: float = -20.0
+
 @export var max_health: float = 30.0
 @export var damage: float = 8.0
 @export var speed: float = 3.0
@@ -9,6 +14,10 @@ extends Resource
 @export var stun: float = 0.5
 ## Distance at which the enemy stops chasing and can melee.
 @export var melee_range: float = 1.8
+## Scene-placed grunts stay dormant (no chase, no telegraph, not counted by the
+## IntensityController) until the player comes within this distance — checked once per
+## primary beat. Wave-spawned grunts are activated by their WaveSpawner.
+@export var aggro_range: float = 22.0
 ## Starting shield (hyper-armor while > 0; only guard-breaking hits get through). 0 = no shield.
 @export var shield: float = 0.0
 ## Rare Scrap ("cells" in code, GDD §5.1) awarded on this enemy's death. 0 = doesn't drop any

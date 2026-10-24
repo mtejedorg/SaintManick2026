@@ -17,6 +17,9 @@ var combat_comp: Node = null
 
 var player: Node3D
 var attack_step: int = AttackStep.IDLE
+## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
+## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
+var is_active: bool = false
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -49,11 +52,17 @@ func _ready() -> void:
 	SignalBus.downbeat.connect(_on_downbeat)
 
 func _physics_process(delta: float) -> void:
+	if _check_kill_plane():
+		return
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 
 	if not combat_comp.is_stunned():
-		if player and is_on_floor():
+		if not is_active:
+			# Dormant: stand still, no chase.
+			velocity.x = move_toward(velocity.x, 0, 20 * delta)
+			velocity.z = move_toward(velocity.z, 0, 20 * delta)
+		elif player and is_on_floor():
 			if attack_step == AttackStep.IDLE:
 				var dist = global_position.distance_to(player.global_position)
 				if dist > stats.melee_range:
@@ -83,6 +92,11 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	tween.tween_property(mesh_instance, "scale", Vector3(1.1, 1.1, 1.1), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(mesh_instance, "scale", Vector3(1.0, 1.0, 1.0), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
+	# Dormant grunts keep the heartbeat pulse but never telegraph.
+	_update_aggro()
+	if not is_active:
+		return
+
 	var layer_data = Conductor.layers.get(layer)
 	var bpm_count = layer_data.beats_per_measure if layer_data else 4
 
@@ -107,12 +121,29 @@ func _on_beat(layer: String, beat_index: int) -> void:
 func _on_downbeat(layer: String, _measure_index: int) -> void:
 	if layer != "primary":
 		return
+	if not is_active:
+		return
 	if combat_comp.is_stunned():
 		return
 
 	if attack_step == AttackStep.TELEGRAPH:
 		attack_step = AttackStep.ACTIVE
 		hitbox.is_active = true
+
+## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
+## for good.
+func _update_aggro() -> void:
+	if is_active or not player or not is_instance_valid(player):
+		return
+	if global_position.distance_to(player.global_position) <= stats.aggro_range:
+		is_active = true
+
+## Out of the world -> despawn silently (no scrap, no enemy_died). Returns true if freed.
+func _check_kill_plane() -> bool:
+	if global_position.y < EnemyStats.KILL_PLANE_Y:
+		queue_free()
+		return true
+	return false
 
 func _on_health_changed(_current: float, _max_health: float) -> void:
 	pass

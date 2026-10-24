@@ -12,6 +12,9 @@ var player: Node3D
 var base_material: StandardMaterial3D
 var telegraph_material: StandardMaterial3D
 var attack_step: int = 0 # 0 = idle, 1 = telegraph, 2 = active, 3 = recovery
+## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
+## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
+var is_active: bool = false
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -56,11 +59,17 @@ func _ready() -> void:
 	SignalBus.beat.connect(_on_beat)
 
 func _physics_process(delta: float) -> void:
+	if _check_kill_plane():
+		return
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 		
 	if not combat_comp.is_stunned():
-		if player and is_on_floor():
+		if not is_active:
+			# Dormant: stand still, no chase.
+			velocity.x = move_toward(velocity.x, 0, 20 * delta)
+			velocity.z = move_toward(velocity.z, 0, 20 * delta)
+		elif player and is_on_floor():
 			if attack_step == 0:
 				var dist = global_position.distance_to(player.global_position)
 				if dist > 1.5:
@@ -82,6 +91,9 @@ func _physics_process(delta: float) -> void:
 
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":
+		return
+	_update_aggro()
+	if not is_active:
 		return
 	if combat_comp.is_stunned():
 		return
@@ -106,6 +118,21 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		if dist <= 2.5:
 			attack_step = 1
 			mesh_instance.set_surface_override_material(0, telegraph_material)
+
+## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
+## for good.
+func _update_aggro() -> void:
+	if is_active or not player or not is_instance_valid(player):
+		return
+	if global_position.distance_to(player.global_position) <= stats.aggro_range:
+		is_active = true
+
+## Out of the world -> despawn silently (no scrap, no enemy_died). Returns true if freed.
+func _check_kill_plane() -> bool:
+	if global_position.y < EnemyStats.KILL_PLANE_Y:
+		queue_free()
+		return true
+	return false
 
 func _on_health_changed(_current: float, _max_health: float) -> void:
 	pass

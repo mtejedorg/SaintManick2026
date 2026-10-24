@@ -247,6 +247,28 @@ func test_combo_caps_at_50_and_fires_capped_signal_once() -> void:
 	SignalBus.combo_capped.disconnect(on_capped)
 	player.queue_free()
 
+func test_capped_combo_survives_a_landed_attack() -> void:
+	# D5 regression: once capped, a hit that lands must still count as a hit for the
+	# whiff check — otherwise the capped combo drops to 0 at the end of the next attack.
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var combo_comp = player.combo_component
+	if not SignalBus.player_hit_landed.is_connected(combo_comp._on_player_hit_landed):
+		SignalBus.player_hit_landed.connect(combo_comp._on_player_hit_landed)
+	var damage_info = DamageInfo.new()
+	damage_info.source = player
+
+	for i in range(combo_comp.MAX_COMBO):
+		SignalBus.player_hit_landed.emit(damage_info)
+	assert_eq(combo_comp.combo_count, 50, "Precondition: combo capped at 50")
+
+	combo_comp.on_attack_started()
+	SignalBus.player_hit_landed.emit(damage_info)
+	combo_comp.on_attack_ended()
+	assert_eq(combo_comp.combo_count, 50, "A landed hit while capped must not read as a whiff")
+
+	player.queue_free()
+
 func test_player_combo_routes() -> void:
 	var player = load("res://characters/player/player.tscn").instantiate()
 	add_child(player)

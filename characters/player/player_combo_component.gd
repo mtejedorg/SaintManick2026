@@ -23,8 +23,10 @@ func _process(delta: float) -> void:
 func _on_player_hit_landed(_damage_info: DamageInfo) -> void:
 	if combo_count >= MAX_COMBO:
 		# Already capped — keep the timer alive but don't re-fire the celebration signal
-		# on every subsequent hit.
+		# on every subsequent hit. Still a landed hit: without this, the next
+		# on_attack_ended() reads the capped attack as a whiff and drops the combo to 0.
 		combo_timer = combo_timeout
+		has_hit_this_attack = true
 		return
 	combo_count += 1
 	combo_timer = combo_timeout

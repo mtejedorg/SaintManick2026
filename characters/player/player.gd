@@ -258,7 +258,8 @@ func apply_gravity(delta: float) -> void:
 		can_double_jump = double_jump_unlocked
 
 func get_movement_input() -> Vector2:
-	var x := Input.get_axis("ui_left", "ui_right")
+	# The real gameplay actions (A/D, arrows, D-pad, left stick) — not the ui_* menu ones.
+	var x := Input.get_axis("move_left", "move_right")
 	# GDD §3.1: while plane-locked to a Path3D (side-scroll), up/down do nothing — they
 	# must not flip facing or enter StateRun while Nick stands still.
 	if current_path != null:

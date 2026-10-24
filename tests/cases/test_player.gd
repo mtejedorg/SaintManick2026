@@ -210,3 +210,14 @@ func test_nick_rim_is_cyan_at_strength_3_5() -> void:
 	for sm in visual.skinned_meshes:
 		assert_null(sm.material_override, "Nick keeps his textured materials (WHITE tint)")
 	player.queue_free()
+
+func test_move_left_action_drives_movement_x() -> void:
+	# F1: horizontal movement reads move_left/move_right (A/D, arrows, D-pad, stick).
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	player.current_path = null
+	Input.action_press("move_left")
+	var dir: Vector2 = player.get_movement_input()
+	Input.action_release("move_left")
+	assert_almost_eq(dir.x, -1.0, 0.001, "move_left should drive x = -1")
+	player.queue_free()

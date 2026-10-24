@@ -18,7 +18,7 @@ func enter() -> void:
 	if player:
 		player.velocity.y = 0
 	if player and player.animation_controller:
-		player.animation_controller.play("dash")
+		player.animation_controller.play_fitted("dash", dash_duration)
 	_skip_cooldown = player.try_beat_aligned_dodge_reward() if player else false
 
 func exit() -> void:

@@ -21,7 +21,7 @@ func enter() -> void:
 	roll_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)
 	player.face_direction(roll_direction.x if roll_direction.x != 0 else roll_direction.y)
 	if player.animation_controller:
-		player.animation_controller.play("roll")
+		player.animation_controller.play_fitted("roll", roll_iframe_duration + roll_recovery_duration)
 	if player.health_component:
 		player.health_component.is_invincible = true
 	_skip_cooldown = player.try_beat_aligned_dodge_reward()

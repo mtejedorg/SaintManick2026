@@ -137,3 +137,33 @@ func test_new_rail_is_eased_onto_not_snapped() -> void:
 
 	player.queue_free()
 	rail.queue_free()
+
+func test_stale_play_once_does_not_override_a_later_clip_with_idle() -> void:
+	# D11: a play_once whose clip was superseded by play("run") must not fall back to idle
+	# when some later non-looping clip finishes.
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var ctrl := player.animation_controller
+	assert_not_null(ctrl.anim_player, "Nick's AnimationPlayer should be found")
+	assert_eq(ctrl.anim_player.playback_default_blend_time, ctrl.blend_time, "Default blend time should be applied")
+
+	ctrl.play_once("hit_react")
+	ctrl.play("run")
+	ctrl.anim_player.animation_finished.emit(&"hit_react")
+	assert_eq(String(ctrl.anim_player.current_animation), "run", "A stale play_once must not switch to idle")
+
+	# A play_once that is still current DOES fall back to idle.
+	ctrl.play_once("hit_react")
+	ctrl.anim_player.animation_finished.emit(&"hit_react")
+	assert_eq(String(ctrl.anim_player.current_animation), "idle", "A current play_once should fall back to idle")
+	player.queue_free()
+
+func test_play_fitted_stretches_the_clip_to_the_state_duration() -> void:
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var ctrl := player.animation_controller
+	var length: float = ctrl.anim_player.get_animation("dash").length
+	ctrl.play_fitted("dash", 0.25)
+	assert_eq(String(ctrl.anim_player.current_animation), "dash")
+	assert_almost_eq(ctrl.anim_player.get_playing_speed(), length / 0.25, 0.01, "Clip speed should fit the 0.25 s dash")
+	player.queue_free()

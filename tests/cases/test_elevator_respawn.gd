@@ -8,6 +8,8 @@ var elevator: ElevatorEncounter
 var platform: AnimatableBody3D
 var spawner: WaveSpawner
 var trigger: Area3D
+var exit_path: Path3D
+var player_stub: Node3D
 
 func before_each() -> void:
 	platform = AnimatableBody3D.new()
@@ -20,6 +22,11 @@ func before_each() -> void:
 	elevator.spawner = spawner
 	elevator.entry_trigger = trigger
 	elevator.target_y = 14.5
+	exit_path = Path3D.new()
+	elevator.exit_path = exit_path
+	player_stub = Node3D.new()
+	player_stub.name = "PlayerStub"
+	player_stub.add_to_group("player")
 	var wave := WaveDef.new()
 	var node := Node3D.new()
 	var scene := PackedScene.new()
@@ -33,10 +40,15 @@ func before_each() -> void:
 	add_child(spawner)
 	add_child(trigger)
 	add_child(elevator)
+	add_child(exit_path)
+	add_child(player_stub)
+	GameManager.has_checkpoint = false
+	GameManager.checkpoint_path = null
+	GameManager.checkpoint_top_down = true
 
 func after_each() -> void:
 	super.after_each()
-	for n in [elevator, platform, spawner, trigger]:
+	for n in [elevator, platform, spawner, trigger, exit_path, player_stub]:
 		if is_instance_valid(n):
 			n.free()
 
@@ -74,3 +86,17 @@ func test_respawn_before_boarding_does_nothing() -> void:
 	SignalBus.player_respawned.emit()
 	assert_false(elevator.is_active)
 	assert_eq(platform.position.y, -4.5)
+
+# G3: dying between the elevator's arrival and the Zone 10 trigger used to respawn Nick at
+# the Zone 9 checkpoint at the base, under a platform that is parked at the top for good.
+func test_completed_elevator_checkpoints_nick_dock_side_on_the_exit_rail() -> void:
+	elevator.start_encounter()
+	platform.position.y = elevator.target_y
+	elevator.current_wave_index = elevator.waves.size()
+	player_stub.global_position = Vector3(350.0, 15.0, 0.0)
+	elevator._physics_process(0.016)
+	assert_true(elevator.completed, "Precondition: arrival with every wave beaten completes the elevator")
+	assert_true(GameManager.has_checkpoint, "Elevator completion should store a checkpoint")
+	assert_eq(GameManager.checkpoint_path, elevator.exit_path, "The checkpoint rail should be the elevator's exit rail")
+	assert_false(GameManager.checkpoint_top_down, "The dock checkpoint is side-scroll")
+	assert_eq(GameManager.checkpoint_position, Vector3(350.0, 15.0, 0.0), "The checkpoint is where Nick stands on the arrived platform")

@@ -15,6 +15,9 @@ var active: bool = false
 ## T3: set once all waves are beaten. A completed encounter NEVER resets on respawn —
 ## dead enemies stay dead (kills the death-farming loop where reloads re-dropped scrap).
 var completed: bool = false
+## Bumped on every activation and every respawn reset: a deferred wave spawn scheduled
+## under an older generation is stale (a respawn reset landed in the same frame) and no-ops.
+var _generation: int = 0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -32,6 +35,7 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	if body is PlayerController:
 		active = true
+		_generation += 1
 		# Disable detection so it doesn't trigger again
 		set_deferred("monitoring", false)
 
@@ -49,9 +53,11 @@ func _on_body_entered(body: Node3D) -> void:
 		# Start spawning waves. Deferred: this runs inside the Area3D body_entered
 		# callback, where add_child()/monitorable changes are blocked by the physics server.
 		current_wave_index = 0
-		_spawn_current_wave.call_deferred()
+		_spawn_current_wave.bind(_generation).call_deferred()
 
-func _spawn_current_wave() -> void:
+func _spawn_current_wave(generation: int = -1) -> void:
+	if (generation != -1 and generation != _generation) or not active or completed:
+		return
 	if current_wave_index < waves.size():
 		if spawner:
 			spawner.spawn_wave(waves[current_wave_index])
@@ -66,7 +72,7 @@ func _on_wave_cleared() -> void:
 	current_wave_index += 1
 	# Deferred: wave_cleared fires from the last enemy's tree_exited, i.e. while the
 	# spawner is mid remove_child() — add_child() of the next wave would fail ("busy").
-	_spawn_current_wave.call_deferred()
+	_spawn_current_wave.bind(_generation).call_deferred()
 
 func _complete_encounter() -> void:
 	completed = true
@@ -79,6 +85,7 @@ func _complete_encounter() -> void:
 ## enemy_died, no scrap) and re-arm the trigger so he refights it from wave 1.
 ## Completed encounters are untouched.
 func _on_player_respawned() -> void:
+	_generation += 1
 	if completed or not active:
 		return
 	if spawner:

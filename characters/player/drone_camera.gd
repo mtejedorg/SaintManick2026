@@ -59,6 +59,21 @@ func snap_to_mode(top_down: bool) -> void:
 	else:
 		state_machine._on_transition_requested(mode)
 
+## True while the camera FSM is tweening between modes.
+func is_shifting() -> bool:
+	var transitioning_state = state_machine.states.get("transitioning")
+	return transitioning_state != null and state_machine.current_state == transitioning_state
+
+## Where the in-flight shift is heading (top_down, path). Only meaningful while is_shifting().
+## Top-down is always free movement, so its path is null whatever was requested.
+func shift_destination() -> Dictionary:
+	var transitioning_state = state_machine.states.get("transitioning")
+	if transitioning_state == null:
+		return {"top_down": false, "path": null}
+	var top_down: bool = transitioning_state.target_top_down
+	var path: Path3D = null if top_down else transitioning_state.target_path
+	return {"top_down": top_down, "path": path}
+
 func _on_camera_shift_requested(top_down: bool, target_path: Path3D, transition_time: float) -> void:
 	var transitioning_state = state_machine.states.get("transitioning")
 	if transitioning_state:

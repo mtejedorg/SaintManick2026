@@ -126,6 +126,8 @@ var combo_component: Node = null
 var _rest_rim_key: String = ""
 
 func _ready() -> void:
+	# Lookup handle for systems outside the slice root (e.g. ElevatorEncounter's checkpoint).
+	add_to_group("player")
 	var sm = get_node_or_null("/root/SaveManager")
 	if sm and sm.profile:
 		double_jump_unlocked = sm.profile.double_jump_unlocked

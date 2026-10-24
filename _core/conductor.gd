@@ -59,6 +59,10 @@ func _process(delta: float) -> void:
 				layer.measure_index += 1
 				SignalBus.downbeat.emit(layer_name, layer.measure_index)
 
+## The tempo the world rests at between set pieces (the authored starting bpm).
+func get_resting_bpm() -> float:
+	return _resting_bpm
+
 ## A new run must not inherit the previous run's tempo (e.g. a game over in the
 ## Headliner's 160 BPM phase 2) or its beat/measure counters.
 func _on_run_started() -> void:

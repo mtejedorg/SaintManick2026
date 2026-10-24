@@ -414,3 +414,32 @@ func test_left_gate_visual_shows_only_while_sealed() -> void:
 	boss._on_player_respawned()
 	assert_false(gate_visual.visible, "LeftGate/Visual hides again when the respawn reset re-opens the gate")
 	arena.queue_free()
+
+# G5: the reset and death paths used to hard-code 128 BPM instead of the Conductor's
+# resting tempo. A non-default resting tempo proves neither path still hard-codes it.
+func test_reset_and_death_return_to_the_conductors_resting_tempo() -> void:
+	var saved_resting: float = Conductor._resting_bpm
+	var saved_bpm: float = Conductor.bpm
+	var saved_target: float = Conductor.target_bpm
+	Conductor._resting_bpm = 140.0
+
+	var boss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	add_child(boss)
+	boss.activate_boss()
+	Conductor.target_bpm = 160.0 # phase 2 tempo
+	boss._on_player_respawned()
+	assert_eq(Conductor.target_bpm, Conductor.get_resting_bpm(), "The respawn reset should return to the resting tempo")
+
+	boss.activate_boss()
+	Conductor.target_bpm = 160.0
+	var gm = get_node("/root/GameManager")
+	var initial_is_test = gm.is_test
+	gm.is_test = true
+	boss._on_died()
+	assert_eq(Conductor.target_bpm, Conductor.get_resting_bpm(), "Death should return to the resting tempo")
+
+	gm.is_test = initial_is_test
+	Conductor._resting_bpm = saved_resting
+	Conductor.bpm = saved_bpm
+	Conductor.target_bpm = saved_target
+	boss.queue_free()

@@ -104,7 +104,7 @@ func _on_player_respawned() -> void:
 	if mesh_instance:
 		mesh_instance.scale = _base_scale
 	if Conductor:
-		Conductor.target_bpm = 128.0
+		Conductor.target_bpm = Conductor.get_resting_bpm()
 	# Re-open the LeftGate so the player can walk back in.
 	var gate = get_parent().get_node_or_null("LeftGate")
 	if gate:
@@ -206,6 +206,6 @@ func _on_died() -> void:
 	# Data Cores (GDD §5.1/§4.2): "Defeating one drops a Data Core" — district bosses only.
 	GameManager.add_cores(1)
 	if Conductor:
-		Conductor.target_bpm = 128.0
+		Conductor.target_bpm = Conductor.get_resting_bpm()
 	if state_machine:
 		state_machine.transition_to("StateDead")

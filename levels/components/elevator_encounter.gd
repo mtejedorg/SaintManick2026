@@ -27,6 +27,9 @@ var completed: bool = false
 var _start_y: float = 0.0
 var is_cooldown: bool = false
 var cooldown_timer: float = 0.0
+## Bumped on every respawn: a deferred start_encounter scheduled under an older generation
+## is stale (a respawn reset landed in the same frame) and no-ops.
+var _generation: int = 0
 
 func _ready() -> void:
 	if platform:
@@ -41,6 +44,7 @@ func _ready() -> void:
 ## the bottom and re-arm the entry trigger so he can board and fight it again from wave 1.
 ## A completed elevator is left alone.
 func _on_player_respawned() -> void:
+	_generation += 1
 	if completed or not is_active:
 		return
 	if spawner:
@@ -63,9 +67,14 @@ func _on_entry_trigger_entered(body: Node3D) -> void:
 		SignalBus.camera_shift_requested.emit(false, target_path, 1.5)
 		
 		# Start encounter (deferred: spawning inside the body_entered callback is blocked)
-		start_encounter.call_deferred()
+		start_encounter.bind(_generation).call_deferred()
 
-func start_encounter() -> void:
+func start_encounter(generation: int = -1) -> void:
+	if generation != -1 and generation != _generation:
+		# Stale: Nick respawned before the deferred start ran -- stay idle, re-arm boarding.
+		if entry_trigger:
+			entry_trigger.set_deferred("monitoring", true)
+		return
 	is_active = true
 	completed = false
 	is_cooldown = false
@@ -117,6 +126,11 @@ func _check_completion() -> void:
 	if reached_top and all_waves_done:
 		is_active = false
 		completed = true
+		# The completed elevator never resets, so the Zone 9 checkpoint (at the base) would
+		# respawn Nick below a parked platform: checkpoint him dock-side, on the exit rail.
+		var player := get_tree().get_first_node_in_group("player") as Node3D
+		if player:
+			GameManager.set_checkpoint(player.global_position, exit_path, false)
 		if cells_reward > 0:
 			GameManager.add_cells(cells_reward)
 		if exit_path:

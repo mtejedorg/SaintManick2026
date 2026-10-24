@@ -67,9 +67,12 @@ func test_slice_at_load_rests_at_base_tempo() -> void:
 	for area in slice.find_children("*", "Area3D", false, true):
 		if area.get_parent() == slice and not (area is Hitbox3D) and not (area is Hurtbox3D):
 			area.set_deferred("monitoring", false)
+	var grunt_count := 0
 	for grunt in slice.find_children("*", "CharacterBody3D", true, false):
 		if "is_active" in grunt and "player" in grunt:
+			grunt_count += 1
 			grunt.player = player # _ready resolved current_scene/Player — the suite's dummy scene
+	assert_gt(grunt_count, 0, "The slice must contain scene-placed grunts for this test to mean anything")
 
 	# Two primary beats so the IntensityController re-evaluates with grunts' aggro checks done.
 	var beats = [0]

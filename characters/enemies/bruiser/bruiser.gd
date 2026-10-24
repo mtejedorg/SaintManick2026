@@ -22,8 +22,9 @@ const FACING_MIN_SPEED := 0.1
 
 var player: Node3D
 var attack_step: int = AttackStep.IDLE
-## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
-## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
+## Dormant until the player enters stats.aggro_range (checked per primary beat) (a
+## WaveSpawner only places it; the aggro check wakes it). IntensityController treats
+## is_active == false as dormant.
 var is_active: bool = false
 ## Authored visual scale (bruiser.tscn sizes the shared visual to its 2.2 m capsule). The
 ## beat pulse is relative to this, never to Vector3.ONE.

@@ -191,3 +191,40 @@ func test_respawn_restores_sidescroll_rail_jump_and_camera_mode() -> void:
 	player.free() # immediate — see name-clash note in test_checkpoint_updates_on_zone_entered
 	cam.free()
 	rail.free()
+
+func test_checkpoint_captured_mid_camera_shift_records_the_destination_mode() -> void:
+	# G2: the rail is only assigned when the shift tween lands (1.5 s). Leaving Zone 6
+	# during the shift used to store Zone 7 as top-down with a null rail.
+	var rail := Path3D.new()
+	rail.name = "Rail"
+	rail.curve = Curve3D.new()
+	rail.curve.add_point(Vector3(-50.0, 0.0, 0.0))
+	rail.curve.add_point(Vector3(50.0, 0.0, 0.0))
+	get_tree().current_scene.add_child(rail)
+
+	var player = load("res://characters/player/player.tscn").instantiate()
+	player.name = "Player"
+	get_tree().current_scene.add_child(player)
+	player.current_path = null # top-down plaza fight: free movement
+	player.global_position = Vector3(10.0, 0.0, 0.0)
+
+	var cam: DroneCamera = load("res://characters/player/drone_camera.tscn").instantiate()
+	cam.name = "DroneCamera"
+	get_tree().current_scene.add_child(cam)
+	cam.target = player
+	cam.state_machine._on_transition_requested("TopDown")
+
+	GameManager.start_new_run()
+	SignalBus.camera_shift_requested.emit(false, rail, 1.5)
+	await get_tree().process_frame # the tween is still in flight
+	assert_true(cam.is_shifting(), "Precondition: the camera shift is still in flight")
+	assert_null(player.current_path, "Precondition: the rail is not assigned until the tween lands")
+
+	SignalBus.zone_entered.emit("SECTOR 07 — ENFORCER")
+
+	assert_false(GameManager.checkpoint_top_down, "A checkpoint taken mid-shift must record the destination (side-scroll) mode")
+	assert_eq(GameManager.checkpoint_path, rail, "A checkpoint taken mid-shift must record the destination rail")
+
+	player.free() # immediate -- see name-clash note in test_checkpoint_updates_on_zone_entered
+	cam.free()
+	rail.free()

@@ -1339,7 +1339,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 14)
 
 ; ================= ZONE 7: Mini-Boss Arena (2.5D) =================
 [node name="Z7_Trigger" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, -4, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 245, -4, 0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("22_zone_trigger")

@@ -251,6 +251,14 @@ func _restore_checkpoint_mode(player: Node) -> void:
 	if "is_jump_enabled" in player:
 		player.is_jump_enabled = not checkpoint_top_down
 
+## Stores a checkpoint that is not a zone entry (e.g. the Zone 9 elevator arriving at the
+## dock). Leaves checkpoint_zone, _zones_seen and zones_cleared untouched.
+func set_checkpoint(position: Vector3, path: Path3D, top_down: bool) -> void:
+	checkpoint_position = position
+	checkpoint_path = path
+	checkpoint_top_down = top_down
+	has_checkpoint = true
+
 func _find_drone_camera() -> DroneCamera:
 	if not get_tree() or not get_tree().current_scene:
 		return null
@@ -273,8 +281,16 @@ func _on_zone_entered(zone_name: String) -> void:
 		checkpoint_zone = zone_name
 		checkpoint_position = player.global_position
 		if "current_path" in player:
-			checkpoint_path = player.current_path
-			checkpoint_top_down = player.current_path == null
+			# Mid camera shift the rail is only assigned when the tween lands, so the
+			# player's current_path is still the OLD mode -- record where the shift is heading.
+			var cam := _find_drone_camera()
+			if cam and cam.is_shifting():
+				var dest: Dictionary = cam.shift_destination()
+				checkpoint_top_down = dest.top_down
+				checkpoint_path = dest.path
+			else:
+				checkpoint_path = player.current_path
+				checkpoint_top_down = player.current_path == null
 		has_checkpoint = true
 	if _zones_seen.has(zone_name):
 		return

@@ -21,14 +21,38 @@ signal encounter_completed
 
 var current_wave_index: int = 0
 var is_active: bool = false
+## Set once the elevator has arrived and every wave is beaten. A completed elevator never
+## resets on respawn (dead enemies stay dead, no scrap re-farming).
+var completed: bool = false
+var _start_y: float = 0.0
 var is_cooldown: bool = false
 var cooldown_timer: float = 0.0
 
 func _ready() -> void:
+	if platform:
+		_start_y = platform.position.y
 	if spawner:
 		spawner.wave_cleared.connect(_on_wave_cleared)
 	if entry_trigger:
 		entry_trigger.body_entered.connect(_on_entry_trigger_entered)
+	SignalBus.player_respawned.connect(_on_player_respawned)
+
+## The player lost a life mid-ride: despawn the wave silently, drop the platform back to
+## the bottom and re-arm the entry trigger so he can board and fight it again from wave 1.
+## A completed elevator is left alone.
+func _on_player_respawned() -> void:
+	if completed or not is_active:
+		return
+	if spawner:
+		spawner.reset()
+	if platform:
+		platform.position.y = _start_y
+	current_wave_index = 0
+	is_cooldown = false
+	cooldown_timer = 0.0
+	is_active = false
+	if entry_trigger:
+		entry_trigger.set_deferred("monitoring", true)
 
 func _on_entry_trigger_entered(body: Node3D) -> void:
 	if body is PlayerController and not is_active:
@@ -43,6 +67,7 @@ func _on_entry_trigger_entered(body: Node3D) -> void:
 
 func start_encounter() -> void:
 	is_active = true
+	completed = false
 	is_cooldown = false
 	current_wave_index = 0
 	_spawn_current_wave()
@@ -91,6 +116,7 @@ func _check_completion() -> void:
 	
 	if reached_top and all_waves_done:
 		is_active = false
+		completed = true
 		if cells_reward > 0:
 			GameManager.add_cells(cells_reward)
 		if exit_path:

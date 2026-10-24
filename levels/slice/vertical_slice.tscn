@@ -147,7 +147,7 @@ size = Vector3(8, 1, 6)
 size = Vector3(2, 4, 4)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gate"]
-size = Vector3(1, 4, 8)
+size = Vector3(1, 4, 14)
 
 [sub_resource type="Curve3D" id="Curve3D_z10"]
 _data = {
@@ -309,6 +309,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, -0.5, 0)
 use_collision = true
 size = Vector3(5, 1, 5)
 
+[node name="Platform7" type="CSGBox3D" parent="Z2_Platforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 92.5, -0.5, 0)
+use_collision = true
+size = Vector3(5, 1, 5)
+
 [node name="ToxicPit" parent="." instance=ExtResource("13_toxic_pit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, -2.5, -2)
 
@@ -404,7 +409,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 8)
 [node name="SpawnPoint4" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
 
-[node name="BombGrid" parent="." instance=ExtResource("12_bomb_grid")]
+[node name="BombGrid" parent="." node_paths=PackedStringArray("encounter") instance=ExtResource("12_bomb_grid")]
+encounter = NodePath("../Z3_Encounter")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 0, 0)
 
 ; ================= ZONE 4: Catwalk & Vista (2.5D) =================
@@ -482,7 +488,7 @@ use_collision = false
 size = Vector3(50, 20, 0.5)
 
 [node name="Z4_Encounter" parent="." unique_id=410000015 node_paths=PackedStringArray("spawner") instance=ExtResource("10_encounter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 122.5, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 135, 0, 0)
 zone_name = "SECTOR 04 — SCAFFOLDING"
 waves = Array[ExtResource("8_wave_def")]([SubResource("Resource_z4_w1"), SubResource("Resource_z4_w2"), SubResource("Resource_z4_w3")])
 spawner = NodePath("Z4_Spawner")
@@ -491,7 +497,7 @@ spawner = NodePath("Z4_Spawner")
 shape = SubResource("BoxShape3D_z4_trig")
 
 [node name="Z4_Spawner" parent="Z4_Encounter" unique_id=410000017 instance=ExtResource("9_spawner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
 
 [node name="SpawnPoint4" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000018]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -2)
@@ -617,14 +623,24 @@ size = Vector3(1, 5, 30)
 material = SubResource("StandardMaterial3D_hologram")
 
 [node name="CoverPillar1" type="CSGBox3D" parent="Z6_Plaza" unique_id=410000045]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 220, -4, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 219, -2.5, -6)
 use_collision = true
-size = Vector3(0.5, 1.5, 0.5)
+size = Vector3(1.5, 3, 1.5)
 
 [node name="CoverPillar2" type="CSGBox3D" parent="Z6_Plaza" unique_id=410000046]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 230, -4, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 231, -2.5, -6)
 use_collision = true
-size = Vector3(0.5, 1.5, 0.5)
+size = Vector3(1.5, 3, 1.5)
+
+[node name="CoverPillar3" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 219, -2.5, 6)
+use_collision = true
+size = Vector3(1.5, 3, 1.5)
+
+[node name="CoverPillar4" type="CSGBox3D" parent="Z6_Plaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 231, -2.5, 6)
+use_collision = true
+size = Vector3(1.5, 3, 1.5)
 
 [node name="Z6_Encounter" parent="." node_paths=PackedStringArray("spawner", "target_camera_path", "gates") instance=ExtResource("10_encounter")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -4, 0)
@@ -698,9 +714,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 237, -3, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 245, -3, 0)
 
 [node name="Z7_Barrier" type="CSGBox3D" parent="." unique_id=410000051]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 250, -3.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 250, -1.0, 0)
 use_collision = true
-size = Vector3(0.5, 2, 4)
+size = Vector3(0.5, 7, 4)
 
 [node name="RhythmEnforcer" parent="." instance=ExtResource("6_enforcer")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)
@@ -761,7 +777,7 @@ collision_mask = 2
 shape = SubResource("BoxShape3D_escape_end")
 
 [node name="EscapeDoorHazard" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, 1, 0)
 script = ExtResource("16_door_hazard")
 close_beat_interval = 4
 closed_duration_beats = 2
@@ -785,7 +801,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 310, 6, 0)
 script = ExtResource("17_falling_hazard")
 beat_interval = 8
 telegraph_beats = 2
-fall_distance = 6.0
+fall_distance = 9.0
 damage = 15.0
 
 [node name="HazardBody" type="CSGBox3D" parent="EscapeFallingHazard"]
@@ -900,7 +916,7 @@ size = Vector3(25, 4, 0.5)
 [node name="RightWall" type="CSGBox3D" parent="Zone10_Dock"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 2.5, 0)
 use_collision = true
-size = Vector3(0.5, 4, 8)
+size = Vector3(0.5, 4, 14)
 
 [node name="Pillar1" type="CSGBox3D" parent="Zone10_Dock" unique_id=410000055]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.75, 3)
@@ -920,7 +936,7 @@ shape = SubResource("BoxShape3D_gate")
 disabled = true
 
 [node name="Visual" type="CSGBox3D" parent="LeftGate"]
-size = Vector3(0.5, 4, 8)
+size = Vector3(0.5, 4, 14)
 
 [node name="Path_Z10" type="Path3D" parent="."]
 curve = SubResource("Curve3D_z10")

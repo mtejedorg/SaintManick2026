@@ -107,9 +107,18 @@ func test_respawn_or_game_over_flow() -> void:
 	GameManager.respawn_or_game_over()
 	assert_eq(GameManager.current_lives, 1, "Lives should decrement to 1")
 	
-	# Trigger third respawn (dies, triggers game over)
+	# GDD §5: "permadeath only when HP hits 0 with 0 lives remaining" — three lives mean
+	# three respawns. The third death spends the last life but still respawns...
 	GameManager.respawn_or_game_over()
-	assert_eq(GameManager.current_lives, 0, "Lives should decrement to 0 on game over")
+	assert_eq(GameManager.current_lives, 0, "Third death spends the last life")
+	assert_eq(GameManager.current_hp, 120.0, "Third death still respawns with a full HP refill")
+	assert_eq(SaveManager.profile.scrap, 10, "No banking yet — the run is still alive on 0 lives")
+	assert_false(GameManager.run_ended, "The run must not end while Nick respawned on his last life")
+	
+	# ...and only the fourth death (0 lives remaining) is game over.
+	GameManager.respawn_or_game_over()
+	assert_eq(GameManager.current_lives, 0, "Lives stay at 0 on game over")
+	assert_true(GameManager.run_ended, "Fourth death with 0 lives remaining is game over")
 	assert_eq(SaveManager.profile.scrap, 25, "Run scrap (15) should transfer to persistent scrap (10 + 15 = 25) on game over")
 
 func test_enemies_and_zones_tracking() -> void:
@@ -190,7 +199,8 @@ func test_cells_and_cores_transfer_on_game_over_too() -> void:
 
 	GameManager.respawn_or_game_over() # lives 3 -> 2
 	GameManager.respawn_or_game_over() # lives 2 -> 1
-	GameManager.respawn_or_game_over() # lives 1 -> 0, game over, transfers to profile
+	GameManager.respawn_or_game_over() # lives 1 -> 0, still respawns (GDD §5)
+	GameManager.respawn_or_game_over() # 0 lives remaining -> game over, transfers to profile
 
 	assert_eq(SaveManager.profile.cells, 15, "Cells should transfer to profile on game over, not just full clear")
 	assert_eq(SaveManager.profile.cores, 1, "Cores should transfer to profile on game over, not just full clear")

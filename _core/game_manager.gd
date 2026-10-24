@@ -134,21 +134,22 @@ func spend_scrap(amount: int) -> bool:
 			return true
 	return false
 
+## GDD §5: "HP reaching 0 costs a life; permadeath only when HP hits 0 with 0 lives
+## remaining." N lives = N respawns — the death that finds current_lives == 0 is game over.
 func respawn_or_game_over() -> void:
 	if current_lives > 0:
 		current_lives -= 1
 		# Refill volatile HP/shield for the respawn
 		current_hp = max_hp
 		current_shield = max_shield
-		if current_lives > 0:
-			lives_changed.emit(current_lives)
-			SignalBus.player_life_lost.emit(current_lives)
-			# T3: checkpoint respawn instead of a full scene reload. Cleared encounters
-			# stay cleared (dead enemies never respawn — no death-farming); uncleared
-			# fights and activated bosses reset via player_respawned listeners.
-			_respawn_at_checkpoint()
-			SignalBus.player_respawned.emit()
-			return
+		lives_changed.emit(current_lives)
+		SignalBus.player_life_lost.emit(current_lives)
+		# T3: checkpoint respawn instead of a full scene reload. Cleared encounters
+		# stay cleared (dead enemies never respawn — no death-farming); uncleared
+		# fights and activated bosses reset via player_respawned listeners.
+		_respawn_at_checkpoint()
+		SignalBus.player_respawned.emit()
+		return
 
 	# No lives left – game over (single emission for the terminal state)
 	if run_ended:

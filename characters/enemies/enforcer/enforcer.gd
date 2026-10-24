@@ -124,4 +124,10 @@ func _on_died() -> void:
 	SignalBus.enemy_died.emit(global_position)
 	SignalBus.miniboss_defeated.emit()
 	SignalBus.boss_died.emit()
-	queue_free()
+	# F3: flash + shrink, then free (rewards and signals above stay immediate).
+	if shield_bubble:
+		shield_bubble.visible = false
+	if combat_comp:
+		combat_comp.play_death_and_free(character_visual)
+	else:
+		queue_free()

@@ -30,6 +30,12 @@ const TELEGRAPH_RIM_STRENGTH := 6.0
 ## Vulnerable window (post-attack recovery / shield break).
 const VULNERABLE_RIM_COLOR := Color(0.2, 0.6, 1.0, 1.0)
 
+## Death presentation (F3): white-hot rim while the body shrinks away.
+const DEATH_RIM_STRENGTH := 6.0
+## Shrink target as a fraction of the authored scale — a true zero basis is singular
+## (rotation/inverse queries on it error out), and 0.1 % is invisible.
+const DEATH_SCALE_FRACTION := 0.001
+
 const DARK_BASE_ALBEDO := Color(0.05, 0.05, 0.08, 1.0)
 const DARK_BASE_TINT_WEIGHT := 0.18
 const DARK_BASE_ROUGHNESS := 0.55
@@ -204,6 +210,22 @@ func lean_forward(degrees: float, seconds: float) -> void:
 	_lean_tween.tween_property(pivot, "rotation:x", leaned, seconds * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_lean_tween.tween_interval(seconds * 0.5)
 	_lean_tween.tween_property(pivot, "rotation:x", _pivot_base_rotation.x, seconds * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+## F3: shared enemy death — white-hot rim and a shrink of the Pivot (or the root when the
+## model has none) to nothing over `seconds`. Returns the shrink tween (null outside the
+## tree) so the owner can queue_free when it finishes.
+func play_death(seconds: float = 0.25) -> Tween:
+	_kill_rim_tween()
+	_set_rim(Color.WHITE, DEATH_RIM_STRENGTH)
+	if not is_inside_tree():
+		return null
+	for t: Tween in [_pulse_tween, _lean_tween, _hover_tween]:
+		if t and t.is_valid():
+			t.kill()
+	var target: Node3D = pivot if pivot else self
+	var death_tween := create_tween()
+	death_tween.tween_property(target, "scale", target.scale * DEATH_SCALE_FRACTION, seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	return death_tween
 
 ## Returns the default rim colour for this character's faction.
 func get_faction_rim_color() -> Color:

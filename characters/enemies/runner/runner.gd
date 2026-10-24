@@ -143,5 +143,9 @@ func _on_health_changed(_current: float, _max_health: float) -> void:
 func _on_died() -> void:
 	GameManager.add_scrap(stats.scrap)
 	SignalBus.enemy_died.emit(global_position)
-	queue_free()
+	# F3: flash + shrink, then free (scrap/enemy_died above stay immediate).
+	if combat_comp:
+		combat_comp.play_death_and_free(character_visual)
+	else:
+		queue_free()
 

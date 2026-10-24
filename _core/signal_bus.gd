@@ -15,6 +15,9 @@ signal player_life_lost(current_lives: int)
 ## Bosses reset to dormant, uncleared encounters despawn+re-arm, zone triggers re-arm.
 signal player_respawned()
 signal ability_meter_changed(current: float, max_meter: float)
+## F9: Bass Drop armed (true, waiting for the next downbeat) / detonated (false). The HUD
+## ability bar shows the armed state; Nick's rim holds white-hot while armed.
+signal bass_drop_armed(armed: bool)
 
 # --- Run Events ---
 ## Emitted at the end of GameManager.start_new_run(). Global systems that carry state

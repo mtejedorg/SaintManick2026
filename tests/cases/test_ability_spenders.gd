@@ -114,3 +114,36 @@ func test_bass_drop_damages_enemies_in_radius() -> void:
 
 	bruiser.queue_free()
 	far_bruiser.queue_free()
+
+# F9: the armed cue — signal for the HUD, white-hot rim while armed, hit-stop + shock ring on
+# detonation.
+func test_arming_bass_drop_emits_the_armed_signal_and_holds_a_white_rim() -> void:
+	var got := {"armed": []}
+	var on_armed := func(a: bool): got.armed.append(a)
+	SignalBus.bass_drop_armed.connect(on_armed)
+	player.ability_meter = player.MAX_ABILITY_METER
+	player.try_arm_bass_drop()
+	assert_eq(got.armed, [true], "Arming emits bass_drop_armed(true)")
+	assert_eq(player.character_visual.get_base_rim_color(), Color.WHITE, "Armed Nick rests at a white rim")
+	assert_almost_eq(player.character_visual.get_base_rim_strength(), 5.0, 0.001, "...at strength 5")
+
+	var stops := {"n": 0}
+	var on_stop := func(d, _s): if is_equal_approx(d, 0.12): stops.n += 1
+	SignalBus.hit_stop_requested.connect(on_stop)
+	SignalBus.downbeat.emit("primary", 1)
+	SignalBus.bass_drop_armed.disconnect(on_armed)
+	SignalBus.hit_stop_requested.disconnect(on_stop)
+	Engine.time_scale = 1.0
+	var hs = get_node_or_null("/root/HitStop")
+	if hs:
+		hs.hit_stop_timer = 0.0
+
+	assert_eq(got.armed, [true, false], "Detonation emits bass_drop_armed(false)")
+	assert_eq(stops.n, 1, "Detonation requests a 0.12 s hit-stop")
+	assert_eq(player.character_visual.get_base_rim_color(), CharacterVisual.PLAYER_RIM_COLOR, "The cyan rim returns after detonation")
+	var ring: MeshInstance3D = get_node_or_null("BassDropRing")
+	assert_not_null(ring, "Detonation spawns a shock ring next to Nick")
+	if ring:
+		assert_almost_eq(ring.global_position.y, player.global_position.y - 1.0, 0.01, "The ring sits at Nick's feet")
+		await get_tree().create_timer(0.45).timeout
+		assert_false(is_instance_valid(ring), "The ring frees itself after growing to the radius")

@@ -87,6 +87,16 @@ const LOW_HP_FRACTION := 0.25
 const LOW_HP_PULSE_COLOR := Color(1.0, 0.0, 0.666667)
 const LOW_HP_PULSE_STRENGTH := 4.0
 const LOW_HP_PULSE_SECONDS := 0.25
+## F9: Bass Drop cue — rim held white-hot while armed; detonation hit-stop and a magenta
+## shock ring that grows from RING_START_SCALE to bass_drop_radius at Nick's feet.
+const BASS_DROP_ARMED_RIM_STRENGTH := 5.0
+const BASS_DROP_HIT_STOP_DURATION := 0.12
+const BASS_DROP_HIT_STOP_SCALE := 0.05
+const BASS_DROP_RING_COLOR := Color(1.0, 0.0, 0.666667)
+const BASS_DROP_RING_START_SCALE := 0.5
+const BASS_DROP_RING_SECONDS := 0.3
+## Capsule half-height: Nick's origin is the capsule centre, his feet are this far below.
+const FEET_OFFSET := 1.0
 
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -205,6 +215,8 @@ func try_arm_bass_drop() -> bool:
 	if ability_meter < MAX_ABILITY_METER:
 		return false
 	bass_drop_armed = true
+	SignalBus.bass_drop_armed.emit(true)
+	_update_rest_rim()
 	return true
 
 func _on_downbeat(_layer: String, _measure_index: int) -> void:
@@ -214,6 +226,8 @@ func _on_downbeat(_layer: String, _measure_index: int) -> void:
 
 func _detonate_bass_drop() -> void:
 	bass_drop_armed = false
+	SignalBus.bass_drop_armed.emit(false)
+	_update_rest_rim()
 	ability_meter = 0.0
 	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 
@@ -233,6 +247,34 @@ func _detonate_bass_drop() -> void:
 			hurtbox.receive_hit(dmg_info)
 
 	SignalBus.camera_shake_requested.emit(0.3, 0.4)
+	SignalBus.hit_stop_requested.emit(BASS_DROP_HIT_STOP_DURATION, BASS_DROP_HIT_STOP_SCALE)
+	_spawn_bass_drop_ring()
+
+## F9: one-shot shock ring at Nick's feet (Bass Drop fires at most once per full meter, so
+## it is created and freed rather than pooled). Parented to Nick's parent so it stays where
+## the drop landed while he moves.
+func _spawn_bass_drop_ring() -> MeshInstance3D:
+	var host := get_parent()
+	if host == null or not is_inside_tree():
+		return null
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.9
+	torus.outer_radius = 1.0
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = BASS_DROP_RING_COLOR
+	torus.material = mat
+	var ring := MeshInstance3D.new()
+	ring.name = "BassDropRing"
+	ring.mesh = torus
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	host.add_child(ring)
+	ring.global_position = global_position - Vector3(0.0, FEET_OFFSET, 0.0)
+	ring.scale = Vector3(BASS_DROP_RING_START_SCALE, 1.0, BASS_DROP_RING_START_SCALE)
+	var tween := ring.create_tween()
+	tween.tween_property(ring, "scale", Vector3(bass_drop_radius, 1.0, bass_drop_radius), BASS_DROP_RING_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(ring.queue_free)
+	return ring
 
 func _on_died() -> void:
 	if animation_controller:
@@ -259,16 +301,24 @@ func is_low_health() -> bool:
 	var hc := health_component
 	return hc.max_health > 0.0 and hc.current_health > 0.0 and hc.current_health / hc.max_health < LOW_HP_FRACTION
 
-## The rim Nick rests at: pale cyan while invincible, otherwise his authored cyan.
-## Flashes (damage, low-HP pulse) play on top and return to it.
+## The rim Nick rests at: white-hot while Bass Drop is armed (F9), pale cyan while
+## invincible, otherwise his authored cyan. Flashes (damage, low-HP pulse) play on top and
+## return to it.
 func _update_rest_rim() -> void:
 	if character_visual == null:
 		return
-	var key := "invincible" if health_component.is_invincible else "default"
+	var key := "default"
+	if bass_drop_armed:
+		key = "bass_drop_armed"
+	elif health_component.is_invincible:
+		key = "invincible"
 	if key == _rest_rim_key:
 		return
 	_rest_rim_key = key
 	match key:
+		"bass_drop_armed":
+			character_visual.update_rim_color(Color.WHITE)
+			character_visual.update_rim_strength(BASS_DROP_ARMED_RIM_STRENGTH)
 		"invincible":
 			character_visual.update_rim_color(INVINCIBLE_RIM_COLOR)
 			character_visual.update_rim_strength(INVINCIBLE_RIM_STRENGTH)

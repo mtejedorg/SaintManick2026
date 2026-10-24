@@ -10,12 +10,16 @@ size = Vector3(1.5, 3.0, 1.5)
 size = Vector3(1.5, 3.0, 1.5)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
-albedo_color = Color(0.3, 0.3, 0.35, 1.0)
-metallic = 0.8
+resource_local_to_scene = true
+albedo_color = Color(0.290196, 0.290196, 0.333333, 1)
+metallic = 0.15
 roughness = 0.4
+emission_enabled = true
+emission = Color(1, 0.352941, 0, 1)
+emission_energy_multiplier = 0.6
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_damage"]
-size = Vector3(1.6, 0.5, 1.6)
+size = Vector3(1.6, 1.0, 1.6)
 
 [node name="CeilingPiston" type="Node3D"]
 script = ExtResource("1_zzzzz")
@@ -33,7 +37,7 @@ mesh = SubResource("BoxMesh_body")
 surface_material_override/0 = SubResource("StandardMaterial3D_metal")
 
 [node name="Hitbox3D" type="Area3D" parent="PistonBody"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 collision_layer = 8192
 collision_mask = 1024
 script = ExtResource("2_zzzzz")

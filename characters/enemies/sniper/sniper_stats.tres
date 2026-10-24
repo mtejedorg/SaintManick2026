@@ -10,3 +10,4 @@ speed = 0.0
 scrap = 25
 knockback = 4.0
 stun = 0.8
+attack_range = 16.0

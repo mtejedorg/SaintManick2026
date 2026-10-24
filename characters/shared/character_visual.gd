@@ -17,6 +17,10 @@ enum Faction { PLAYER, ENEMY }
 ## Rim colour override. Alpha 0 (the default) means "use the faction colour".
 @export var rim_color: Color = Color(0.0, 0.0, 0.0, 0.0)
 @export var rim_strength: float = 3.0
+## Idle hover for floating models (Sniper drone): sine bob of the Pivot, +/- amplitude
+## metres at hover_hz. 0 = no hover.
+@export var hover_amplitude: float = 0.0
+@export var hover_hz: float = 1.0
 
 const PLAYER_RIM_COLOR := Color(0.0, 0.960784, 1.0, 1.0)     # #00F5FF cyan
 const ENEMY_RIM_COLOR := Color(1.0, 0.0, 0.666667, 1.0)      # #FF00AA magenta
@@ -53,6 +57,7 @@ var _pivot_base_scale: Vector3 = Vector3.ONE
 var _pivot_base_rotation: Vector3 = Vector3.ZERO
 var _pulse_tween: Tween = null
 var _lean_tween: Tween = null
+var _hover_tween: Tween = null
 
 func _ready() -> void:
 	skinned_meshes.clear()
@@ -63,6 +68,8 @@ func _ready() -> void:
 	if pivot:
 		_pivot_base_scale = pivot.scale
 		_pivot_base_rotation = pivot.rotation
+		if hover_amplitude > 0.0 and hover_hz > 0.0:
+			_start_hover()
 
 	if tint != Color.WHITE:
 		base_material = StandardMaterial3D.new()
@@ -163,6 +170,14 @@ func flash_telegraph() -> void:
 ## The authored resting rim: the rim_color export, or the faction colour when unset.
 func get_default_rim_color() -> Color:
 	return rim_color if rim_color.a > 0.0 else get_faction_rim_color()
+
+func _start_hover() -> void:
+	var base_y := pivot.position.y
+	var half_period := 0.5 / hover_hz
+	pivot.position.y = base_y - hover_amplitude
+	_hover_tween = create_tween().set_loops()
+	_hover_tween.tween_property(pivot, "position:y", base_y + hover_amplitude, half_period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_hover_tween.tween_property(pivot, "position:y", base_y - hover_amplitude, half_period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Procedural beat squash for unrigged models: stretch the pivot's height by `amount`
 ## (0.03 = +3 %) about the feet and settle back, all within `seconds`.

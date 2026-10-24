@@ -9,9 +9,19 @@ extends CharacterBody3D
 @onready var character_visual: CharacterVisual = $MeshInstance3D
 var combat_comp: Node = null
 
+## Beam widths in metres per phase (BoxMesh_laser is 1 x 1 x 30, so scale.xy == width).
+const AIM_BEAM_SCALE := Vector3(0.15, 0.15, 1.0)    # beat 3: aiming, still tracking
+const LOCK_BEAM_SCALE := Vector3(0.3, 0.3, 1.0)     # beat 4: locked + white-hot telegraph
+const FIRE_BEAM_SCALE := Vector3(0.6, 0.6, 1.0)     # beat 1: live
+const BEAM_COLOR := Color(1.0, 0.0, 0.0)
+const BEAM_ENERGY := 3.0
+
 var player: Node3D
 var laser_material: StandardMaterial3D
 var is_aim_locked: bool = false
+## True between the aim beat and the end of the shot. A cycle only arms while the player
+## is within stats.attack_range, so an out-of-range sniper never paints or fires.
+var is_cycle_armed: bool = false
 ## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
 ## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
 var is_active: bool = false
@@ -43,12 +53,12 @@ func _ready() -> void:
 	
 	laser_beam.visible = false
 	
-	# Setup laser material
+	# Laser: unshaded red. Unshaded drops EMISSION in Godot 4, so the energy is carried by
+	# an HDR albedo (x BEAM_ENERGY) — that is what the bloom picks up.
 	laser_material = StandardMaterial3D.new()
-	laser_material.albedo_color = Color(1.0, 0.0, 0.0, 0.5)
-	laser_material.transparency = StandardMaterial3D.TRANSPARENCY_ALPHA
-	laser_material.emission_enabled = true
-	laser_material.emission = Color(1.0, 0.0, 0.0, 1.0)
+	laser_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	laser_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	laser_material.albedo_color = _beam_color(0.5)
 	laser_beam.set_surface_override_material(0, laser_material)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
@@ -74,31 +84,54 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	if not is_active:
 		return
 	if combat_comp.is_stunned():
-		laser_beam.visible = false
-		laser_hitbox.is_active = false
+		_end_cycle()
 		return
-		
+
 	match beat_index:
 		3:
+			if not _player_in_attack_range():
+				_end_cycle()
+				return
+			is_cycle_armed = true
 			is_aim_locked = false
 			laser_beam.visible = true
-			laser_beam.scale = Vector3(0.05, 0.05, 1.0)
-			laser_material.albedo_color.a = 0.3
+			laser_beam.scale = AIM_BEAM_SCALE
+			laser_material.albedo_color = _beam_color(0.3)
 		4:
+			if not is_cycle_armed:
+				return
 			is_aim_locked = true
 			# Lock = one beat before the shot: the shared white-hot telegraph.
 			character_visual.flash_telegraph()
-			laser_beam.scale = Vector3(0.15, 0.15, 1.0)
-			laser_material.albedo_color.a = 0.6
+			laser_beam.scale = LOCK_BEAM_SCALE
+			laser_material.albedo_color = _beam_color(0.6)
 		1:
+			if not is_cycle_armed:
+				return
 			laser_beam.visible = true
-			laser_beam.scale = Vector3(1.0, 1.0, 1.0)
-			laser_material.albedo_color.a = 1.0
+			laser_beam.scale = FIRE_BEAM_SCALE
+			laser_material.albedo_color = _beam_color(1.0)
 			laser_hitbox.is_active = true
 		2:
-			laser_beam.visible = false
-			laser_hitbox.is_active = false
-			is_aim_locked = false
+			_end_cycle()
+
+func _end_cycle() -> void:
+	is_cycle_armed = false
+	is_aim_locked = false
+	laser_beam.visible = false
+	laser_hitbox.is_active = false
+
+func _player_in_attack_range() -> bool:
+	if not player or not is_instance_valid(player):
+		return false
+	if stats.attack_range <= 0.0:
+		return true
+	return global_position.distance_to(player.global_position) <= stats.attack_range
+
+func _beam_color(alpha: float) -> Color:
+	var c := BEAM_COLOR * BEAM_ENERGY
+	c.a = alpha
+	return c
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.

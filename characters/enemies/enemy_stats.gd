@@ -18,6 +18,9 @@ const KILL_PLANE_Y: float = -20.0
 ## IntensityController) until the player comes within this distance — checked once per
 ## primary beat. Wave-spawned grunts are activated by their WaveSpawner.
 @export var aggro_range: float = 22.0
+## Ranged attackers (Sniper) only start an attack cycle while the player is within this
+## distance. 0 = no limit.
+@export var attack_range: float = 0.0
 ## Starting shield (hyper-armor while > 0; only guard-breaking hits get through). 0 = no shield.
 @export var shield: float = 0.0
 ## Rare Scrap ("cells" in code, GDD §5.1) awarded on this enemy's death. 0 = doesn't drop any

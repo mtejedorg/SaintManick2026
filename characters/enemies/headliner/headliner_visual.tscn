@@ -6,7 +6,7 @@
 [node name="MeshInstance3D" type="MeshInstance3D"]
 script = ExtResource("1_visual")
 rim_color = Color(1, 0.54902, 0.101961, 1)
-rim_strength = 4.0
+rim_strength = 2.4
 
 [node name="Pivot" type="Node3D" parent="."]
 transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0)

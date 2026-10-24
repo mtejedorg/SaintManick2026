@@ -1,5 +1,7 @@
 extends EnforcerState
 
+const BodyFacing = preload("res://characters/shared/body_facing.gd")
+
 var attack_step: int = 0
 
 func enter() -> void:
@@ -24,7 +26,10 @@ func _execute_attack() -> void:
 		var dir = (enforcer.player.global_position - enforcer.global_position).normalized()
 		dir.y = 0
 		# use_model_front: the Enforcer mesh faces +Z, so +Z (not -Z) must point at Nick.
-		enforcer.look_at(enforcer.player.global_position, Vector3.UP, true)
+		# F8: target flattened to the body's height so the lunge never pitches the body.
+		var target: Vector3 = BodyFacing.flat_target(enforcer, enforcer.player.global_position)
+		if enforcer.global_position.distance_to(target) > 0.1:
+			enforcer.look_at(target, Vector3.UP, true)
 		enforcer.velocity.x = dir.x * enforcer.stats.speed * 2.0
 		enforcer.velocity.z = dir.z * enforcer.stats.speed * 2.0
 		

@@ -28,9 +28,15 @@ var phase_2_triggered: bool = false
 const PHASE_2_RIM_COLOR := CharacterVisual.ENEMY_RIM_COLOR
 ## Enraged pushes the rim hotter than the authored strength.
 const ENRAGED_RIM_STRENGTH := 5.0
+## F8: unrigged 6 m model — procedural life on its Pivot instead of a root-scale pulse.
+const BEAT_SQUASH := 0.02            # +2 % height on every primary beat, both phases
+const BEAT_SQUASH_SECONDS := 0.1
+const TELEGRAPH_LEAN_DEGREES := 6.0  # tips toward the model's front for the telegraph beat
+## F8: yaw rate (rad/s, lerp_angle weight per second) while turning to face Nick.
+const TURN_RATE := 10.0
 ## Authored scale of the visual root (headliner_visual.tscn sizes the model on its Pivot,
-## so this is normally ONE). The beat pulse, the respawn reset and the death squash are
-## relative to this, never to a hard-coded scale.
+## so this is normally ONE). The respawn reset and the death squash are relative to this,
+## never to a hard-coded scale (the beat pulse lives on the Pivot, see _on_beat).
 var _base_scale: Vector3 = Vector3.ONE
 
 func _ready() -> void:
@@ -172,14 +178,11 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		return
 	if layer != "primary":
 		return
+	# F8: a subtle heartbeat squash on the Pivot in both phases (the root keeps its scale).
+	if character_visual:
+		character_visual.beat_pulse(BEAT_SQUASH, BEAT_SQUASH_SECONDS)
 	if combat_comp and combat_comp.is_stunned():
 		return
-		
-	if phase_2_triggered and mesh_instance:
-		# Pulse albedo/scale on beat
-		var tween = create_tween()
-		tween.tween_property(mesh_instance, "scale", _base_scale * 1.05, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(mesh_instance, "scale", _base_scale, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 	if state_machine:
 		state_machine.handle_beat(layer, beat_index)

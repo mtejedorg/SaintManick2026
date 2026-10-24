@@ -1,5 +1,7 @@
 extends HeadlinerState
 
+const BodyFacing = preload("res://characters/shared/body_facing.gd")
+
 func enter() -> void:
 	boss.speed_multiplier = 1.2
 	boss.is_shield_active = false
@@ -18,10 +20,8 @@ func physics_update(delta: float) -> void:
 	boss.apply_gravity(delta)
 	
 	if boss.player:
-		var target_pos = boss.player.global_position
-		target_pos.y = boss.global_position.y
-		if boss.global_position.distance_to(target_pos) > 0.1:
-			boss.look_at(target_pos, Vector3.UP, true) # mesh faces +Z
+		# F8: ease the yaw toward Nick (mesh faces +Z) instead of snapping; never pitch.
+		BodyFacing.turn_toward(boss, boss.player.global_position, HeadlinerBoss.TURN_RATE, delta)
 			
 		var dist = boss.global_position.distance_to(boss.player.global_position)
 		if dist > 3.0:

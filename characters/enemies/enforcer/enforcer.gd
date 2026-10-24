@@ -15,6 +15,8 @@ var combat_comp: Node = null
 const BEAT_SQUASH := 0.03            # +3 % height on every primary beat
 const BEAT_SQUASH_SECONDS := 0.1
 const TELEGRAPH_LEAN_DEGREES := 8.0  # tips toward the model's front for the telegraph beat
+## F8: yaw rate (rad/s, lerp_angle weight per second) while turning to face Nick.
+const TURN_RATE := 10.0
 
 var player: Node3D
 var is_shield_active: bool = false

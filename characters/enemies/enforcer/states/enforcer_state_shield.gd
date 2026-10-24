@@ -1,5 +1,7 @@
 extends EnforcerState
 
+const BodyFacing = preload("res://characters/shared/body_facing.gd")
+
 func enter() -> void:
 	enforcer.is_shield_active = true
 	if enforcer.shield_bubble:
@@ -14,10 +16,8 @@ func physics_update(delta: float) -> void:
 	enforcer.apply_gravity(delta)
 	
 	if enforcer.player:
-		var target_pos = enforcer.player.global_position
-		target_pos.y = enforcer.global_position.y
-		if enforcer.global_position.distance_to(target_pos) > 0.1:
-			enforcer.look_at(target_pos, Vector3.UP, true) # mesh faces +Z
+		# F8: ease the yaw toward Nick (mesh faces +Z) instead of snapping; never pitch.
+		BodyFacing.turn_toward(enforcer, enforcer.player.global_position, EnforcerEnemy.TURN_RATE, delta)
 			
 		var dist = enforcer.global_position.distance_to(enforcer.player.global_position)
 		if dist > 3.0:

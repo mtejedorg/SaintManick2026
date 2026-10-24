@@ -1,5 +1,7 @@
 extends HeadlinerState
 
+const BodyFacing = preload("res://characters/shared/body_facing.gd")
+
 func enter() -> void:
 	if boss.hitbox:
 		boss.hitbox.damage_info.amount = boss.stats.damage
@@ -12,7 +14,10 @@ func enter() -> void:
 	if boss.player:
 		var dir = (boss.player.global_position - boss.global_position).normalized()
 		dir.y = 0
-		boss.look_at(boss.player.global_position, Vector3.UP, true) # mesh faces +Z
+		# F8: target flattened to the body's height so the lunge never pitches the body.
+		var target: Vector3 = BodyFacing.flat_target(boss, boss.player.global_position)
+		if boss.global_position.distance_to(target) > 0.1:
+			boss.look_at(target, Vector3.UP, true) # mesh faces +Z
 		var lunge_speed = boss.stats.speed * 2.0 * boss.speed_multiplier
 		boss.velocity.x = dir.x * lunge_speed
 		boss.velocity.z = dir.z * lunge_speed

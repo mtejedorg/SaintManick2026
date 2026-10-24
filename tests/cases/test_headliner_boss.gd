@@ -288,12 +288,17 @@ func test_phase_2_beat_pulse_returns_to_authored_scale() -> void:
 	# window would restart the tween and make this test depend on the global beat phase.
 	if SignalBus.beat.is_connected(boss._on_beat):
 		SignalBus.beat.disconnect(boss._on_beat)
+	var pivot: Node3D = boss.character_visual.pivot
+	var pivot_scale: Vector3 = pivot.scale
 	boss._on_beat("primary", 1)
 
-	await get_tree().create_timer(0.05).timeout
-	assert_gt(boss.mesh_instance.scale.x, authored.x * 0.99, "Beat pulse should never shrink the visual below its authored scale")
-	await get_tree().create_timer(0.4).timeout
-	assert_true(boss.mesh_instance.scale.is_equal_approx(authored), "Beat pulse should settle back to the authored scale, got %s" % boss.mesh_instance.scale)
+	# F8: the beat squash lives on the Pivot (+2 %); the root keeps its authored scale.
+	await get_tree().create_timer(0.03).timeout
+	assert_true(boss.mesh_instance.scale.is_equal_approx(authored), "The root never pulses (got %s)" % boss.mesh_instance.scale)
+	assert_gt(pivot.scale.y, pivot_scale.y, "The beat squashes the Pivot upward")
+	assert_lt(pivot.scale.y, pivot_scale.y * 1.021, "...by at most 2 %")
+	await get_tree().create_timer(0.2).timeout
+	assert_true(pivot.scale.is_equal_approx(pivot_scale), "The Pivot settles back, got %s" % pivot.scale)
 
 	# Respawn reset restores the authored scale, not Vector3.ONE.
 	boss.mesh_instance.scale = authored * 2.0
@@ -354,7 +359,7 @@ func test_headliner_rim_follows_phase_and_resets_on_respawn() -> void:
 	var visual: CharacterVisual = boss.character_visual
 	var amber := Color(1.0, 0.54902, 0.101961, 1.0)
 	assert_true(visual.get_base_rim_color().is_equal_approx(amber), "Phase 1 rests at the amber rim")
-	assert_almost_eq(visual.get_base_rim_strength(), 4.0, 0.001, "Headliner rim strength 4")
+	assert_almost_eq(visual.get_base_rim_strength(), 2.4, 0.001, "Headliner rim strength 2.4 (F8)")
 	for sm in visual.skinned_meshes:
 		assert_null(sm.material_override, "The textured Headliner mesh keeps its own material")
 		assert_true((sm.mesh.surface_get_format(0) & Mesh.ARRAY_FORMAT_NORMAL) != 0, "Normals are generated for the normal-less GLB (else the rim floods the whole body)")
@@ -369,7 +374,7 @@ func test_headliner_rim_follows_phase_and_resets_on_respawn() -> void:
 
 	boss._on_player_respawned()
 	assert_true(visual.get_base_rim_color().is_equal_approx(amber), "Respawn restores the amber rim")
-	assert_almost_eq(visual.get_base_rim_strength(), 4.0, 0.001, "Respawn restores the rim strength")
+	assert_almost_eq(visual.get_base_rim_strength(), 2.4, 0.001, "Respawn restores the rim strength")
 	boss.queue_free()
 
 func test_headliner_visual_stands_six_metres_on_its_capsule() -> void:

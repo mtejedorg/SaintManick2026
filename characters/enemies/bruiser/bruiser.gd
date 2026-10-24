@@ -20,6 +20,9 @@ var attack_step: int = AttackStep.IDLE
 ## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
 ## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
 var is_active: bool = false
+## Authored visual scale (bruiser.tscn sizes the shared visual to its 2.2 m capsule). The
+## beat pulse is relative to this, never to Vector3.ONE.
+var _base_scale: Vector3 = Vector3.ONE
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -46,6 +49,7 @@ func _ready() -> void:
 	# Hitbox-clarity fix (M6b): no more permanent contact damage. It switches on only
 	# during the active step, gated by the beat.
 	hitbox.is_active = false
+	_base_scale = mesh_instance.scale
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 	SignalBus.beat.connect(_on_beat)
@@ -89,8 +93,8 @@ func _on_beat(layer: String, beat_index: int) -> void:
 
 	# Visual scale pulse on every beat.
 	var tween = create_tween()
-	tween.tween_property(mesh_instance, "scale", Vector3(1.1, 1.1, 1.1), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mesh_instance, "scale", Vector3(1.0, 1.0, 1.0), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(mesh_instance, "scale", _base_scale * 1.1, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(mesh_instance, "scale", _base_scale, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 	# Dormant grunts keep the heartbeat pulse but never telegraph.
 	_update_aggro()

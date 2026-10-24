@@ -43,6 +43,11 @@ var _zones_seen: Dictionary = {}
 var checkpoint_zone: String = ""
 var checkpoint_position: Vector3 = Vector3.ZERO
 var has_checkpoint: bool = false
+## Camera/movement mode at the checkpoint: the rail Nick was locked to (null = free
+## top-down movement) and whether the camera was top-down. Restored on respawn so a death
+## in a top-down fight doesn't leave a side-scroll checkpoint with the camera top-down.
+var checkpoint_path: Path3D = null
+var checkpoint_top_down: bool = false
 ## Seconds of post-respawn invincibility grace so Nick isn't hit on the exact frame
 ## he reappears.
 var respawn_grace_duration: float = 1.0
@@ -219,10 +224,35 @@ func _respawn_at_checkpoint() -> void:
 		)
 	if has_checkpoint:
 		player.global_position = checkpoint_position
+		_restore_checkpoint_mode(player)
 	if "velocity" in player:
 		player.velocity = Vector3.ZERO
 	if "last_safe_position" in player:
 		player.last_safe_position = player.global_position
+
+## Puts the camera FSM and Nick's movement constraint back to what they were at the
+## checkpoint — instantly, no tween (the camera snap also kills any in-flight shift so its
+## tween can't land later and overwrite the restored rail).
+func _restore_checkpoint_mode(player: Node) -> void:
+	var cam := _find_drone_camera()
+	if cam:
+		cam.snap_to_mode(checkpoint_top_down)
+	if "current_path" in player:
+		player.current_path = checkpoint_path
+	if "is_jump_enabled" in player:
+		player.is_jump_enabled = not checkpoint_top_down
+
+func _find_drone_camera() -> DroneCamera:
+	if not get_tree() or not get_tree().current_scene:
+		return null
+	var scene := get_tree().current_scene
+	var direct := scene.get_node_or_null("DroneCamera") as DroneCamera
+	if direct:
+		return direct
+	for cam in scene.find_children("*", "Camera3D", true, false):
+		if cam is DroneCamera:
+			return cam
+	return null
 
 func _on_enemy_died(_position: Vector3) -> void:
 	enemies_defeated += 1
@@ -233,6 +263,9 @@ func _on_zone_entered(zone_name: String) -> void:
 	if player:
 		checkpoint_zone = zone_name
 		checkpoint_position = player.global_position
+		if "current_path" in player:
+			checkpoint_path = player.current_path
+			checkpoint_top_down = player.current_path == null
 		has_checkpoint = true
 	if _zones_seen.has(zone_name):
 		return

@@ -45,6 +45,20 @@ func _on_camera_shake_requested(strength: float, duration: float) -> void:
 	shake_duration = duration
 	shake_timer = duration
 
+## Respawn/teleport: jump straight to a mode with no transition tween. Leaving
+## Transitioning kills its tween (Tween.kill() never emits finished), so an in-flight shift
+## can't land afterwards and re-apply its own rail/jump settings.
+func snap_to_mode(top_down: bool) -> void:
+	var transitioning_state = state_machine.states.get("transitioning")
+	if transitioning_state and transitioning_state.current_tween:
+		transitioning_state.current_tween.kill()
+		transitioning_state.current_tween = null
+	var mode := "topdown" if top_down else "sidescroll"
+	if state_machine.current_state == state_machine.states.get(mode):
+		state_machine.current_state.enter() # already there — re-apply offset/rotation/jump
+	else:
+		state_machine._on_transition_requested(mode)
+
 func _on_camera_shift_requested(top_down: bool, target_path: Path3D, transition_time: float) -> void:
 	var transitioning_state = state_machine.states.get("transitioning")
 	if transitioning_state:

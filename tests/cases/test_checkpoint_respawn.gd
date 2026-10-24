@@ -13,6 +13,8 @@ func before_each() -> void:
 	GameManager.has_checkpoint = false
 	GameManager.checkpoint_zone = ""
 	GameManager.checkpoint_position = Vector3.ZERO
+	GameManager.checkpoint_path = null
+	GameManager.checkpoint_top_down = false
 
 func test_life_loss_does_not_reload_scene_in_test_mode() -> void:
 	GameManager.start_new_run()
@@ -144,3 +146,48 @@ func test_enforcer_resets_to_dormant_full_hp_on_respawn() -> void:
 
 	SignalBus.boss_reset.disconnect(on_reset)
 	enforcer.queue_free()
+
+func test_respawn_restores_sidescroll_rail_jump_and_camera_mode() -> void:
+	# D3: dying in a top-down fight respawns at a side-scroll checkpoint — the rail, jump
+	# and camera mode must come back with Nick, instantly (no transition tween).
+	var rail := Path3D.new()
+	rail.name = "Rail"
+	rail.curve = Curve3D.new()
+	rail.curve.add_point(Vector3(-50.0, 0.0, 0.0))
+	rail.curve.add_point(Vector3(50.0, 0.0, 0.0))
+	get_tree().current_scene.add_child(rail)
+
+	var player = load("res://characters/player/player.tscn").instantiate()
+	player.name = "Player"
+	get_tree().current_scene.add_child(player)
+	player.current_path = rail
+	player.global_position = Vector3(10.0, 0.0, 0.0)
+
+	var cam: DroneCamera = load("res://characters/player/drone_camera.tscn").instantiate()
+	cam.name = "DroneCamera"
+	get_tree().current_scene.add_child(cam)
+	cam.target = player
+
+	SignalBus.zone_entered.emit("SECTOR 03 — SECURITY LOCK")
+	assert_eq(GameManager.checkpoint_path, rail, "Checkpoint should store the rail Nick was on")
+	assert_false(GameManager.checkpoint_top_down, "A railed checkpoint is side-scroll")
+
+	# The fight then goes top-down (free movement, no jump) and Nick dies mid-shift.
+	cam.state_machine._on_transition_requested("TopDown")
+	player.current_path = null
+	player.is_jump_enabled = false
+	SignalBus.camera_shift_requested.emit(false, null, 5.0) # in-flight tween at death
+	assert_eq(cam.state_machine.current_state.name, "Transitioning", "Precondition: a camera shift is in flight")
+
+	GameManager.start_new_run()
+	GameManager.respawn_or_game_over()
+
+	assert_true(player.is_jump_enabled, "Respawn at a side-scroll checkpoint must re-enable jump")
+	assert_eq(player.current_path, GameManager.checkpoint_path, "Respawn must restore the checkpoint rail")
+	assert_eq(cam.state_machine.current_state.name, "Sidescroll", "Camera should snap straight to Sidescroll")
+	var transitioning = cam.state_machine.states["transitioning"]
+	assert_null(transitioning.current_tween, "The in-flight camera tween should be killed by the snap")
+
+	player.free() # immediate — see name-clash note in test_checkpoint_updates_on_zone_entered
+	cam.free()
+	rail.free()

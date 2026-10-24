@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_attack.gd" id="8_enforcer"]
 [ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_recovery.gd" id="9_enforcer"]
 [ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_shield.gd" id="10_enforcer"]
-[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="11_visual"]
+[ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer_visual.tscn" id="11_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enforcer"]
 radius = 1.2
@@ -42,8 +42,6 @@ script = ExtResource("1_enforcer")
 shape = SubResource("CapsuleShape3D_enforcer")
 
 [node name="MeshInstance3D" parent="." instance=ExtResource("11_visual")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
-tint = Color(1, 0.5, 0, 1)
 
 [node name="ShieldBubble" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

@@ -41,10 +41,22 @@ var _rim_material_instance: ShaderMaterial = null
 var _base_rim_color: Color
 var _base_rim_strength: float
 var _rim_tween: Tween = null
+## Optional child named "Pivot" carrying the model's placement (scale + feet offset). Unrigged
+## models get their procedural motion (beat squash, telegraph lean) on it, about the feet,
+## so the root keeps its authored transform.
+var pivot: Node3D = null
+var _pivot_base_scale: Vector3 = Vector3.ONE
+var _pivot_base_rotation: Vector3 = Vector3.ZERO
+var _pulse_tween: Tween = null
+var _lean_tween: Tween = null
 
 func _ready() -> void:
 	skinned_meshes.clear()
 	_find_mesh_instances_recursive(self)
+	pivot = get_node_or_null("Pivot") as Node3D
+	if pivot:
+		_pivot_base_scale = pivot.scale
+		_pivot_base_rotation = pivot.rotation
 
 	if tint != Color.WHITE:
 		base_material = StandardMaterial3D.new()
@@ -123,6 +135,32 @@ func flash_telegraph() -> void:
 ## The authored resting rim: the rim_color export, or the faction colour when unset.
 func get_default_rim_color() -> Color:
 	return rim_color if rim_color.a > 0.0 else get_faction_rim_color()
+
+## Procedural beat squash for unrigged models: stretch the pivot's height by `amount`
+## (0.03 = +3 %) about the feet and settle back, all within `seconds`.
+func beat_pulse(amount: float, seconds: float) -> void:
+	if pivot == null or not is_inside_tree():
+		return
+	if _pulse_tween and _pulse_tween.is_valid():
+		_pulse_tween.kill()
+	pivot.scale = _pivot_base_scale
+	var peak := _pivot_base_scale * Vector3(1.0, 1.0 + amount, 1.0)
+	_pulse_tween = create_tween()
+	_pulse_tween.tween_property(pivot, "scale", peak, seconds * 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_pulse_tween.tween_property(pivot, "scale", _pivot_base_scale, seconds * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+## Procedural telegraph lean for unrigged models: tip the pivot `degrees` toward the model's
+## front (+Z) about the feet, hold, and return within `seconds`.
+func lean_forward(degrees: float, seconds: float) -> void:
+	if pivot == null or not is_inside_tree():
+		return
+	if _lean_tween and _lean_tween.is_valid():
+		_lean_tween.kill()
+	var leaned := _pivot_base_rotation.x + deg_to_rad(degrees)
+	_lean_tween = create_tween()
+	_lean_tween.tween_property(pivot, "rotation:x", leaned, seconds * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_lean_tween.tween_interval(seconds * 0.5)
+	_lean_tween.tween_property(pivot, "rotation:x", _pivot_base_rotation.x, seconds * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 ## Returns the default rim colour for this character's faction.
 func get_faction_rim_color() -> Color:

@@ -5,6 +5,7 @@ func enter() -> void:
 	if enforcer.shield_bubble:
 		enforcer.shield_bubble.visible = false
 	enforcer.character_visual.flash_telegraph()
+	enforcer.character_visual.lean_forward(EnforcerEnemy.TELEGRAPH_LEAN_DEGREES, 60.0 / maxf(Conductor.bpm, 1.0))
 	enforcer.velocity.x = 0
 	enforcer.velocity.z = 0
 

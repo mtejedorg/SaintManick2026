@@ -32,3 +32,27 @@ func test_runner_visual_matches_capsule() -> void:
 
 func test_bruiser_visual_matches_capsule() -> void:
 	_check("res://characters/enemies/bruiser/bruiser.tscn", 2.2, "Bruiser")
+
+func test_enforcer_visual_matches_capsule() -> void:
+	_check("res://characters/enemies/enforcer/enforcer.tscn", 3.0, "Enforcer")
+
+func test_enforcer_keeps_its_materials_and_telegraphs_with_rim_and_lean() -> void:
+	var enforcer: EnforcerEnemy = load("res://characters/enemies/enforcer/enforcer.tscn").instantiate()
+	enforcer.position = Vector3(0.0, 300.0, 4100.0)
+	add_child(enforcer)
+	var visual: CharacterVisual = enforcer.character_visual
+	assert_not_null(visual.pivot, "enforcer_visual.tscn has a Pivot for procedural motion")
+	for sm in visual.skinned_meshes:
+		assert_null(sm.material_override, "Enforcer_Hammer.glb keeps its own materials")
+	assert_almost_eq(visual.get_base_rim_strength(), 3.5, 0.001, "Enforcer rim strength 3.5")
+	assert_eq(visual.get_base_rim_color(), CharacterVisual.ENEMY_RIM_COLOR, "Enforcer rim is magenta")
+
+	enforcer.state_machine.transition_to("StateTelegraph")
+	assert_eq(visual.get_current_rim_color(), CharacterVisual.TELEGRAPH_RIM_COLOR, "Telegraph flashes the rim white-hot")
+	# Track the peak over the telegraph beat (frame timing in the test runner is uneven).
+	var peak := 0.0
+	for i in 40:
+		await get_tree().process_frame
+		peak = maxf(peak, visual.pivot.rotation.x)
+	assert_gt(peak, deg_to_rad(7.0), "Telegraph leans the Enforcer ~8 deg toward its front (peak %.3f rad)" % peak)
+	enforcer.queue_free()

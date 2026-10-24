@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://3D_Assets/enforcers_ai/clean/Enforcer_Hammer.glb" id="2_model"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+resource_name = "enforcer_body_dark_metal"
+albedo_color = Color(0.19, 0.206, 0.248, 1)
+metallic = 0.6
+roughness = 0.4
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+script = ExtResource("1_visual")
+rim_strength = 3.5
+
+[node name="Pivot" type="Node3D" parent="."]
+transform = Transform3D(1.51, 0, 0, 0, 1.51, 0, 0, 0, 1.51, 0, -1.5, 0)
+
+[node name="EnforcerHammer" parent="Pivot" instance=ExtResource("2_model")]
+
+[node name="Enforcer_Hammer" parent="Pivot/EnforcerHammer" index="0"]
+surface_material_override/0 = SubResource("StandardMaterial3D_body")

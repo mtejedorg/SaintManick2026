@@ -11,6 +11,11 @@ extends CharacterBody3D
 @onready var state_machine: EnforcerStateMachine = $StateMachine
 var combat_comp: Node = null
 
+## Unrigged mesh (Enforcer_Hammer.glb): procedural life instead of clips.
+const BEAT_SQUASH := 0.03            # +3 % height on every primary beat
+const BEAT_SQUASH_SECONDS := 0.1
+const TELEGRAPH_LEAN_DEGREES := 8.0  # tips toward the model's front for the telegraph beat
+
 var player: Node3D
 var is_shield_active: bool = false
 var is_vulnerable: bool = false
@@ -96,6 +101,8 @@ func apply_gravity(delta: float) -> void:
 		velocity += get_gravity() * delta
 
 func _on_beat(layer: String, beat_index: int) -> void:
+	if layer == "primary" and character_visual:
+		character_visual.beat_pulse(BEAT_SQUASH, BEAT_SQUASH_SECONDS)
 	if not is_active:
 		return
 	if combat_comp.is_stunned():

@@ -23,7 +23,8 @@ func _execute_attack() -> void:
 	if enforcer.player:
 		var dir = (enforcer.player.global_position - enforcer.global_position).normalized()
 		dir.y = 0
-		enforcer.look_at(enforcer.player.global_position, Vector3.UP)
+		# use_model_front: the Enforcer mesh faces +Z, so +Z (not -Z) must point at Nick.
+		enforcer.look_at(enforcer.player.global_position, Vector3.UP, true)
 		enforcer.velocity.x = dir.x * enforcer.stats.speed * 2.0
 		enforcer.velocity.z = dir.z * enforcer.stats.speed * 2.0
 		

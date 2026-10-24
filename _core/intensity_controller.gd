@@ -19,6 +19,8 @@ func _ready() -> void:
 		SignalBus.boss_died.connect(_on_boss_died)
 	if not SignalBus.boss_reset.is_connected(_on_boss_reset):
 		SignalBus.boss_reset.connect(_on_boss_reset)
+	if not SignalBus.run_started.is_connected(_on_run_started):
+		SignalBus.run_started.connect(_on_run_started)
 
 func _on_beat(layer: String, _beat_index: int) -> void:
 	if layer == "primary":
@@ -34,6 +36,11 @@ func _on_boss_died() -> void:
 func _on_boss_reset() -> void:
 	_boss_active = false
 	update_tempo()
+
+## A run that ended mid-boss (game over/abandon) never emits boss_died/boss_reset —
+## without this the tempo stays frozen for the whole next run.
+func _on_run_started() -> void:
+	_boss_active = false
 
 func get_active_enemy_count() -> int:
 	var active_components: Array = []

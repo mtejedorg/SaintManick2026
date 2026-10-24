@@ -281,6 +281,10 @@ func test_phase_2_beat_pulse_returns_to_authored_scale() -> void:
 
 	boss.activate_boss()
 	boss.phase_2_triggered = true
+	# Only the manual beat below may pulse: a live Conductor beat landing inside the 0.45 s
+	# window would restart the tween and make this test depend on the global beat phase.
+	if SignalBus.beat.is_connected(boss._on_beat):
+		SignalBus.beat.disconnect(boss._on_beat)
 	boss._on_beat("primary", 1)
 
 	await get_tree().create_timer(0.05).timeout

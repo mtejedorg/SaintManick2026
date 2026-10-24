@@ -53,6 +53,7 @@ func test_respawn_teleports_refills_and_emits_player_respawned() -> void:
 	get_tree().current_scene.add_child(player)
 	player.global_position = Vector3(10.0, 0.0, 0.0)
 
+	GameManager.start_new_run() # the run starts before any zone entry (it clears checkpoints)
 	SignalBus.zone_entered.emit("SECTOR 03 — SECURITY LOCK")
 
 	# Walk on, get hurt, die once.
@@ -64,7 +65,6 @@ func test_respawn_teleports_refills_and_emits_player_respawned() -> void:
 	var on_respawn = func(): flags.respawned = true
 	SignalBus.player_respawned.connect(on_respawn)
 
-	GameManager.start_new_run()
 	GameManager.respawn_or_game_over()
 
 	assert_true(flags.respawned, "player_respawned should fire on a survivable life loss")
@@ -168,6 +168,7 @@ func test_respawn_restores_sidescroll_rail_jump_and_camera_mode() -> void:
 	get_tree().current_scene.add_child(cam)
 	cam.target = player
 
+	GameManager.start_new_run() # the run starts before any zone entry (it clears checkpoints)
 	SignalBus.zone_entered.emit("SECTOR 03 — SECURITY LOCK")
 	assert_eq(GameManager.checkpoint_path, rail, "Checkpoint should store the rail Nick was on")
 	assert_false(GameManager.checkpoint_top_down, "A railed checkpoint is side-scroll")
@@ -179,7 +180,6 @@ func test_respawn_restores_sidescroll_rail_jump_and_camera_mode() -> void:
 	SignalBus.camera_shift_requested.emit(false, null, 5.0) # in-flight tween at death
 	assert_eq(cam.state_machine.current_state.name, "Transitioning", "Precondition: a camera shift is in flight")
 
-	GameManager.start_new_run()
 	GameManager.respawn_or_game_over()
 
 	assert_true(player.is_jump_enabled, "Respawn at a side-scroll checkpoint must re-enable jump")

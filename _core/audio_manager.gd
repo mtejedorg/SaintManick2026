@@ -121,6 +121,9 @@ func _connect_signals() -> void:
 	SignalBus.boss_died.connect(_on_boss_died)
 	SignalBus.boss_reset.connect(_on_boss_reset)
 
+	# Run lifecycle
+	SignalBus.run_started.connect(_on_run_started)
+
 
 func _on_player_hit_landed(damage_info: DamageInfo) -> void:
 	if damage_info.amount >= DamageInfo.HEAVY_THRESHOLD:
@@ -223,6 +226,13 @@ func _on_boss_died() -> void:
 		_boss_music_a.stop()
 	if _boss_music_b:
 		_boss_music_b.stop()
+
+## A run that ended mid-Headliner (game over/abandon) never emitted boss_died — clear the
+## boss-music flag so the next run's Enforcer kill doesn't cut the zone music, and forget
+## the last track so the first zone entry starts its music fresh.
+func _on_run_started() -> void:
+	_boss_music_active = false
+	_current_music = ""
 
 ## T3: a checkpoint respawn returned the boss to dormant — silence the boss track the
 ## same way a kill does (guarded, so an Enforcer reset leaves zone music alone).

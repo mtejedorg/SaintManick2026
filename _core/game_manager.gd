@@ -101,10 +101,18 @@ func start_new_run() -> void:
 	_zones_seen.clear()
 	run_ended = false
 
+	# A new run starts from the slice's own first zone — never a previous run's checkpoint.
+	has_checkpoint = false
+	checkpoint_zone = ""
+	checkpoint_position = Vector3.ZERO
+	checkpoint_path = null
+	checkpoint_top_down = false
+
 	scrap_changed.emit(scrap)
 	cells_changed.emit(cells)
 	cores_changed.emit(cores)
 	lives_changed.emit(current_lives)
+	SignalBus.run_started.emit()
 
 func add_scrap(amount: int) -> void:
 	scrap += amount * scrap_multiplier

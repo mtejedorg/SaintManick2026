@@ -17,9 +17,14 @@ var bpm_ramp_rate: float = 20.0 # BPM change per second
 
 # IntensityController hook stub
 var intensity_controller: Node = null
+## The tempo the world rests at, captured from the exported `bpm` at startup (the Slice's
+## ~128, not a canonical BPM). A new run returns here.
+var _resting_bpm: float = 128.0
 
 func _ready() -> void:
 	target_bpm = bpm
+	_resting_bpm = bpm
+	SignalBus.run_started.connect(_on_run_started)
 	var intensity_controller_script = load("res://_core/intensity_controller.gd")
 	intensity_controller = intensity_controller_script.new()
 	add_child(intensity_controller)
@@ -53,6 +58,15 @@ func _process(delta: float) -> void:
 			if beat_in_measure == 1:
 				layer.measure_index += 1
 				SignalBus.downbeat.emit(layer_name, layer.measure_index)
+
+## A new run must not inherit the previous run's tempo (e.g. a game over in the
+## Headliner's 160 BPM phase 2) or its beat/measure counters.
+func _on_run_started() -> void:
+	bpm = _resting_bpm
+	target_bpm = _resting_bpm
+	var primary_meter: int = layers["primary"].beats_per_measure if layers.has("primary") else 4
+	register_layer("primary", primary_meter)
+	SignalBus.tempo_changed.emit(bpm)
 
 ## Register or configure a meter layer
 func register_layer(layer_name: String, beats_per_measure: int = 4) -> void:

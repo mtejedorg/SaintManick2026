@@ -278,3 +278,47 @@ func test_complete_run_twice_banks_once() -> void:
 
 	GameManager.start_new_run()
 	assert_false(GameManager.run_ended, "start_new_run should clear run_ended")
+
+func test_start_new_run_resets_tempo_boss_audio_and_checkpoint_state() -> void:
+	# D4: a game over/abandon mid-boss must not leak 160 BPM, the IntensityController boss
+	# lock, AudioManager's boss-music flag or the old checkpoint into the next run.
+	# The framework disconnects every SignalBus connection between tests — reconnect.
+	var ic: IntensityController = Conductor.intensity_controller
+	var handlers: Array[Callable] = [Conductor._on_run_started, ic._on_run_started, AudioManager._on_run_started]
+	for h in handlers:
+		if not SignalBus.run_started.is_connected(h):
+			SignalBus.run_started.connect(h)
+
+	var saved_bpm: float = Conductor.bpm
+	Conductor.bpm = 160.0
+	Conductor.target_bpm = 160.0
+	Conductor.layers["primary"].beat_index = 37
+	Conductor.layers["primary"].measure_index = 9
+	ic._boss_active = true
+	AudioManager._boss_music_active = true
+	AudioManager._current_music = "zone_corporate"
+	GameManager.has_checkpoint = true
+	GameManager.checkpoint_zone = "SECTOR 10 — HEADLINER"
+	GameManager.checkpoint_position = Vector3(365.0, 15.0, 0.0)
+	GameManager.checkpoint_top_down = true
+
+	GameManager.start_new_run()
+
+	assert_eq(Conductor.bpm, 128.0, "Conductor bpm should return to the resting tempo")
+	assert_eq(Conductor.target_bpm, 128.0, "Conductor target_bpm should return to the resting tempo")
+	assert_eq(Conductor.layers["primary"].beat_index, 0, "Primary layer beat counter should reset")
+	assert_eq(Conductor.layers["primary"].measure_index, 0, "Primary layer measure counter should reset")
+	assert_false(ic._boss_active, "IntensityController boss lock should clear")
+	assert_false(AudioManager._boss_music_active, "AudioManager boss-music flag should clear")
+	assert_eq(AudioManager._current_music, "", "AudioManager should forget the last track")
+	assert_false(GameManager.has_checkpoint, "Checkpoint should clear on a new run")
+	assert_eq(GameManager.checkpoint_zone, "", "Checkpoint zone should clear")
+	assert_eq(GameManager.checkpoint_position, Vector3.ZERO, "Checkpoint position should clear")
+	assert_null(GameManager.checkpoint_path, "Checkpoint rail should clear")
+	assert_false(GameManager.checkpoint_top_down, "Checkpoint camera mode should clear")
+
+	for h in handlers:
+		if SignalBus.run_started.is_connected(h):
+			SignalBus.run_started.disconnect(h)
+	Conductor.bpm = saved_bpm
+	Conductor.target_bpm = saved_bpm

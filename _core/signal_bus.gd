@@ -16,6 +16,12 @@ signal player_life_lost(current_lives: int)
 signal player_respawned()
 signal ability_meter_changed(current: float, max_meter: float)
 
+# --- Run Events ---
+## Emitted at the end of GameManager.start_new_run(). Global systems that carry state
+## across scene changes (Conductor tempo, IntensityController boss lock, AudioManager boss
+## music flag) reset here so a game over/abandon mid-boss can't leak into the next run.
+signal run_started()
+
 # --- Combat Events ---
 signal combo_increased(current_combo: int)
 signal combo_dropped()

@@ -74,8 +74,11 @@ func test_projectile_hits_and_expiry() -> void:
 	proj.hitbox.damage_info.amount = 15.0
 	proj.hitbox.damage_info.source = proj
 	
-	# Trigger the collision
-	proj.hitbox._on_area_entered(player_hurtbox)
+	# Trigger the collision through the real signal so both handlers run: the hitbox
+	# deals damage and the projectile schedules its own return to the pool. (Calling
+	# hitbox._on_area_entered directly skipped the release — the assertion below only
+	# passed because the old hard-coded arena centre culled the projectile.)
+	proj.hitbox.area_entered.emit(player_hurtbox)
 	
 	assert_eq(player_health.current_health, 85.0, "Player should take damage from projectile hit")
 	
@@ -95,6 +98,32 @@ func test_projectile_hits_and_expiry() -> void:
 	# Clean up
 	player_hurtbox.queue_free()
 	player_health.queue_free()
+	pool.queue_free()
+
+func test_projectile_range_is_relative_to_its_spawn_point() -> void:
+	var pool = ObjectPool.new()
+	pool.template = load("res://levels/components/pooled_projectile.tscn")
+	pool.initial_pool_size = 1
+	add_child(pool)
+
+	# Fired far from the Zone 10 arena: must not be culled for being "out of the arena".
+	var proj = pool.acquire()
+	proj.global_position = Vector3(-500.0, 0.0, 40.0) # emitter positions after acquire
+	proj.direction = Vector3.RIGHT
+	proj._physics_process(0.016)
+	assert_true(proj.visible, "Projectile should survive when fired away from the old hard-coded arena centre")
+
+	# Travelling past max_range from its own spawn point returns it to the pool.
+	proj.global_position = Vector3(-500.0 + proj.max_range + 1.0, 0.0, 40.0)
+	proj._physics_process(0.016)
+	assert_false(proj.visible, "Projectile should return to pool beyond max_range from its spawn point")
+
+	# Re-acquired projectiles re-capture a fresh origin.
+	var again = pool.acquire()
+	again.global_position = Vector3(800.0, 0.0, 0.0)
+	again._physics_process(0.016)
+	assert_true(again.visible, "Re-acquired projectile should measure range from its new spawn point")
+
 	pool.queue_free()
 
 func test_boss_activation() -> void:

@@ -66,7 +66,8 @@ func test_hazard_collision_configuration() -> void:
 
 # A9: physics BODY layers (separate from hitbox/hurtbox layers). Player = layer 2
 # ("player"), colliding with world (1) + enemies (3). Enemies = layer 3 ("enemies",
-# bit 4), colliding with world (1) + player (2). Triggers mask layer 2.
+# bit 4), colliding with world (1) + player (2) + other enemies (3) so crowds don't
+# overlap (D13). Triggers mask layer 2.
 func test_body_root_layers() -> void:
 	var player = load("res://characters/player/player.tscn").instantiate()
 	assert_eq(player.collision_layer, 2, "Player body should be on the player layer (2)")
@@ -82,7 +83,7 @@ func test_body_root_layers() -> void:
 	]:
 		var enemy = load(path).instantiate()
 		assert_eq(enemy.collision_layer, 4, "%s body should be on the enemies layer (4)" % path)
-		assert_eq(enemy.collision_mask, 3, "%s body should collide with world (1) + player (2)" % path)
+		assert_eq(enemy.collision_mask, 7, "%s body should collide with world (1) + player (2) + enemies (4)" % path)
 		enemy.free()
 
 	var encounter = load("res://levels/components/zone_encounter.tscn").instantiate()

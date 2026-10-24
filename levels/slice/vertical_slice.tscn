@@ -102,7 +102,7 @@ emission = Color(1.0, 0.0, 0.0, 1.0)
 
 [sub_resource type="Curve3D" id="Curve3D_z8"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 280, -4, 0, 0, 0, 0, 0, 0, 0, 340, -4, 0),
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 240, -4, 0, 0, 0, 0, 0, 0, 0, 348, -4, 0),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
@@ -151,7 +151,7 @@ size = Vector3(1, 4, 8)
 
 [sub_resource type="Curve3D" id="Curve3D_z10"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 349, 15, 0, 0, 0, 0, 0, 0, 0, 377, 15, 0),
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 345, 15, 0, 0, 0, 0, 0, 0, 0, 377, 15, 0),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
@@ -863,13 +863,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, 2)
 [node name="SpawnPoint4" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 2)
 
-[node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path")]
+[node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path", "exit_path")]
 script = ExtResource("19_elevator_encounter")
 platform = NodePath("../ElevatorPlatform")
 spawner = NodePath("../ElevatorPlatform/ElevatorSpawner")
 entry_trigger = NodePath("ElevatorEntryTrigger")
 target_path = NodePath("../ElevatorPlatform/Path_Z9")
-target_y = 15.0
+exit_path = NodePath("../Path_Z10")
+target_y = 14.5
 speed = 2.0
 wave_cooldown = 5.0
 waves = [SubResource("Resource_z9_w1"), SubResource("Resource_z9_w2")]
@@ -927,7 +928,7 @@ size = Vector3(0.5, 4, 8)
 curve = SubResource("Curve3D_z10")
 
 [node name="Zone10_Trigger" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 354, 17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 357, 17, 0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("22_zone_trigger")
@@ -1030,7 +1031,6 @@ light_energy = 2.0
 omni_range = 30.0
 script = ExtResource("35_stage_light")
 
-[connection signal="encounter_completed" from="ElevatorEncounter" to="Headliner" method="activate_boss"]
 [connection signal="body_entered" from="Zone10_Trigger" to="Headliner" method="activate_boss"]
 
 

@@ -12,6 +12,9 @@ signal encounter_completed
 
 @export var entry_trigger: Area3D
 @export var target_path: Path3D # Path_Z9
+## Rail Nick is handed to when the elevator arrives (Path_Z10). Without it he stays on
+## Path_Z9 (max x = platform edge) and cannot walk into the dock.
+@export var exit_path: Path3D
 ## Rare Scrap ("cells" in code, GDD §5.1) awarded for clearing the Zone 9 elevator
 ## endurance encounter.
 @export var cells_reward: int = 10
@@ -90,5 +93,7 @@ func _check_completion() -> void:
 		is_active = false
 		if cells_reward > 0:
 			GameManager.add_cells(cells_reward)
+		if exit_path:
+			SignalBus.camera_shift_requested.emit(false, exit_path, 0.5)
 		encounter_completed.emit()
 		print("Elevator encounter completed!")

@@ -17,7 +17,8 @@ GODOT="/c/Users/MARCO/Tools/Godot/Godot_v4.6.3-stable_win64_console.exe"
 PROJ="/c/Users/MARCO/Documents/GitHub/SAINT MANICK"   # space in path — always quote
 
 "$GODOT" --headless --path "$PROJ" --import           > /tmp/imp.log   2>&1
-"$GODOT" --headless --path "$PROJ" --quit-after 300   > /tmp/smoke.log 2>&1
+"$GODOT" --headless --path "$PROJ" --quit-after 300   > /tmp/smoke_title.log 2>&1                                   # main scene = title screen
+"$GODOT" --headless --path "$PROJ" --quit-after 300 res://levels/slice/vertical_slice.tscn > /tmp/smoke.log 2>&1   # the slice
 "$GODOT" --headless --path "$PROJ" --script tests/run_tests.gd
 ```
 
@@ -26,41 +27,57 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 **Also grep both logs** for errors the test suite is blind to (design-contract violations aside — scene corruption, silent shader failures, missing loaders):
 
 ```bash
-grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke.log
+grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke_title.log /tmp/smoke.log
 ```
 
-Pass = exit 0 on all three commands, zero grep hits, test count at or above the last known-good baseline (currently **100**).
+Pass = exit 0 on all commands, zero grep hits (the two exit-time leak lines are known), test count at or above the last known-good baseline (currently **218**). Visual gate: `tools/capture/capture_scene.tscn` (see `.claude/CLAUDE.md`).
 
 ---
 
 ## 2. Test Coverage Table
 
-The automated suite consists of **100 test cases** across **20 test suites**.
+The automated suite consists of **218 test cases** across **38 test suites** (2026-10-24; regenerate this table with the snippet in the commit that produced it — counts `func test_` per file).
 
-| Test Suite File | Test Cases | Objective / Verification |
+| Test Suite File | Test Cases | Covers |
 | :--- | :---: | :--- |
-| `test_health_component.gd` | 6 | Shield-first damage absorption, spillover to health, `is_shield_breaker` bypass, health clamping + `died` signal, shield regen delay, player signal routing. |
-| `test_damage_flow.gd` | 4 | Active `Hitbox3D`/`Hurtbox3D` overlap damage, inactive hitbox no-op, `damage_info.source` auto-population and preservation. |
-| `test_conductor.gd` | 3 | `beat_index` progression/downbeat wrapping, `measure_index` incrementing, BPM ramp toward target. |
-| `test_game_manager.gd` | 7 | Run reset + upgrade scaling, scrap add/spend, respawn/game-over life decrement flow, enemy/zone tracking, **cells/cores accumulate + reset**, **full-clear and game-over currency banking (scrap + cells + core)**. |
-| `test_save_manager.gd` | 3 | Profile serialization round-trip (now including default-unlocked starter combos), missing-file fallback, **one-time `persistent_scrap` → `scrap` migration from a legacy fixture save**. |
-| `test_enemy_stats.gd` | 5 | `.tres` stat assertions for Bruiser/Runner/Sniper/Enforcer/Headliner. |
-| `test_wave_encounter.gd` | 2 | `wave_cleared` emission, ZoneEncounter gate lock/unlock progression. |
-| `test_collision_layers.gd` | 4 | 3D physics collision layer constants and per-scene layer/mask assignments. |
-| `test_camera_fsm.gd` | 3 | Sidescroll → Transitioning → TopDown transitions, target tracking, jump-suppression/`current_path` updates. |
-| `test_juice_combat.gd` | 12 | Roll/dash invincibility, enemy knockback + stun decay, launcher Y-pop, combo counter timeout/whiff-drop, combo route damage (Tri-Cut/Sweeper/Battery Ram), **resource-driven combo route data (C4)**, **Bruiser shield sourced from EnemyStats (C4)**, **combo reset on player damage (M11)**, **combo cap at 50 with `combo_capped` firing exactly once (M11)**, hit-stop time-scale recovery. |
-| `test_slice_b_logic.gd` | 5 | Enforcer death rewiring, escape sequence camera/wall/end-zone, escape hazard periodic damage, elevator translation/waves/cooldown, elevator completion conditions. |
-| `test_headliner_boss.gd` | 7 | Object pool lifecycle, pooled projectile hit/expiry, boss dormant→Shield activation, shield mitigation/break, Phase 2 top-down transition, Bullet Hell state + enrage transition, Death state + run completion. |
-| `test_player.gd` | 1 | Fall-out-of-world returns to last safe position and costs HP (no infinite fall, no full reload). |
-| `test_ability_bar_logic.gd` | 6 | Meter fill/cap, **heavy attack stays heavy at 0 meter (C1)**, **Battery Ram sets `is_guard_breaking` at 0 meter (C1)**, **fill classified via `DamageInfo.HEAVY_THRESHOLD` not damage scale (C5)**, **out-of-combat decay respecting the delay window (C5)**, decay never goes negative. |
-| `test_ability_spenders.gd` | 7 | **EMP Dash-Cancel spends 25 meter and transitions to StateDash (M5b)**, fails gracefully without enough meter, hitbox on/off across the active/recovery boundary, **Bass Drop arms only at full meter, detonates on downbeat + resets meter, no-op without arming, AoE radius targeting (M5b)**. |
-| `test_bruiser.gd` | 5 | Shield/guard-break absorption, **hitbox inactive by default (M6b)**, **telegraph arms one beat before the downbeat within range (M6b)**, **hitbox active only during the beat-gated active step then recovers (M6b)**, **no telegraph out of melee range (M6b)**. |
-| `test_shop_and_combo_gating.gd` | 8 | **Tri-Cut/Launcher free + unlocked by default (M8)**, **Sweeper/Battery Ram cost cells (M8)**, locked route falls back to generic damage, unlocked route uses tuned route data, **booster-slot upgrade costs 1 core and grants +1 slot (M8)**, shop scene renders both upgrade lists, buying a combo spends currency + unlocks it, buying with an unmet prerequisite is rejected. |
-| `test_vcr_overlay.gd` | 4 | **Burst sets/decays `aberration_strength` (M10)**, **`player_damaged` and `camera_shift_requested` each trigger a burst (M10)**. |
-| `test_hud_layout.gd` | 4 | **Ability Bar lives in StatusContainer, not floating at HUD root (GAP-8/M12)**, **shield overlays the battery instead of a separate stamina slot (GAP-8/M12)**, ability bar's estamina textures are assigned, HUD reacts to `ability_meter_changed` post-move. |
-| `test_zone_lighting.gd` | 4 | **All 10 zone-tinted `OmniLight3D`s exist under `ZoneLights` (M13)**, **Zone 10 carries the `stage_light.gd` script**, stage light pulses on beat and cycles its palette on downbeat. |
-
----
+| `test_ability_bar_logic.gd` | 6 | ability meter fill; heavy attack free at zero meter; battery ram sets guard breaking at zero meter; meter fill classifies by heavy threshold not damage scale; meter decays out of combat but not immediately; meter decay stops at zero |
+| `test_ability_spenders.gd` | 7 | emp dash cancel consumes meter and transitions to dash; emp dash cancel fails without enough meter; hitbox disabled during recovery window; bass drop arms only at full meter; bass drop detonates on downbeat and resets meter; bass drop does not detonate without arming … |
+| `test_audio_zones.gd` | 1 | tier for zone follows factory to neon arc |
+| `test_boss_shield_absorb.gd` | 2 | headliner shield absorbs without stun or knockback; enforcer shield absorbs without stun or knockback |
+| `test_bruiser.gd` | 5 | bruiser shield and guard break; bruiser hitbox inactive by default; bruiser telegraphs one beat before downbeat; bruiser hitbox active only on downbeat then recovers; bruiser does not telegraph out of range |
+| `test_camera_fsm.gd` | 3 | initial state is sidescroll; transition to topdown; transition back to sidescroll |
+| `test_ceiling_piston.gd` | 6 | downbeat triggers slam; slam beat is not driven by a local counter; cock back happens on beat four before the downbeat; beat offset staggers the slam beat; accelerated piston slams on beats one and three never a three beat cycle; slammed hitbox world aabb overlaps the floor to head height |
+| `test_character_visual.gd` | 4 | white tint keeps model materials; non white tint applies one dark base; rim defaults overrides and flash returns; default rim by faction |
+| `test_checkpoint_respawn.gd` | 7 | life loss does not reload scene in mode; checkpoint updates on zone entered; respawn teleports refills and emits player respawned; cleared encounter stays cleared after respawn; uncleared encounter resets and rearms on respawn; enforcer resets to dormant full hp on respawn … |
+| `test_collision_layers.gd` | 5 | collision layer constants; player collision configuration; enemy collision configuration; hazard collision configuration; body root layers |
+| `test_combo_hit_registration.gd` | 3 | single light attack hits runner in front; light chain registers every hit on a target still in the box; battery ram ends the chain without a third hit |
+| `test_conductor.gd` | 3 | beat index progression and wrapping; downbeat emissions; tempo transition ramping |
+| `test_damage_flow.gd` | 4 | active hitbox inflicts damage; inactive hitbox ignores overlaps; source populated with owner if unset; source remains unchanged if already set |
+| `test_dodge_economy.gd` | 4 | cooldown blocks immediate redodge from idle; roll is vulnerable during recovery tail; beat aligned dodge grants meter and skips cooldown; emp dash cancel still works with cooldown active |
+| `test_elevator_respawn.gd` | 3 | mid ride respawn resets platform waves and rearms the trigger; completed elevator is untouched by respawn; respawn before boarding does nothing |
+| `test_enemy_stats.gd` | 5 | bruiser stats; runner stats; sniper stats; enforcer stats; headliner stats |
+| `test_enemy_visual_scale.gd` | 4 | runner visual matches capsule; bruiser visual matches capsule; enforcer visual matches capsule; enforcer keeps its materials and telegraphs with rim and lean |
+| `test_escape_kill_wall.gd` | 6 | wall is dormant in the authored scene; wall parks ten metres behind nick when the escape starts; respawn reparks the wall behind the checkpoint and keeps it moving; respawn before the escape leaves the wall alone; wall stops once it passes the end trigger; each damage beat shakes the camera |
+| `test_game_manager.gd` | 12 | start new run resets and applies upgrades; scrap modification and spending; respawn or game over flow; enemies and zones tracking; cells and cores accumulate and reset; full clear banks scrap cells and cores … |
+| `test_grunt_dormancy.gd` | 3 | runner below kill plane despawns silently; far runner stays dormant and near runner wakes on beat; slice at load rests at base tempo |
+| `test_headliner_boss.gd` | 14 | object pool lifecycle; projectile hits and expiry; projectile range is relative to its spawn point; boss activation; boss shield breaker; boss phase transition … |
+| `test_health_component.gd` | 6 | shield absorbs damage first; non shield breaker spillover; shield breaker bypasses shield; health cannot drop below zero and died signal; shield regen delay and processing; player routing to signal bus and game manager |
+| `test_hud_layout.gd` | 6 | ability bar lives in lower row not floating; shield bar overlays battery not separate slot; ability bar uses ability art textures; hud reflects ability meter changes; hud has no input overlay; battery rect has texture after ready |
+| `test_intensity_controller.gd` | 4 | tempo boost calculations; tempo boost clamp limit; boss suspension logic; dormant boss and miniboss hurtboxes excluded from count |
+| `test_juice_combat.gd` | 17 | player roll invincibility; player dash invincibility; enemy knockback and stun; enemy air juggle launch; player combo counter; combo resets when player takes damage … |
+| `test_level_fixes.gd` | 12 | z7 barrier is taller than a jump; zone4 trigger no longer overlaps the zone3 room; zone4 spawn markers stay over the catwalk; zone10 arena gate and walls span the whole dock; falling hazard reaches the floor and door closes flush; zone2 to zone3 gap is split by platform7 … |
+| `test_player.gd` | 9 | fall returns to safe position and costs hp; up down ignored while plane locked; nick visual feet rest on capsule bottom; new rail is eased onto not snapped; stale play once does not override a later clip with idle; play fitted stretches the clip to the state duration … |
+| `test_rail_reachability.gd` | 5 | every zone trigger lies inside its rails x range; consecutive rails overlap so nick is never snapped across a gap; elevator hands nick to the dock rail and boss gate closes behind him; player walking the zone8 rail boards the elevator; scene placed enemies stand on solid ground |
+| `test_save_manager.gd` | 6 | fallback to default profile when missing; save and load profile; legacy persistent scrap migrates to scrap; multiple run boosters persist through save round trip; legacy single run booster migrates to array; legacy none run booster is not migrated |
+| `test_shield_hierarchy.gd` | 5 | generic heavy pressures but does not zero a shield; battery ram zeroes the shield; generic heavy no longer launches; light attack shield damage unchanged; bass drop breaks boss shield state |
+| `test_shop_and_combo_gating.gd` | 11 | tri cut and launcher free and available by default; sweeper and battery ram cost cells; unpurchased sweeper falls back to generic damage; purchased sweeper uses route data; booster slot upgrade costs one core and grants slot; shop scene loads and lists upgrades … |
+| `test_slice_b_logic.gd` | 6 | flow rewire; escape activation; escape hazards damage non instant; elevator encounter movement and wave cooldown; elevator completion; door flashes one beat before closing |
+| `test_sniper.gd` | 3 | beam widens through aim lock fire in range; no cycle when player beyond attack range; drone visual is dark metal orange rim and hovers |
+| `test_trigger_physics.gd` | 1 | player body trips zone encounter through physics |
+| `test_vcr_overlay.gd` | 4 | trigger burst sets aberration strength; burst decays over time; player damaged triggers burst; camera shift triggers burst |
+| `test_wave_encounter.gd` | 3 | wave spawner clears wave on enemy tree exit; wave spawner honours named spawn marker; zone encounter gate locks and wave progression |
+| `test_zone_atmosphere.gd` | 5 | lookup returns the zone 5 palette; all ten zones are defined and unknown zones are empty; zone number parses the first integer; zone entered targets the entered zones values and tweens the environment; private environment copy leaves the authored resource untouched |
+| `test_zone_lighting.gd` | 8 | zone lights container and all ten lights exist; zone 10 stage light wired to stage light script; zone 10 stage light pulses on beat; zone 10 stage light cycles palette on downbeat; zone light coverage additions exist; zone 3 and 8 lights pulse with the beat … |
 
 ## 3. Manual Playtest Regression Checklist
 

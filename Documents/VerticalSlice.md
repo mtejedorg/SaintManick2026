@@ -14,7 +14,7 @@
 1. Nick dies with 0 lives → **Game Over** → **Karen's Shop** (currencies banked). Abandoning from pause banks them too.
 2. The player spends **Scrap / Cells / Cores** on permanent upgrades and equips a Run Booster.
 3. Nick re-enters from Zone 1, over-levelled for the early zones.
-4. Numbers are tuned in `tools/balance_tool.html` toward 2–3 runs (average) / 4–5 (weaker). *The current yields (≈2385 Scrap for a full clear) are far above the tool's assumptions — see GDD Appendix B.*
+4. Numbers are tuned in `tools/balance_tool.html` toward 2–3 runs (average) / 4–5 (weaker). *The current yields (≈2320 Scrap for a full clear, ≈4640 with Scrap Magnet) are far above the tool's assumptions — see GDD Appendix B.*
 
 > **Universal death rule (everywhere):** damage drains shield → HP. HP 0 costs a **life** and respawns Nick at the last zone checkpoint (full HP/shield, 1 s grace). Permadeath only at **HP 0 + 0 lives**. Hazards, falls (20 HP, back to the last safe ground) and escape failures obey the same rule.
 
@@ -56,11 +56,11 @@
 
 ### Zone 8 — SECTOR 08 · Escape (the Market Purge)
 - **Trigger:** the instant the Enforcer dies, a visible magenta kill wall starts 10 m behind Nick and advances at 3 m/s (15 damage per beat on contact).
-- **Course:** a blast door that closes every 4 beats (12 damage), a falling sign on an 8-beat cycle with a 2-beat flashing warning (15), a collapsing platform (shakes 0.5 s, falls, resets after 3 s), two 30 m floors with a 5 m gap. ~60 m; single jump suffices.
+- **Course:** a blast door that closes every 4 beats (12 damage), a falling sign on an 8-beat cycle with a 2-beat flashing warning (15), a collapsing platform (shakes 0.5 s, falls, resets after 3 s), two 30 m floors with a 5 m gap, and 2 Runners posted at the door and the gap. ~60 m; single jump suffices.
 - **Reward:** 10 Cells at the end trigger. *Length/speed tuning is open (GDD Decision D10).*
 
 ### Zone 9 — SECTOR 09 · Ascent (the elevator)
-- **Geometry:** an 8×6 m freight elevator rising 19 m to the rooftop. Boarding hands Nick the elevator's own rail; on arrival the rail hands him to the rooftop.
+- **Geometry:** an 8×6 m freight elevator rising 19 m to the rooftop. Boarding hands Nick the elevator's own rail; once the platform has reached the top **and** both waves are dead, the rail hands him to the rooftop.
 - **Waves:** 3 Runners · then 2 Bruisers + 2 Runners after a 5 s cooldown, with shield-regen windows between. Dying on the elevator resets it to the bottom.
 - **Reward:** 10 Cells.
 
@@ -77,8 +77,10 @@
 | Nick | 120 (12 seg) | Light 12 / Heavy 28 | 40 (12/s after 3 s) | — | — | 3 lives |
 | Runner | 30 | 8 | — | 8 | — | aggro range, telegraph → lunge |
 | Bruiser | 90 | 20 | 50 | 50 | — | downbeat only |
-| Sniper | 24 | 18 | — | 25 | — | fires on beat 1 |
+| Sniper | 24 | 18 | — | 25 | — | arms within 16 m; fires on beat 1 |
 | Rhythm Enforcer | 600 | 22 (third hit 28.6) | state-based | 300 | 15 | Zone 7 |
 | The Headliner | 1500 | 25 / bullets 10 | state-based | 1000 | 1 Core | Zone 10 |
+
+Hazards: piston 15 (knockback 5) · bomb cell 15 (knockback 6) · toxic pit 5 per beat · falling sign 15 · blast door 12 · kill wall 15 per beat · fall out of the world 20.
 
 Shop: Max HP +20 = 100 Scrap · Max Shield +10 = 150 · Extra Life = 300 · Double Jump = 200 · Sweeper = 20 Cells · Battery Ram = 25 Cells · Extra Booster Slot = 1 Core.

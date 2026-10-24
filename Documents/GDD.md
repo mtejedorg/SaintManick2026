@@ -87,8 +87,8 @@ Nick fights with two tools that read as one fighter: the **katana** (A, light �
 | **Battery Ram** | B-B | 40 dmg, **guard-breaking + shield-breaker**, 0.8 s | the only pure-arm route; the arm commits |
 
 - **Air attacks:** A/B pressed while airborne attack in the air (the ground routes apply). A dedicated *Air-Combo* route that holds launched enemies airborne is **[POST-SLICE]**.
-- **Shields (universal rule):** Bruiser, Enforcer and Headliner carry a shield. Light hits pressure it ×1, heavy hits ×2, overflow carries to HP. Only **Battery Ram** and **Bass Drop** *shatter* a shield outright. *(The Bruiser's 50-point shield therefore falls to two generic heavies — see Decision D7 in the audit if that should be raised to 80 so Battery Ram is the intended answer.)*
-- **Hit feedback:** hit-stop (0.08 s at 5 % time scale), camera shake (light 0.05 / heavy 0.1), cyan sparks for light hits and magenta for heavy, enemy knockback + stun. Hitboxes are fixed boxes in front of Nick (katana 2.5 m reach, arm 1.6 m), deliberately **not** parented to the animated weapon so hit detection stays deterministic.
+- **Shields — two kinds:** the **Bruiser** carries a 50-point *HP shield* (`HealthComponent`): light hits pressure it ×1, heavy hits ×2, overflow carries to HP, it regenerates 12/s after 3 s, and while it holds the Bruiser has hyper-armour (no knockback or stun). One generic heavy (28 × 2 = 56) already breaks it — Decision D7 proposes 80 so that two heavies or Battery Ram are the answer. The **Enforcer** and **The Headliner** use a *state shield* (on/off per cycle phase): while it is up, non-breaker hits deal nothing and are absorbed without knockback or stun; only **Battery Ram** and **Bass Drop** (`is_shield_breaker`) shatter it and stun them for two beats.
+- **Hit feedback:** hit-stop (0.08 s at 5 % time scale), camera shake (light 0.05 / heavy 0.1), cyan sparks for light hits and magenta for heavy, enemy knockback + stun. A hit is classed *heavy* at ≥ 20 damage, so every route finisher (Tri-Cut 20, Launcher 35, Sweeper 20, Battery Ram 40) gets heavy feedback and +9 meter. Hitboxes are fixed boxes in front of Nick — katana 1.5 wide × 1.5 tall × 2.5 m deep, arm 3.0 wide × 3.0 tall × 1.6 m deep (the arm sweeps a wide arc, which matters in top-down) — deliberately **not** parented to the animated weapon so hit detection stays deterministic.
 - **Defensive move — Dash & Roll:**
   - **Dash** (dedicated input: Shift / RB): 0.25 s burst at 18 m/s, **fully invincible** for its duration, 0.5 s shared dodge cooldown.
   - **Roll** (dedicated input: Ctrl / B): 0.45 s of i-frames then a 0.2 s vulnerable recovery tail, 18 m/s. The primary way to survive bullet hell in top-down.
@@ -122,7 +122,7 @@ Enemies hit hard; in compensation their attacks are locked to the Conductor so t
 |---|---|---|---|---|---|
 | **Runner** (Scrap-Punk Junkie) | 30 | 8 | — | 8 | chases within aggro range; telegraphs on a beat, lunges on the next |
 | **Bruiser** (Riot-Shield Enforcer) | 90 | 20 | 50 | 50 | plants and swings **only on the downbeat** (telegraph on beat 4; hitbox live for exactly one beat); heavy hits pressure the shield, Battery Ram shatters it |
-| **Sniper** (Laser-Sight Turret) | 24 | 18 | — | 25 | aims on beat 3, locks on beat 4, **fires on beat 1**; the beam widens/brightens through the cycle |
+| **Sniper** (Laser-Sight Turret) | 24 | 18 | — | 25 | arms only within 16 m; aims on beat 3, locks on beat 4, **fires on beat 1**; the beam widens 0.15 → 0.3 → 0.6 m through the cycle |
 
 Scene-placed grunts stay dormant until Nick is within their aggro range; any enemy that falls out of the world is removed silently (no reward). The tempo controller only counts active enemies.
 
@@ -140,11 +140,11 @@ Scene-placed grunts stay dormant until Nick is within their aggro range; any ene
 Defeating a district boss drops a **Data Core** (§5.1).
 
 ### 4.3. The Mini-Boss: The Rhythm Enforcer **[SLICE — Zone 7]**
-A heavily shielded enforcer *(`enforcer_stats.tres`: HP 600, hit 22, Scrap 300, **15 Cells**)*. The first hard **beat-reading test**: an 8-beat cycle — shield up (beat 3 → 1), telegraph (beat 2), a **3-hit burst on beats 2/3/4** (the third hit ×1.3 damage, ×1.8 knockback), then two vulnerable recovery beats at ×1.5 damage taken. The shield is up only while he advances; a shield-breaker hit (Battery Ram / Bass Drop) stuns him for two beats. Its death triggers the Zone 8 security purge.
+A heavily shielded enforcer *(`enforcer_stats.tres`: HP 600, hit 22, Scrap 300, **15 Cells**)*. The first hard **beat-reading test**: an 8-beat cycle — shield up while he advances (2 beats), **telegraph on beat 1**, a **3-hit burst on beats 2/3/4** (the third hit ×1.3 damage, ×1.8 knockback), then two vulnerable recovery beats at ×1.5 damage taken. The shield is up only while he advances; a shield-breaker hit (Battery Ram / Bass Drop) stuns him for two beats. Its death triggers the Zone 8 security purge.
 
 ### 4.4. The Vertical-Slice Boss: The Headliner **[SLICE — Zone 10]**
 A towering holographic VJ/DJ idol projected above the rooftop plaza *(`headliner_stats.tres`: HP 1500, hit 25, Scrap 1000, 1 Data Core)*.
-- **Phase 1 (side-scroll, 128 BPM):** the Enforcer's cycle at boss scale — shield, telegraph, lunge, recovery — with a 3.5 m shield bubble.
+- **Phase 1 (side-scroll, 128 BPM):** shield up while it advances (3.5 m bubble), a one-beat telegraph, a **single lunge**, then four vulnerable recovery beats at ×1.5 damage taken.
 - **Phase 2 (at 50 % HP):** the track jumps to **160 BPM**, the drone executes a Nier-style shift to **top-down bullet hell**, depth movement unlocks, and the Headliner raises a shield while firing a pooled **projection storm**: a 12-shot radial on beat 1, aimed shots on beats 2 and 4, an 8-shot spiral on beat 3 (10 damage each). The phase ends when a shield-breaker lands **or after 24 beats, when the shield overheats** — so a first-run player without Battery Ram is never soft-locked.
 - **Enraged:** back to side-scroll, no shield, +20 % speed, melee duel to the finish.
 - **Holo-walls and crowd-surge hazards** from the original concept are **[POST-SLICE]**; the slice's phase-2 hazard is the projection storm alone.
@@ -207,7 +207,7 @@ A constant faint scanline overlay and vignette sell the surveillance feed. Whene
 ### 6.3. Controls
 | Action | Keyboard | Gamepad |
 |---|---|---|
-| Move | A/D (←/→) | Left stick / D-pad |
+| Move | A/D or ←/→ | Left stick / D-pad |
 | Jump | Space | A |
 | Light / Heavy | J / K | X / Y |
 | Dash / Roll | Shift / Ctrl | RB / B |

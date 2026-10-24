@@ -35,6 +35,7 @@ func _ready() -> void:
 		combat_comp = combat_script.new()
 		combat_comp.name = "EnemyCombatComponent"
 		add_child(combat_comp)
+		combat_comp.connect("stun_started", _on_stun_started)
 
 	if not stats:
 		stats = load("res://characters/enemies/bruiser/bruiser_stats.tres")
@@ -153,6 +154,13 @@ func _update_facing() -> void:
 	if side == 0.0:
 		return
 	mesh_instance.rotation.y = lerp_angle(mesh_instance.rotation.y, side * PI / 2.0, FACING_TURN_WEIGHT)
+
+## F4: a stunning hit cancels the attack sequence — hitbox off, telegraph rim dropped — so
+## the grunt needs a fresh tell before it can swing again.
+func _on_stun_started() -> void:
+	attack_step = AttackStep.IDLE
+	hitbox.is_active = false
+	character_visual.update_rim_color(character_visual.get_default_rim_color())
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.

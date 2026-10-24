@@ -1,5 +1,9 @@
 extends Node
 
+## F4: emitted whenever a hit sets a stun (> 0). Grunts cancel their attack sequence on it
+## (disarm the hitbox, drop the telegraph) so they never lunge without a fresh tell.
+signal stun_started()
+
 @export var friction: float = 15.0 # Floor horizontal decay friction
 @export var normal_hit_y_pop: float = 3.0
 @export var launcher_hit_y_pop: float = 8.0
@@ -56,10 +60,9 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 	if enemy.get("is_shield_active") == true and not (damage_info.is_guard_breaking or damage_info.is_shield_breaker):
 		return
 		
-	_flash_hit(enemy)
-
 	var has_shield = enemy.get("health_component") and enemy.health_component.current_shield > 0.0
 	if has_shield and not damage_info.is_guard_breaking:
+		_flash_hit(enemy)
 		return
 		
 	# Calculate knockback direction
@@ -86,6 +89,10 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 		enemy.velocity.y = normal_hit_y_pop
 		
 	stun_timer = damage_info.stun
+	if stun_timer > 0.0:
+		stun_started.emit()
+	# After stun_started: a grunt's handler restores its resting rim, the flash goes on top.
+	_flash_hit(enemy)
 
 func is_stunned() -> bool:
 	return stun_timer > 0.0

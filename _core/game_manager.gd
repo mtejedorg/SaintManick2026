@@ -49,6 +49,11 @@ var respawn_grace_duration: float = 1.0
 
 var is_test: bool = false
 
+## Set once the run has terminated (full clear, game over or abandon) so a second
+## terminal event in the same run can't bank currencies twice — e.g. a last-life death
+## inside the Headliner's victory hold. Cleared by start_new_run().
+var run_ended: bool = false
+
 func _ready() -> void:
 	if not is_test:
 		start_new_run()
@@ -89,6 +94,7 @@ func start_new_run() -> void:
 	enemies_defeated = 0
 	zones_cleared = 0
 	_zones_seen.clear()
+	run_ended = false
 
 	scrap_changed.emit(scrap)
 	cells_changed.emit(cells)
@@ -132,6 +138,9 @@ func respawn_or_game_over() -> void:
 			return
 
 	# No lives left – game over (single emission for the terminal state)
+	if run_ended:
+		return
+	run_ended = true
 	current_lives = 0
 	lives_changed.emit(current_lives)
 	SignalBus.player_life_lost.emit(current_lives)
@@ -140,17 +149,29 @@ func respawn_or_game_over() -> void:
 	_bank_run_currencies()
 
 	if not is_test:
-		get_tree().change_scene_to_file("res://ui/menus/game_over_screen.tscn")
+		_change_scene("res://ui/menus/game_over_screen.tscn")
 
 func complete_run() -> void:
+	if run_ended:
+		return
+	run_ended = true
 	_bank_run_currencies()
 
 	if not is_test:
-		get_tree().change_scene_to_file("res://ui/menus/run_results_screen.tscn")
+		_change_scene("res://ui/menus/run_results_screen.tscn")
+
+## Every GameManager scene change unpauses first: a pause opened during a hold (e.g. the
+## boss victory timer) must not leak `paused = true` into the next screen.
+func _change_scene(path: String) -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file(path)
 
 ## Pause menu "ABANDON RUN": banks the run's scrap/cells/cores exactly like a game
 ## over, then clears the volatile run currencies. Does NOT change scene — the caller does.
 func abandon_run() -> void:
+	if run_ended:
+		return
+	run_ended = true
 	_bank_run_currencies()
 	scrap = 0
 	cells = 0

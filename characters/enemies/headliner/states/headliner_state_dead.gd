@@ -28,8 +28,11 @@ func enter() -> void:
 			boss.queue_free()
 	)
 
-	# Hold on the victory moment before switching to the results screen.
-	get_tree().create_timer(2.5).timeout.connect(func():
+	# Hold on the victory moment before switching to the results screen. The timer must
+	# NOT process while paused (create_timer defaults process_always=true): Esc during the
+	# hold would otherwise change scene under a paused tree. GameManager.run_ended guards
+	# against a last-life death in this window banking the run a second time.
+	get_tree().create_timer(2.5, false).timeout.connect(func():
 		GameManager.complete_run()
 	)
 

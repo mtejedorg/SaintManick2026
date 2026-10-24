@@ -255,3 +255,26 @@ func test_abandon_run_banks_currencies_and_clears_run_state() -> void:
 	assert_eq(GameManager.scrap, 0, "Run scrap should be cleared after abandoning")
 	assert_eq(GameManager.cells, 0, "Run cells should be cleared after abandoning")
 	assert_eq(GameManager.cores, 0, "Run cores should be cleared after abandoning")
+
+func test_complete_run_twice_banks_once() -> void:
+	# D1: a second terminal event in the same run (e.g. a last-life death inside the
+	# Headliner's victory hold) must not bank the run a second time.
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	SaveManager.profile.scrap = 0
+	GameManager.start_new_run()
+	GameManager.add_scrap(30)
+
+	GameManager.complete_run()
+	GameManager.complete_run()
+	assert_eq(SaveManager.profile.scrap, 30, "complete_run twice should bank the run's scrap once")
+
+	# A game over after the run already completed must not bank again either.
+	GameManager.current_lives = 0
+	GameManager.respawn_or_game_over()
+	assert_eq(SaveManager.profile.scrap, 30, "A game over after complete_run should not bank again")
+
+	GameManager.start_new_run()
+	assert_false(GameManager.run_ended, "start_new_run should clear run_ended")

@@ -15,6 +15,11 @@ enum AttackStep { IDLE, TELEGRAPH, ACTIVE, RECOVERY }
 @onready var character_visual: CharacterVisual = $MeshInstance3D
 var combat_comp: Node = null
 
+## F2: facing turn rate (per physics tick, same weight as PlayerController.face_direction)
+## and the speed below which the grunt faces the player instead of its velocity.
+const FACING_TURN_WEIGHT := 0.2
+const FACING_MIN_SPEED := 0.1
+
 var player: Node3D
 var attack_step: int = AttackStep.IDLE
 ## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
@@ -83,6 +88,7 @@ func _physics_process(delta: float) -> void:
 				velocity.x = move_toward(velocity.x, 0, 20 * delta)
 				velocity.z = move_toward(velocity.z, 0, 20 * delta)
 
+	_update_facing()
 	move_and_slide()
 
 func _on_beat(layer: String, beat_index: int) -> void:
@@ -132,6 +138,21 @@ func _on_downbeat(layer: String, _measure_index: int) -> void:
 	if attack_step == AttackStep.TELEGRAPH:
 		attack_step = AttackStep.ACTIVE
 		hitbox.is_active = true
+
+## F2: the NickProto body faces +Z, so yaw the visual root toward the move direction (or
+## toward the player while planted), like PlayerController.face_direction. Dormant and
+## stunned grunts keep their current yaw (knockback must not spin them away).
+func _update_facing() -> void:
+	if not is_active or combat_comp.is_stunned():
+		return
+	var side := 0.0
+	if absf(velocity.x) > FACING_MIN_SPEED:
+		side = signf(velocity.x)
+	elif player and is_instance_valid(player):
+		side = signf(player.global_position.x - global_position.x)
+	if side == 0.0:
+		return
+	mesh_instance.rotation.y = lerp_angle(mesh_instance.rotation.y, side * PI / 2.0, FACING_TURN_WEIGHT)
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.

@@ -24,19 +24,19 @@ func physics_update(delta: float) -> void:
 	player.move_and_slide()
 	
 	if not player.is_on_floor():
+		# F10: walked off a ledge without jumping -> coyote time for a late ground jump.
+		player.start_coyote_time()
 		transition_requested.emit("StateAirborne")
-		return
-		
-	if Input.is_action_just_pressed("jump") and player.is_jump_enabled:
-		transition_requested.emit("StateAirborne")
-		return
-		
-	if Input.is_action_just_pressed("dash") and player.can_dodge():
-		transition_requested.emit("StateDash")
 		return
 
-	if Input.is_action_just_pressed("roll") and player.can_dodge():
-		transition_requested.emit("StateRoll")
+	# F10: presses arrive through the player's buffers (this frame's press included).
+	if player.has_buffered_jump() and player.is_jump_enabled:
+		transition_requested.emit("StateAirborne")
+		return
+
+	var dodge_state := player.take_buffered_dodge()
+	if dodge_state != "":
+		transition_requested.emit(dodge_state)
 		return
 		
 	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):

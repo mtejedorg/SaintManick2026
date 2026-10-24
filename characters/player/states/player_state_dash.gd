@@ -13,6 +13,8 @@ func enter() -> void:
 	if player and player.health_component:
 		player.health_component.is_invincible = true
 	dash_timer = dash_duration
+	if player:
+		player.clear_dodge_buffer() # this dodge used the press (EMP cancel included)
 	var input_dir = player.get_movement_input() if player else Vector2.ZERO
 	dash_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player and player.is_facing_right else Vector2.LEFT)
 	if player:

@@ -16,6 +16,7 @@ func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
 	roll_timer = roll_iframe_duration + roll_recovery_duration
+	player.clear_dodge_buffer() # this dodge used the press
 	_iframes_ended = false
 	var input_dir = player.get_movement_input()
 	roll_direction = input_dir if input_dir != Vector2.ZERO else (Vector2.RIGHT if player.is_facing_right else Vector2.LEFT)

@@ -22,6 +22,19 @@ extends CharacterBody3D
 @export var beat_aligned_dodge_meter: float = 4.0
 var _dodge_cooldown_timer: float = 0.0
 
+## F10 input forgiveness. Coyote time: a ground jump is still allowed this long after
+## walking off a ledge. Jump buffer: a jump pressed this long before landing fires on
+## landing. Dodge buffer: a dash/roll pressed during attack recovery or the dodge cooldown
+## fires as soon as it is allowed, if within this window.
+@export var coyote_time: float = 0.10
+@export var jump_buffer_time: float = 0.12
+@export var dodge_buffer_time: float = 0.15
+var _coyote_timer: float = 0.0
+var _jump_buffer_timer: float = 0.0
+var _dodge_buffer_timer: float = 0.0
+## The dodge state the buffered press asks for ("StateDash"/"StateRoll"; "" = none).
+var _buffered_dodge_state: String = ""
+
 ## The rail Nick is plane-locked to (null = free top-down movement). Switching to a new
 ## rail eases him onto it over rail_blend_time instead of hard-snapping in one frame (the
 ## Zone 7 -> 8 hand-off alone is up to 25 m).
@@ -326,7 +339,62 @@ func _update_rest_rim() -> void:
 			character_visual.update_rim_color(character_visual.get_default_rim_color())
 			character_visual.update_rim_strength(character_visual.rim_strength)
 
+## F10: ticks the forgiveness windows and records this frame's jump/dodge presses. Runs
+## from _physics_process, before the StateMachine child's physics step (parent first), so
+## states always see the press of the current frame through the buffers.
+func _tick_input_buffers(delta: float) -> void:
+	_coyote_timer = maxf(0.0, _coyote_timer - delta)
+	_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
+	_dodge_buffer_timer = maxf(0.0, _dodge_buffer_timer - delta)
+	if _dodge_buffer_timer <= 0.0:
+		_buffered_dodge_state = ""
+	if Input.is_action_just_pressed("jump"):
+		buffer_jump()
+	if Input.is_action_just_pressed("dash"):
+		buffer_dodge("StateDash")
+	elif Input.is_action_just_pressed("roll"):
+		buffer_dodge("StateRoll")
+
+func buffer_jump() -> void:
+	_jump_buffer_timer = jump_buffer_time
+
+func has_buffered_jump() -> bool:
+	return _jump_buffer_timer > 0.0
+
+## Uses up the buffered jump; returns whether there was one.
+func consume_jump_buffer() -> bool:
+	var had := has_buffered_jump()
+	_jump_buffer_timer = 0.0
+	return had
+
+func start_coyote_time() -> void:
+	_coyote_timer = coyote_time
+
+func has_coyote_time() -> bool:
+	return _coyote_timer > 0.0
+
+func clear_coyote_time() -> void:
+	_coyote_timer = 0.0
+
+func buffer_dodge(state_name: String) -> void:
+	_buffered_dodge_state = state_name
+	_dodge_buffer_timer = dodge_buffer_time
+
+## The buffered dodge state to enter now ("" if none is buffered or the cooldown still
+## runs). Consumes the buffer when it returns a state.
+func take_buffered_dodge() -> String:
+	if _dodge_buffer_timer <= 0.0 or _buffered_dodge_state == "" or not can_dodge():
+		return ""
+	var state_name := _buffered_dodge_state
+	clear_dodge_buffer()
+	return state_name
+
+func clear_dodge_buffer() -> void:
+	_dodge_buffer_timer = 0.0
+	_buffered_dodge_state = ""
+
 func _physics_process(delta: float) -> void:
+	_tick_input_buffers(delta)
 	if current_path and current_path.curve:
 		# Snap the player X and Z to the closest point on the path to prevent drifting —
 		# eased over rail_blend_time right after a rail switch.

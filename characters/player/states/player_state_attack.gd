@@ -214,5 +214,7 @@ func physics_update(delta: float) -> void:
 		player.bionic_arm_hitbox.is_active = false
 		if not player.is_on_floor():
 			transition_requested.emit("StateAirborne")
-		else:
-			transition_requested.emit("StateIdle")
+			return
+		# F10: a dash/roll pressed during recovery fires the moment the attack ends.
+		var dodge_state := player.take_buffered_dodge()
+		transition_requested.emit(dodge_state if dodge_state != "" else "StateIdle")

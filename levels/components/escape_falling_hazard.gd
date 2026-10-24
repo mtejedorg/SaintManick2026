@@ -72,16 +72,18 @@ func _on_beat(layer: String, beat_index: int) -> void:
 	elif local_beat_counter == reset_delay_beats % beat_interval:
 		retract()
 		
-	# Flash warning if telegraphing
+	# F7: the warning is lit on EVERY telegraph beat (it used to toggle, so with the
+	# default 2 telegraph beats the first was dark and only one flash ever showed).
 	if is_telegraphing:
-		flash_state = not flash_state
+		flash_state = true
 		_update_warning_visuals(flash_state)
 	else:
 		_update_warning_visuals(false)
 
+## Starts the telegraph unlit — the beat that called this lights it (see _on_beat).
 func start_telegraph() -> void:
 	is_telegraphing = true
-	flash_state = true
+	flash_state = false
 
 func fall() -> void:
 	is_telegraphing = false

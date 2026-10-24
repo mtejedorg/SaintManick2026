@@ -43,7 +43,8 @@ func physics_update(delta: float) -> void:
 func _on_tween_finished() -> void:
 	if camera.target:
 		if "current_path" in camera.target:
-			camera.target.current_path = target_path
+			# Top-down is always free movement — never rail-lock, whatever path was passed.
+			camera.target.current_path = null if target_top_down else target_path
 		if "is_jump_enabled" in camera.target:
 			camera.target.is_jump_enabled = not target_top_down
 			

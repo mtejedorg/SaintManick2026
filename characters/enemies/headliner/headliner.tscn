@@ -117,7 +117,7 @@ volume_db = -80.0
 [node name="ObjectPool" type="Node" parent="."]
 script = ExtResource("16_pool")
 template = ExtResource("17_proj_scene")
-initial_pool_size = 40
+initial_pool_size = 80
 
 [node name="ProjectileEmitter" type="Node3D" parent="." node_paths=PackedStringArray("pool")]
 script = ExtResource("15_emitter")

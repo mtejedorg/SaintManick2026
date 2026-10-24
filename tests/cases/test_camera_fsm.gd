@@ -51,7 +51,8 @@ func test_transition_to_topdown() -> void:
 	
 	# After tween finish, state machine should transition to TopDown
 	assert_eq(state_machine.current_state.name, "TopDown", "Should shift to TopDown state after transition completes")
-	assert_eq(mock_target.current_path, dummy_path, "Target's current_path should be updated to dummy_path")
+	# D2: top-down is always free movement — a path passed with top_down=true is ignored.
+	assert_null(mock_target.current_path, "Top-down must never rail-lock the target, even if a path is passed")
 	assert_false(mock_target.is_jump_enabled, "Target's jump should be disabled in top-down view")
 
 func test_transition_back_to_sidescroll() -> void:

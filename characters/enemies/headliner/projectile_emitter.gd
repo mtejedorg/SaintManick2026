@@ -7,7 +7,8 @@ func fire_radial(count: int, speed: float, damage: float, offset: float = 0.0) -
 	if not pool:
 		return
 	for i in range(count):
-		var angle = offset + (i * 2.0 * PI / count)
+		# Half-step offset so no bullet sits exactly on the boss->player axis at offset 0.
+		var angle = offset + PI / count + (i * 2.0 * PI / count)
 		var dir = Vector3(cos(angle), 0, sin(angle)).normalized()
 		_spawn_projectile(dir, speed, damage)
 

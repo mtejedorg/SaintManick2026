@@ -8,8 +8,9 @@ func enter() -> void:
 	if boss.shield_bubble:
 		boss.shield_bubble.visible = false
 
-	# Request top-down camera shift
-	SignalBus.camera_shift_requested.emit(true, boss.path_z10, 2.0)
+	# Request the top-down camera shift with NO rail: phase 2's bullet hell needs free
+	# depth movement. StateEnraged hands Nick back to boss.path_z10 on the way out.
+	SignalBus.camera_shift_requested.emit(true, null, 2.0)
 
 	# Wait for transition time to complete, then enter Bullet Hell
 	get_tree().create_timer(2.0).timeout.connect(func():

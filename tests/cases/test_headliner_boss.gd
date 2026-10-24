@@ -177,11 +177,17 @@ func test_boss_phase_transition() -> void:
 	var boss = boss_scene.instantiate()
 	add_child(boss)
 	boss.activate_boss()
+	# Give the boss a real arena rail so the test proves phase 2 does NOT pass it on.
+	var rail := Path3D.new()
+	rail.curve = Curve3D.new()
+	add_child(rail)
+	boss.path_z10 = rail
 	
-	var flags = {"camera_shifted": false, "top_down": false}
+	var flags = {"camera_shifted": false, "top_down": false, "path": rail}
 	var camera_connection = func(top_down, path, transition_time):
 		flags.camera_shifted = true
 		flags.top_down = top_down
+		flags.path = path
 	SignalBus.camera_shift_requested.connect(camera_connection)
 	
 	# Deal damage to drop health to 50% or below (750 HP or below)
@@ -195,10 +201,12 @@ func test_boss_phase_transition() -> void:
 	assert_eq(boss.state_machine.current_state.name, "StateTransition", "Boss should transition to StateTransition")
 	assert_true(flags.camera_shifted, "Camera shift should be requested")
 	assert_true(flags.top_down, "Camera shift should request top-down")
+	assert_null(flags.path, "Phase 2 top-down shift must not rail-lock Nick (path should be null)")
 	
 	# Disconnect and clean up
 	SignalBus.camera_shift_requested.disconnect(camera_connection)
 	boss.queue_free()
+	rail.queue_free()
 
 func test_boss_bullet_hell_shield_break() -> void:
 	var boss_scene = load("res://characters/enemies/headliner/headliner.tscn")

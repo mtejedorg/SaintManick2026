@@ -5,7 +5,10 @@ extends CanvasLayer
 ## the battery (GDD §6.1: "regenerating shield shown as an overlaid layer on top"), not a
 ## separate slot using the stamina textures — the Ability Bar owns that slot now.
 @onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
-@onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LowerRow/LivesRect
+@onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRect
+## Magenta "LAST LIFE" tag under the lives icon, shown when no spare lives remain.
+@onready var last_life_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LastLifeLabel
+@onready var zone_title_card: Control = $ZoneTitleCard
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
 @onready var boss_bar_container: PanelContainer = $BossBarContainer
@@ -20,15 +23,24 @@ extends CanvasLayer
 ## on a res:// png is false in exported builds (only the imported .ctex ships).
 const ART_DIR := "res://ui/hud/art/"
 const COMBO_CYAN := Color(0.0, 0.961, 1.0, 1.0)
+## Below this fraction of max HP the battery pulses magenta on every beat.
+const LOW_HP_RATIO := 0.25
+const LOW_HP_MAGENTA := Color(1.0, 0.0, 0.667, 1.0)
+const LOW_HP_PULSE_TIME := 0.15
+## How long the "LIFE LOST — N LEFT" banner rests on screen.
+const LIFE_LOST_HOLD := 1.2
 
 var beat_tween: Tween
 var combo_tween: Tween
+var low_hp_tween: Tween
+var _low_hp: bool = false
 
 func _ready() -> void:
 	# Subscriptions
 	SignalBus.player_health_changed.connect(_on_player_health_changed)
 	SignalBus.player_shield_changed.connect(_on_player_shield_changed)
 	GameManager.lives_changed.connect(_on_lives_changed)
+	SignalBus.player_life_lost.connect(_on_player_life_lost)
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.downbeat.connect(_on_downbeat)
 	SignalBus.combo_increased.connect(_on_combo_increased)
@@ -77,8 +89,15 @@ func _on_player_shield_changed(new_shield: float, max_shield: float) -> void:
 func _on_lives_changed(new_amount: int) -> void:
 	_update_lives_ui(new_amount)
 
+## A life was spent. With lives left, reuse the zone card as a short banner; the terminal
+## (0 lives) emission is the game-over path and is handled by the game-over screen.
+func _on_player_life_lost(current_lives: int) -> void:
+	if current_lives > 0:
+		zone_title_card.call("show_text", "LIFE LOST — %d LEFT" % current_lives, LIFE_LOST_HOLD)
+
 func _update_battery_ui(current: float, max_val: float) -> void:
 	var ratio = current / max_val if max_val > 0.0 else 0.0
+	_set_low_hp(ratio > 0.0 and ratio < LOW_HP_RATIO)
 	var segments = clamp(round(ratio * 12.0), 0, 12)
 	
 	var path := ""
@@ -96,19 +115,40 @@ func _update_shield_ui(current: float, max_val: float) -> void:
 	shield_bar.max_value = max_val
 	shield_bar.value = current
 
+## The icon stays visible at 0 spare lives (the last-life state is the most important one to
+## see); a magenta "LAST LIFE" tag appears under it.
 func _update_lives_ui(lives: int) -> void:
-	if lives <= 0:
-		lives_rect.visible = false
-	else:
-		lives_rect.visible = true
-		var path: String = _get_lives_path(clampi(lives, 1, 4))
-		if ResourceLoader.exists(path):
-			lives_rect.texture = load(path)
+	lives_rect.visible = true
+	var path: String = _get_lives_path(clampi(lives, 1, 4))
+	if ResourceLoader.exists(path):
+		lives_rect.texture = load(path)
+	last_life_label.visible = lives <= 0
+
+func _set_low_hp(low: bool) -> void:
+	if low == _low_hp:
+		return
+	_low_hp = low
+	if not low:
+		if low_hp_tween:
+			low_hp_tween.kill()
+		battery_rect.modulate = Color.WHITE
+
+## Subtle per-beat battery pulse white -> magenta -> white while HP is under 25 %.
+func _pulse_low_hp() -> void:
+	if not _low_hp:
+		return
+	if low_hp_tween:
+		low_hp_tween.kill()
+	low_hp_tween = create_tween()
+	low_hp_tween.tween_property(battery_rect, "modulate", LOW_HP_MAGENTA, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
+	low_hp_tween.tween_property(battery_rect, "modulate", Color.WHITE, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
 
 func _on_beat(layer: String, _beat_index: int) -> void:
 	if layer != "primary":
 		return
-		
+
+	_pulse_low_hp()
+
 	if beat_tween:
 		beat_tween.kill()
 		

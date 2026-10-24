@@ -25,6 +25,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 script = ExtResource("1_xxx")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -129,13 +130,11 @@ layout_mode = 2
 [node name="BoosterButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme = ExtResource("2_theme")
 text = "Equipped Booster: None  (Slots: 1)"
 
 [node name="StartRunButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
-theme = ExtResource("2_theme")
 theme_override_font_sizes/font_size = 32
 text = "START RUN"
 

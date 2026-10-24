@@ -41,6 +41,17 @@ func test_ability_bar_uses_ability_art_textures() -> void:
 	assert_not_null(progress_bar.texture_under, "Ability bar should have a background texture assigned")
 	assert_not_null(progress_bar.texture_progress, "Ability bar should have a fill texture assigned")
 
+func test_ability_bar_has_empty_track() -> void:
+	# The empty art is only a small bracket, so a dark Track panel sits behind the meter to
+	# keep the slot readable at 0.
+	var ability_bar = hud.get_node("MarginContainer/VBoxContainer/LowerRow/AbilityBar")
+	var track = ability_bar.get_node_or_null("Track")
+	assert_not_null(track, "AbilityBar should have a Track child behind the progress bar")
+	if track == null:
+		return
+	assert_true(track is Panel, "Track should be a Panel")
+	assert_true(track.get_index() < ability_bar.get_node("ProgressBar").get_index(), "Track must be drawn behind the ProgressBar")
+
 func test_hud_reflects_ability_meter_changes() -> void:
 	var ability_bar = hud.get_node("MarginContainer/VBoxContainer/LowerRow/AbilityBar")
 	var progress_bar: TextureProgressBar = ability_bar.get_node("ProgressBar")

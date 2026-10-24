@@ -2,7 +2,7 @@
 
 ## Project
 Godot **4.6.3** (Forward+), GDScript. 2.5D Action-Roguelite Beat'em up — this is a **3D project** filmed by a constrained camera: `CharacterBody3D`, `Area3D`, `Node3D`. Never `Node2D`/`CharacterBody2D`.
-Vertical slice (Zones 1–10) complete. Player character: Nick. Main scene: `levels/slice/vertical_slice.tscn`.
+Vertical slice (Zones 1–10) complete. Player character: Nick. Main scene: `ui/menus/title_screen.tscn` (title → Karen's Shop → run); the slice itself is `levels/slice/vertical_slice.tscn`.
 Design source of truth: `Documents/GDD.md`. Full architecture contracts: `Documents/CodeArchitecture.md` — read §7 (Conductor) before touching anything beat-driven.
 
 ## Stack & toolchain
@@ -34,13 +34,16 @@ PROJ="/c/Users/MARCO/Documents/GitHub/SAINT MANICK"
 
 test -x "$GODOT" || { echo "BINARY MISSING — abort"; exit 1; }
 "$GODOT" --headless --path "$PROJ" --import          > /tmp/imp.log   2>&1
-"$GODOT" --headless --path "$PROJ" --quit-after 300  > /tmp/smoke.log 2>&1   # main scene, ~300 frames
+"$GODOT" --headless --path "$PROJ" --quit-after 300  > /tmp/smoke_title.log 2>&1                                   # main scene = title screen
+"$GODOT" --headless --path "$PROJ" --quit-after 300 res://levels/slice/vertical_slice.tscn > /tmp/smoke.log 2>&1   # the slice, ~300 frames
 "$GODOT" --headless --path "$PROJ" --script tests/run_tests.gd               # exits 1 on failure
 
-grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke.log
+grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke_title.log /tmp/smoke.log
 ```
 
-Pass = exit 0, zero grep hits, **tests ≥ 100 and never decreasing**, zero-warning smoke log (baseline is zero warnings — any new warning is a regression). Touching models/animation? Also grep `track|bone|skeleton|clip|animation` (case-insensitive).
+Pass = exit 0, zero grep hits, **tests ≥ 200 and never decreasing** (202 as of 2026-10-24), zero-warning smoke logs apart from the three known exit-time audio-leak lines (`ObjectDB instances leaked`, `resources still in use`, `Lambda capture … freed`) — any new warning is a regression. The Zone 1 encounter now genuinely fires during the slice smoke (the player starts inside its trigger), so a spawner/encounter regression shows up here first.
+
+**Visual gate (run after anything that touches scenes, materials, shaders, lights or models):** `"$GODOT" --path "$PROJ" res://tools/capture/capture_scene.tscn -- --out=res://Captures/<name>/` renders every zone at the real drone camera plus HUD, menus and a character lineup (window flashes ~40 s), and READ the PNGs. `tools/capture/probe_meshes.gd` (headless) prints skeleton/tris/bounds for candidate meshes; `tools/capture/mesh_gallery.gd` renders them; `tools/capture/probe_triggers.tscn` (headless) proves the player body trips the slice's triggers. `Captures/` is git-ignored. Touching models/animation? Also grep `track|bone|skeleton|clip|animation` (case-insensitive).
 
 **Audit executor/agent DONE claims by grep/log before building on them** — every executor round so far needed corrections a green test gate did not catch.
 
@@ -54,6 +57,8 @@ Autoloads (`_core/`): `SignalBus` · `Conductor` · `SaveManager` · `GameManage
 - **No magic numbers** — `Resource` configs (`.tres`): enemy stats, `ComboDef` combos (`characters/player/combos/`), shop upgrades (`_core/persistence/shop_upgrades/`). First-pass values in `Documents/tools/balance_tool.html`, then mirrored to `.tres`.
 - **SaveManager** is the only thing that touches `user://`; persists meta-progression only (never volatile run state).
 - **Projectile pooling** (`_core/pool/`, established Zone 10) — extend it, don't bypass.
+- **Physics layers:** world 1 · player body 2 · enemy bodies 3 (mask world+player+enemies) · hitboxes/hurtboxes 10–14. Any Area3D that must detect Nick's BODY masks layer 2; hitboxes mask the hurtbox layers. Until 2026-10-24 the player sat on layer 1 and no trigger in the slice ever fired — `tools/capture/probe_triggers.tscn` guards this.
+- **Rails:** each zone's combat plane is a `Path3D`; `player.current_path` is a setter that eases Nick onto a new rail over 0.3 s; top-down shifts pass `null`. Rail ends must overlap the next trigger (`tests/cases/test_rail_reachability.gd`).
 - Feature-based folders (`characters/enemies/<type>/`, `levels/<zone>/`, `ui/<feature>/`) — never a type-based `/Scripts` folder. Official Godot style-guide naming throughout; signals are past-tense verbs.
 
 ## Godot 4 / engine gotchas (each has already bitten)
@@ -67,6 +72,8 @@ Autoloads (`_core/`): `SignalBus` · `Conductor` · `SaveManager` · `GameManage
 - No built-in spawn markers in wave_spawner scenes — base scenes must not pre-define children that level scenes also add (node-name clash).
 - `HealthComponent.max_shield` defaults to **0** — shields are explicit (player from GameManager, Bruiser from `bruiser_stats.tres`).
 - Zone names are `"SECTOR NN — DESCRIPTION"` — the audio parser reads the first integer; Enforcer activation string-matches `"07"`/`"ENFORCER"`.
+- **Never pause the whole tree from a tool** (CSG never rebuilds, cameras never move → black frames); freeze with `process_mode = DISABLED` on the actors instead. `Area3D` signal callbacks must not `add_child` or flip `monitoring/monitorable` directly — `call_deferred`.
+- **Legacy HUD PNGs in `2D_Assets/UI_and_Menus/` are full 1920×1080 canvases**; the cropped, ASCII-named copies the HUD uses live in `ui/hud/art/`. Never gate a texture load on `FileAccess.file_exists("res://…png")` — it is false in exported builds; use `ResourceLoader.exists`.
 - **`nick_body_v2.glb` is UNRIGGED** (static posed mesh) — the rigged body is `Animations/Pro Sword and Shield Pack/nick_body_v2.fbx` (33-bone Mixamo skeleton, `mixamorig_*`); clip library is `characters/player/nick_animations.tres` (semantic keys — don't rename). Probe ANY generated mesh for a Skeleton3D before wiring animation; assume nothing.
 
 ## Design rules (do not revert)

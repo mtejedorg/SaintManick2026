@@ -96,13 +96,13 @@ func _run() -> void:
 	if input_overlay:
 		input_overlay.visible = false
 	for shot in zone_shots:
-		_place(shot["pos"], shot["mode"])
+		_place(shot["pos"], shot["mode"], int(str(shot["name"]).substr(4, 2)))
 		await _frames(3)
 		_save(shot["name"])
 
 	# VCR-only variant of one zone so the overlay can be judged in isolation.
 	vcr.visible = true
-	_place(zone_shots[4]["pos"], "side")
+	_place(zone_shots[4]["pos"], "side", 4)
 	await _frames(3)
 	_save("mc_z04_scaffold_vcr")
 	vcr.visible = false
@@ -136,7 +136,12 @@ func _run() -> void:
 	_write_inventory()
 	_finish("OK")
 
-func _place(pos: Vector3, mode: String) -> void:
+func _place(pos: Vector3, mode: String, zone: int = 0) -> void:
+	# Apply the zone's atmosphere instantly (no zone_entered fires while frozen).
+	if zone > 0:
+		var atmo: Node = slice.find_child("ZoneAtmosphere", true, false)
+		if atmo and atmo.has_method("apply_zone"):
+			atmo.apply_zone(zone, true)
 	player.global_position = pos
 	player.velocity = Vector3.ZERO
 	var offset := SIDE_OFFSET

@@ -1,6 +1,6 @@
-> [!IMPORTANT]  
-> **MASTER SOURCE OF TRUTH**  
-> This Game Design Document contains the final, officially approved vision for Saint Manick (Action-Roguelite Beat'em up redesign). It completely supersedes and invalidates all previous design drafts, PDFs, and presentations found in the archives.
+> [!IMPORTANT]
+> **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 2, 2026-10-24)**
+> This Game Design Document is the officially approved vision for Saint Manick. It supersedes every earlier draft, PDF and presentation in the archives. It is written for the **current stage**: the mechanics are defined, the ten-zone level layout is decided, and the Vertical Slice is the demo. Every mechanic in §3–§6 marked **[SLICE]** is implemented and verified in the build; everything marked **[POST-SLICE]** is designed but deliberately not built yet. Numbers live in the data files named next to them (`.tres`), never only here.
 
 # Game Design Document: Saint Manick
 
@@ -17,187 +17,212 @@
 
 ### 1.2. Key Information
 - **Genre:** 2.5D Action Roguelite / Beat'em Up
-- **Engine:** Godot Engine 4.x (GDScript for rapid prototyping of the Vertical Slice)
-- **Platforms:** PC (Standalone Windows)
-- **Target Audience:** Fans of classic beat'em ups (e.g., *Streets of Rage*, *Final Fight*) and hardcore action roguelites (e.g., *Hades*, *Dead Cells*) who appreciate punishing difficulty, meta-progression, and lore-rich settings blended with ambient rhythm mechanics.
+- **Engine:** Godot Engine 4.6 (Forward+), GDScript
+- **Platforms:** PC (Standalone Windows), 1920×1080 canvas, keyboard or gamepad
+- **Target Audience:** Fans of classic beat'em ups (*Streets of Rage*, *Final Fight*) and hardcore action roguelites (*Hades*, *Dead Cells*) who appreciate punishing difficulty, meta-progression and lore-rich settings blended with ambient rhythm mechanics.
+- **Current deliverable:** the **Vertical Slice** — Zones 1–10 of a Factory → Neon District run ending at The Headliner boss, with the full death → shop → retry loop. Detailed zone design: `VerticalSlice.md`.
 
 ### 1.3. Core Pillars
-1. **Classic Beat'em Up Flow:** Fun, heavy-hitting combat that respects the genre's legacy while introducing modern fluidity and combo progression. Players are free to mash buttons and chain combos — combat is never gated by a stamina resource.
-2. **The Beat as the World's Heartbeat:** This is **not a rhythm game**. The player is never required to act on the beat. Instead, the game's internal tempo drives **enemies and traps** — their attack telegraphs, projectiles, and hazard timings all pulse to the beat. The beat is therefore a free *readable cue*: a player who learns to feel the heartbeat knows when to dodge and when to strike, but is never punished for ignoring it. **The tempo is dynamic** — it speeds up with enemy density and bullet-hell intensity, and some bosses layer **polyrhythms** to force the player to track two conflicting patterns at once.
-3. **Radial Dystopian World:** A unique setting where the architecture improves and rises as the player moves closer to the center of the city.
-4. **Dynamic Diegetic Camera (Nier Automata Style):** The interface is the live feed of **Karen’s drone**. The drone dynamically flies around during levels, seamlessly shifting the game between a 2.5D side-scrolling beat'em up and a top-down 3D bullet hell. The shift is **mechanical, not cosmetic**: depth (Z-axis) movement is locked in 2.5D and unlocks only in top-down mode (see §3.1).
-5. **Fair-but-Tense Roguelite Loop:** The game is short and tense. Nick has limited HP, regenerating shields, and a pool of lives, so **true death (permadeath) is rare** — but the threat of it is always present. When Nick does lose his last life, collected resources persist and can be spent in Karen's Shop between runs to buy permanent upgrades. Because upgrades persist, a dead player returns *over-leveled* for the early districts and climbs back quickly. Target pacing: an **average player clears the game in 2–3 runs, a weaker player in 4–5** (see §5).
+1. **Classic Beat'em Up Flow:** Fun, heavy-hitting combat that respects the genre's legacy while introducing modern fluidity and combo progression. Players are free to mash and chain — **combat is never gated by a stamina resource**.
+2. **The Beat as the World's Heartbeat:** This is **not a rhythm game**. The player is never required to act on the beat. The game's internal tempo (the *Conductor*) drives **enemies and traps**: attack telegraphs, projectiles and hazard timings all pulse to the beat, so a player who learns to feel the heartbeat knows when to dodge and when to strike — and is never punished for ignoring it. **The tempo is dynamic**: it rises with enemy density and jumps for the boss. *(Polyrhythm layers are supported by the engine and reserved for later bosses — **[POST-SLICE]**.)*
+3. **Radial Dystopian World:** The architecture improves and rises as the player moves toward the centre of the city.
+4. **Dynamic Diegetic Camera (Nier Automata style):** The interface is the live feed of **Karen's drone**. The drone flies between a 2.5D side-scrolling beat'em up view and a top-down bullet-hell view. The shift is **mechanical, not cosmetic**: depth (Z-axis) movement is locked in side-scroll and unlocks only in top-down (§3.1, §3.5).
+5. **Fair-but-Tense Roguelite Loop:** Short and tense. Nick has limited HP, a regenerating shield and a pool of lives, so **true death (permadeath) is rare** but always threatened. On permadeath, collected resources persist and buy permanent upgrades in Karen's Shop. Because upgrades persist, a dead player returns *over-levelled* and climbs back quickly. Target pacing: an **average player clears the slice in 2–3 runs, a weaker player in 4–5** (§5.4).
 
 ---
 
 ## 2. Story, Setting & Lore
 
 ### 2.1. The World of Saint Manick
-The game takes place in a dystopian future where robotics and rampant technological growth have devastated Earth's natural resources. The common people have been pushed into the marginal suburbs, forced to live in squalor while spending their remaining money on technology to survive.
+A dystopian future where robotics and rampant technological growth have devastated Earth's natural resources. The common people have been pushed into the marginal suburbs, living in squalor while spending their remaining money on the technology they need to survive.
 
-### 2.2. Radial City Design & Biomes
-The city of Saint Manick is structured in a **radial composition**. Buildings in a given district never exceed the height of the next district closer to the center, allowing the player to enjoy stunning vistas of the inner city and the final tower. Nick must traverse through these distinct districts:
+### 2.2. Radial City Design & Districts
+The city is a **radial composition**: buildings in a district never exceed the height of the next district closer to the centre, so the player always sees the inner city and the final tower. Nick traverses:
 
-1. **The Suburbs:** The outermost ring. Sprawling, ruined, and the poorest. No specific environmental hazards, serving as the introduction to the game's mechanics.
-2. **The Industrial Factory:** A toxic, heavy machinery zone. Features **environmental hazards** like toxic gas vents that deal damage-over-time and rhythmic piston crushers.
-3. **The Neon Entertainment District:** High-tech, bright, and vibrant but extremely hostile. A maze of holograms and clubs. No strict hazards, relying instead on pure enemy density.
-4. **The Corporate High-Rise:** Pristine and sterile. Features **environmental hazards** like moving laser grids and security drone strikes synchronized to the music.
-5. **The Central Tower:** The final destination and Karen's true headquarters.
+1. **The Suburbs** — the outermost ring; ruined and poor; no environmental hazards; the game's tutorial. **[POST-SLICE]**
+2. **The Industrial Factory** — toxic heavy machinery: toxic pits that deal damage over time, rhythmic piston crushers, a security lock with a beat-driven bomb grid. **[SLICE — Zones 1–4]**
+3. **The Neon Entertainment District** — high-tech, bright, hostile; holograms and clubs; pure enemy density rather than strict hazards, plus the market's security purge (escape) and the elevator ascent to the rooftop. **[SLICE — Zones 5–10]**
+4. **The Corporate High-Rise** — pristine and sterile; moving laser grids and drone strikes synced to the music. **[POST-SLICE]**
+5. **The Central Tower** — Karen's true headquarters and the final fight. **[POST-SLICE]**
 
 ![Dystopian City Concept](images/radial_city.png)
 
 ### 2.3. Characters
-- **Nick:** The main protagonist. A former mid-level corporate enforcer who went rogue — he knows the system from the inside, which is exactly why he can't let it stand. His right arm is fully bionic/cybernetic from the shoulder: heavy, dangerous, marked with neon along the plating. It is his power hand — hard pushes, charged strikes, and special abilities. His left hand holds a katana: his speed hand, built for fast cuts and slashes. He moves in a beat-up urban hoodie, an underdog against the armored corporate machinery he used to serve. The bionic arm is a lore hook — *why does he have it, and what did it cost him?* — left open for the writer, but it should be visible in every fight. Nick is world-weary, not edgy. He fights because someone has to.
+- **Nick:** A former mid-level corporate enforcer who went rogue — he knows the system from the inside, which is exactly why he can't let it stand. His right arm is fully bionic from the shoulder: heavy, dangerous, marked with neon along the plating — his **power hand** (hard pushes, charged strikes, special abilities). His left hand holds a katana — his **speed hand** (fast cuts and slashes). He moves in a beat-up urban hoodie, an underdog against the armoured corporate machinery he used to serve. Nick is world-weary, not edgy. He fights because someone has to.
+  > **Narrative note (open):** The origin of Nick's bionic arm is a deliberate blank — the most interesting question the game can ask about him. When the story team fills it in, the answer should connect to his break from the corporation.
+- **Karen:** The deuteragonist and secret antagonist. A ruthless corporate director manipulating Nick with simulated emotions of love and vengeance. She wants to test Nick as the definitive combat weapon to take absolute control of the city.
+- **The Drone:** Karen's surveillance drone — the player's camera and the host of the HUD.
 
-  > **Narrative note (open):** The origin of Nick's bionic arm is not yet written. It is a deliberate blank — the most interesting question the game can ask about him. When the story team fills it in, the answer should connect to his break from the corporation. Whatever it cost him, it should make the arm feel earned, not cosmetic.
-
-- **Karen:** The deuteragonist and secret antagonist. A ruthless corporate director manipulating Nick with simulated emotions of love and vengeance. She has zero empathy for the surviving commoners and merely wants to test Nick as the definitive combat weapon to gain absolute control over the city.
-- **The Drone:** Karen's surveillance drone that serves as the player's camera and hosts the HUD interface.
+### 2.4. Visual Identity
+**Neon-noir, neon rim, not baked textures.** A dark world (near-black navy ambient) lit by neon sources; characters read by their rim glow: **Nick cyan `#00F5FF`**, grunts, Bruiser and Enforcer **magenta `#FF00AA`**, the Sniper **orange `#FF8000`** (explosive/ranged), The Headliner **amber** turning **magenta** in phase 2. Red/white-hot rim flashes are the universal attack telegraph. Factory zones are warm sodium + cyan; Neon zones magenta + cyan; Zone 10 is a beat-animated stage. Everything the player sees is a surveillance feed (§6.2).
 
 ---
 
 ## 3. Gameplay Mechanics
 
-### 3.1. Movement & Navigation (Verticality)
-Nick moves left and right along the screen with weight and physics-based inertia, but the environment is rarely flat. Traversal involves significant verticality:
-- **Jumping & Platforming:** The player has a dedicated Jump button. Navigating levels requires jumping up stairs, leaping over gaps, and dropping into lower areas.
-- **Double Jump Skill:** An unlockable upgrade in Karen's Shop that expands platforming capabilities and allows for mid-air combat positioning.
-- **No Depth Movement in 2.5D:** In side-scrolling mode the player moves **only** left/right (and up via jumps). The up/down stick inputs do nothing here — Nick is locked to a single combat plane. Depth (Z-axis) freedom unlocks **exclusively** in top-down camera mode (see §3.5), which is what makes the camera shift a genuine change of gameplay rather than a change of angle.
-- **Curved 2.5D Paths:** The 2.5D planes are not strictly linear; they curve around structures. The camera rotates smoothly to follow the path, granting a strong sense of 3D depth. (The path curves; Nick's *input* remains 1-dimensional lateral.)
-- **Ground & Wall Detection:** Handled by raycast sensors to ensure precise platforming.
+### 3.1. Movement & Navigation (Verticality) **[SLICE]**
+Nick moves left and right with inertia, but the environment is rarely flat:
+- **Jump:** dedicated button. Levels require jumping stairs, gaps and dropping into lower areas. *(Data: `characters/player/player.gd` — `jump_force 18`, gravity ×3, `max_speed 8`.)*
+- **Double Jump:** a permanent **shop unlock** (Karen's Shop, 200 Scrap). Nothing in the slice *requires* it; it expands platforming and mid-air combat positioning. *(Decision rev. 2: the slice does **not** start with it unlocked; see `VerticalSlice.md` "Player Loadout".)*
+- **No depth movement in side-scroll:** Nick is locked to a single combat plane; the up/down inputs do nothing. Depth (Z) freedom unlocks **exclusively** in top-down mode (§3.5).
+- **Rails:** each zone's combat plane is a `Path3D`; Nick blends onto the active rail over 0.3 s when the camera hands him a new one. *(Curved rails and a camera that yaws with them are **[POST-SLICE]** — the slice's rails are straight with a short depth dip in Zone 2.)*
+- **Falls:** falling out of the world is **not** a reload — Nick returns to his last safe ground and pays HP (20) through the universal damage rule (§5).
+- **Ground & wall detection:** `CharacterBody3D` physics; the player body lives on physics layer 2 ("player"), enemies on layer 3, the world on layer 1.
 
-### 3.2. Combat System & Combos
-Nick fights with two completely different tools that read as one fluid fighter: his **bionic right arm** (power hand — hard pushes, charged strikes) and his **katana in the left hand** (speed hand — fast cuts and slashes). The visual duality is intentional. A combo blends both: you can see the arm when he puts weight behind it, and the blade when he needs to be fast.
+### 3.2. Combat System & Combos **[SLICE]**
+Nick fights with two tools that read as one fighter: the **katana** (A, light — fast, blade-forward) and the **bionic arm** (B, heavy — slow, charged, mechanical). There is **no stamina**: mash and chain at will. Basic values *(`characters/player/states/player_state_attack.gd`)*:
 
-Nick uses a dual-input attack system (**Hit A: Light / Katana**, **Hit B: Heavy / Bionic Arm**). There is **no stamina** — players are free to mash and chain at will.
+| Input | Damage | Window | Knockback | Notes |
+|---|---|---|---|---|
+| A (light, katana) | 12 | 0.3 s | 4 | hits pressure shields ×1 |
+| B (heavy, arm) | 28 | 0.3 s (0.6 s as a chain finisher) | 8 | pressures shields at **×2** but does **not** shatter them |
 
-- **Defensive Move — Dash & Roll:** Nick's core survival tool.
-  - **Dash (single input):** A short, snappy burst with brief invincibility frames (i-frames ≈ 0.25s). Used to slip a single telegraphed hit or close distance.
-  - **Roll (double-tap / hold input):** A longer evasive roll with extended i-frames (≈ 0.45s) and greater reposition distance, at the cost of a longer recovery. The primary way to survive bullet-hell sequences in top-down mode.
-  - Because enemy and trap telegraphs pulse to the beat (§1.3), a player who reads the heartbeat instinctively knows *when* to dash/roll — but timing is never strictly enforced.
-- **Initial Combo List:**
+**Combo routes** *(`characters/player/combos/*.tres` — the Combo Skill Tree, §5.2; a matched route replaces the generic finisher and ends the chain)*:
 
-  *A inputs are katana — fast, light, blade. B inputs are bionic arm — heavy, charged, mechanical.*
+| Route | Input | Finisher | Identity |
+|---|---|---|---|
+| **Tri-Cut** | A-A-A | 20 dmg, knockback 4 | three fast blade cuts; single targets |
+| **Launcher** | A-A-B | 35 dmg, knockback 12, **launches** | blade opens, arm punches the enemy airborne |
+| **Sweeper** | A-B-B | 20 dmg, hitbox ×1.5 wide | wide spinning arm strike; crowd control |
+| **Battery Ram** | B-B | 40 dmg, **guard-breaking + shield-breaker**, 0.8 s | the only pure-arm route; the arm commits |
 
-  - **A - A - A (The Tri-Cut):** Three fast katana slashes — quick, safe, blade-forward. Built for single targets at range.
-  - **A - A - B (The Launcher):** Two quick blade hits into a bionic uppercut that punches enemies airborne, opening juggle follow-ups. The arm closes the distance the blade opened.
-  - **Air-Combo (Jump + A - A):** Aerial katana hits to keep a launched enemy airborne. Follow the blade, keep the pressure.
-  - **A - B - B (The Sweeper):** Blade draws the first hit, then the bionic arm follows with a wide spinning strike that clears surrounding enemies and knocks them back. Crowd control — use it when you're surrounded.
-  - **B - B (The Battery Ram):** Two slow, charged bionic arm strikes — armor-piercing, shield-breaking. Dangerous if missed; the arm commits. The only pure-arm combo and the one that costs you if it whiffs.
+- **Air attacks:** A/B pressed while airborne attack in the air (the ground routes apply). A dedicated *Air-Combo* route that holds launched enemies airborne is **[POST-SLICE]**.
+- **Shields (universal rule):** Bruiser, Enforcer and Headliner carry a shield. Light hits pressure it ×1, heavy hits ×2, overflow carries to HP. Only **Battery Ram** and **Bass Drop** *shatter* a shield outright. *(The Bruiser's 50-point shield therefore falls to two generic heavies — see Decision D7 in the audit if that should be raised to 80 so Battery Ram is the intended answer.)*
+- **Hit feedback:** hit-stop (0.08 s at 5 % time scale), camera shake (light 0.05 / heavy 0.1), cyan sparks for light hits and magenta for heavy, enemy knockback + stun. Hitboxes are fixed boxes in front of Nick (katana 2.5 m reach, arm 1.6 m), deliberately **not** parented to the animated weapon so hit detection stays deterministic.
+- **Defensive move — Dash & Roll:**
+  - **Dash** (dedicated input: Shift / RB): 0.25 s burst at 18 m/s, **fully invincible** for its duration, 0.5 s shared dodge cooldown.
+  - **Roll** (dedicated input: Ctrl / B): 0.45 s of i-frames then a 0.2 s vulnerable recovery tail, 18 m/s. The primary way to survive bullet hell in top-down.
+  - **Beat-aligned reward (never a gate):** a dodge started within ±0.12 s of a beat edge refunds its cooldown and grants +4 ability meter. *(Audit Decision D6 proposes narrowing the window to ±0.06 s and halving the refund so on-beat dash chains cannot stay ~60 % invulnerable.)*
 
-### 3.3. The Ability Bar (Combat Resource)
-In place of a stamina system, Nick has an **Ability Bar** (occupying the HUD slot where stamina would traditionally sit). The bar is a *reward* meter, not a limiter — nothing Nick does is ever blocked by an empty bar.
-- **Filling:** The bar charges by landing combo hits (≈ +4% per light hit, +9% per heavy hit) and from rhythm-aligned play. It decays slowly when out of combat, encouraging aggression.
-- **Partial Spenders:** Some special moves consume a portion of the bar — e.g., an **EMP Dash-Cancel** (instantly cancel recovery into a dash) or a **Ground-Pound finisher**.
-- **Full-Bar Ultimates:** The most powerful abilities require a *full* bar, making them a payoff for sustained combo mastery:
-  - **Overclock:** A ~5-second surge of increased attack speed and damage.
-  - **Bass Drop:** A screen-clearing AoE shockwave that detonates on the next downbeat — the one place the game leans on the beat for spectacle.
-- **Progression:** Additional abilities and a larger bar are unlocked in Karen's Shop and slotted via the Combo Skill Tree (§5.2).
+### 3.3. The Ability Bar (Combat Resource) **[SLICE]**
+In place of stamina, Nick has an **Ability Bar** (the HUD's old stamina slot). It is a *reward* meter, never a limiter — nothing Nick does is blocked by an empty bar. *(Data: `player.gd`.)*
+- **Filling:** +4 per light hit, +9 per heavy hit (classified by damage ≥ 20), +4 per beat-aligned dodge. Out of combat (2 s without a landed hit) it decays at 5/s.
+- **Partial spender — EMP Dash-Cancel (25):** during an attack's recovery, Dash cancels straight into a dash, ignoring the dodge cooldown.
+- **Full-bar ultimate — Bass Drop (100):** press Ultimate (L / LB) with a full bar to *arm* it; it detonates on the **next downbeat** — the one place the game leans on the beat for spectacle: 60 damage, radius 6 m, shield-breaker, knockback 16, stun 1 s, to every enemy in range. *(Audit Decision D8: radius 10 / damage 90 to read as "screen-clearing".)*
+- **[POST-SLICE]:** **Overclock** (~5 s attack speed/damage surge) and the **Ground-Pound** partial spender are designed but not built; additional abilities and a larger bar are future shop items.
 
-### 3.4. Rhythm-Action QTE Sections (The "Run or Die" sequences)
-To keep gameplay varied and unpredictable, levels feature bespoke high-intensity traversal sequences inspired by *Rayman Legends*. 
-- **The Triggers:** These sequences occur unexpectedly on the first playthrough—such as fleeing a crumbling bridge, chasing a fleeing target, or a drone malfunction sequence.
-- **The Mechanic:** The music intensifies and the world (collapsing floor, closing doors, falling debris) moves to the beat. The player sprints, jumps, double-jumps, and dashes through it. Reading the heartbeat makes the sequence flow, but the inputs are *traversal*, not strict note-matching.
-- **Failure is NOT instant death:** A missed input costs **HP**, not a life. Only the universal death condition applies (§5): HP reaching 0 costs a life; permadeath occurs solely when HP hits 0 with 0 lives remaining. This keeps the sequences exciting rather than rage-inducing in a permadeath context.
+### 3.4. Rhythm-Action Escape Sequences (the "Run or Die" sequences) **[SLICE — Zone 8]**
+Bespoke traversal set pieces inspired by *Rayman Legends*: the world (collapsing floor, closing blast doors, falling signs) moves to the beat while Nick sprints, jumps and dashes. Reading the heartbeat makes it flow, but inputs are *traversal*, not note-matching.
+- **Failure is NOT instant death:** a clipped door or a falling sign costs **HP** (12–15, roughly one battery segment), a touch of the pursuing kill wall costs 15 per beat. Only the universal death rule applies (§5).
 
-### 3.5. Dynamic Camera Perspectives (Nier Automata Style)
-The camera isn't just a viewport; it is Karen's surveillance drone, and it moves dynamically to give Nick the best tactical advantage, resulting in seamless, chaotic gameplay shifts.
-- **Side-Scrolling Beat'em Up (depth locked):** The standard perspective. **Lateral movement only** along a single 2.5D combat plane (no Z input — see §3.1), perfect for heavy melee combat and jumping platforms.
-- **Top-Down Bullet Hell (depth unlocked):** At specific, unexpected moments (e.g., crossing a wide plaza or fighting a sniper ambush), the drone flies straight up. **This is where free movement opens up** — Nick can now move along both the Z and X axes to weave through the beat-driven bullet patterns or fight swarms from above. Jumping is suppressed; the roll becomes the primary evasive tool.
-- **The Transitions:** The camera pans smoothly without interrupting gameplay. Mechanically, the transition swaps Nick's movement constraints (plane-locked ↔ free-roam) as the drone rotates, keeping traversal through the decadent city chaotic, exciting, and unpredictable.
+### 3.5. Dynamic Camera Perspectives **[SLICE]**
+The camera is Karen's drone and moves to give Nick the best tactical view *(`characters/player/drone_camera.gd`, a camera state machine: Sidescroll → Transitioning → TopDown)*.
+- **Side-scrolling (depth locked):** offset (0, 3, 10); lateral movement only; jump enabled.
+- **Top-down bullet hell (depth unlocked):** the drone climbs to offset (0, 15, 5) and pitches 60°; Nick moves freely on X and Z; **jumping is suppressed**; the roll is the evasive tool. Used in Zone 3 (security lock), Zone 6 (plaza) and the Headliner's phase 2.
+- **Transitions:** a 1.5 s tween (2 s for the boss). On completion the player's movement constraint flips (plane-locked ↔ free) and Nick blends onto the new rail. Every shift fires a VCR glitch burst (§6.2).
 
 ---
 
 ## 4. Enemies & Bosses
 
-### 4.1. The Grunts (Rhythmic Telegraphing)
-Enemies are challenging, bullet-hellish, and hit hard. To compensate, their attack patterns and projectiles are synced to the music, acting as an auditory cue for the player to dodge and counter.
+### 4.1. The Grunts (rhythmic telegraphing) **[SLICE]**
+Enemies hit hard; in compensation their attacks are locked to the Conductor so the beat is a readable cue. All telegraphs use the same language: a white-hot rim flash one beat before the hit. Stats live in `characters/enemies/<type>/<type>_stats.tres`.
 
-> **Design note — Parry (deferred):** A parry mechanic has been discussed but is **not in the vertical slice**. Do not design enemies around it. When it is added, the beat-sync telegraphing makes it a natural fit — enemies broadcast their swings on the beat, the parry window can align to that — but that design work happens after the slice validates core combat feel.
-- **The Runner (Scrap-Punk Junkie):** Fast and squishy. They rush Nick on the upbeat and attempt quick swarms.
-- **The Bruiser (Riot-Shield Enforcer):** Heavy, slow, and shielded. They only attack on the heavy downbeats. Nick must use the B-B combo to break their guard.
-- **The Sniper (Laser-Sight Turret):** A ranged enemy that locks on. The laser changes color to the rhythm, firing exactly when the music drops, giving the player an auditory cue to duck or jump.
+| Enemy | HP | Hit | Shield | Scrap | Behaviour |
+|---|---|---|---|---|---|
+| **Runner** (Scrap-Punk Junkie) | 30 | 8 | — | 8 | chases within aggro range; telegraphs on a beat, lunges on the next |
+| **Bruiser** (Riot-Shield Enforcer) | 90 | 20 | 50 | 50 | plants and swings **only on the downbeat** (telegraph on beat 4; hitbox live for exactly one beat); heavy hits pressure the shield, Battery Ram shatters it |
+| **Sniper** (Laser-Sight Turret) | 24 | 18 | — | 25 | aims on beat 3, locks on beat 4, **fires on beat 1**; the beam widens/brightens through the cycle |
+
+Scene-placed grunts stay dormant until Nick is within their aggro range; any enemy that falls out of the world is removed silently (no reward). The tempo controller only counts active enemies.
+
+> **Parry — deferred [POST-SLICE].** Not designed into any enemy. When added, beat-synced telegraphs make its window a natural fit.
 
 ### 4.2. District Boss Roster
-Each district culminates in a unique boss whose routine is tied to that district's theme and its beat-driven hazards. Defeating one drops a **Data Core** (§5.1).
+| District | Boss | Concept | Beat hook | Status |
+|---|---|---|---|---|
+| 1 · Suburbs | **Junk-Yard Maestro** | Makeshift mech of scrap speakers & neon signs | BPM / time-signature shifts per phase | [POST-SLICE] |
+| 2 · Factory | **The Overseer** | Smelter/crane rig weaponising the foundry | Piston-slam AoEs on the downbeat | [POST-SLICE] |
+| 3 · Neon District | **The Headliner** | Holographic VJ/DJ idol commanding the crowd | Phase change to 160 BPM; projection storm | **[SLICE]** |
+| 4 · Corporate | **The Auditor** | Cold security-AI executive construct | Laser sweeps on-beat | [POST-SLICE] |
+| 5 · Tower | **Karen** | The corporate director — final boss | The most chaotic (§4.5) | [POST-SLICE] |
 
-| District | Boss | Concept | Beat Hook |
-|----------|------|---------|-----------|
-| 1 · Suburbs | **Junk-Yard Maestro** | Makeshift mech of scrap speakers & neon signs | BPM/time-signature shifts per phase |
-| 2 · Factory | **The Overseer** | A smelter/crane rig that weaponizes the foundry | Piston-slam AoEs on the downbeat |
-| 3 · Neon District | **The Headliner** | A holographic VJ/DJ idol commanding the crowd | Holo-walls & crowd surges pulse to the track |
-| 4 · Corporate High-Rise | **The Auditor** | A cold security-AI executive construct | Laser sweeps fire on-beat |
-| 5 · Central Tower | **Karen** | The corporate director — final boss | The most chaotic, see §4.5 |
+Defeating a district boss drops a **Data Core** (§5.1).
 
-### 4.3. Boss Design: The Suburbs Boss
-**"Junk-Yard Maestro"**
-- **The Concept:** A massive, makeshift mech built from discarded speakers and neon signs.
-- **Music-Driven Routines:** The boss's entire attack routine is intrinsically linked to its unique theme song. As the boss loses health and changes phases, the music's BPM, instrumentation, and time signature change.
-- **Mechanic:** The changing music directly dictates the speed and pattern of the boss's AoE attacks and projectiles. The player must learn to "read the music" to find the safe zones and dodge effectively.
+### 4.3. The Mini-Boss: The Rhythm Enforcer **[SLICE — Zone 7]**
+A heavily shielded enforcer *(`enforcer_stats.tres`: HP 600, hit 22, Scrap 300, **15 Cells**)*. The first hard **beat-reading test**: an 8-beat cycle — shield up (beat 3 → 1), telegraph (beat 2), a **3-hit burst on beats 2/3/4** (the third hit ×1.3 damage, ×1.8 knockback), then two vulnerable recovery beats at ×1.5 damage taken. The shield is up only while he advances; a shield-breaker hit (Battery Ram / Bass Drop) stuns him for two beats. Its death triggers the Zone 8 security purge.
 
-### 4.4. The Vertical-Slice Boss: The Headliner (Neon District)
-**"The Headliner"** is the showcase boss of the Vertical Slice (see `VerticalSlice.md`), since the slice is a thematic blend of Districts 2 and 3.
-- **The Concept:** A towering holographic VJ/DJ idol projected above the Neon plaza, conducting the district's lights, holograms, and crowd as instruments.
-- **Music-Driven Routines:** Like all bosses, its attack routine is intrinsically linked to its theme track; phase changes alter BPM and instrumentation, which directly dictate the speed and pattern of its AoE attacks.
-- **Mechanic:** Holographic walls and crowd-surge hazards pulse to the beat, carving the arena into shifting safe zones. Mid-fight, the drone executes a Nier-style shift to **top-down bullet-hell** for a projection-storm phase, testing the roll-dodge and depth movement unlocked in that mode. Beating The Headliner ends the full Vertical Slice (Slice B).
+### 4.4. The Vertical-Slice Boss: The Headliner **[SLICE — Zone 10]**
+A towering holographic VJ/DJ idol projected above the rooftop plaza *(`headliner_stats.tres`: HP 1500, hit 25, Scrap 1000, 1 Data Core)*.
+- **Phase 1 (side-scroll, 128 BPM):** the Enforcer's cycle at boss scale — shield, telegraph, lunge, recovery — with a 3.5 m shield bubble.
+- **Phase 2 (at 50 % HP):** the track jumps to **160 BPM**, the drone executes a Nier-style shift to **top-down bullet hell**, depth movement unlocks, and the Headliner raises a shield while firing a pooled **projection storm**: a 12-shot radial on beat 1, aimed shots on beats 2 and 4, an 8-shot spiral on beat 3 (10 damage each). The phase ends when a shield-breaker lands **or after 24 beats, when the shield overheats** — so a first-run player without Battery Ram is never soft-locked.
+- **Enraged:** back to side-scroll, no shield, +20 % speed, melee duel to the finish.
+- **Holo-walls and crowd-surge hazards** from the original concept are **[POST-SLICE]**; the slice's phase-2 hazard is the projection storm alone.
+- Beating The Headliner ends the Vertical Slice: a 2.5 s hold, then the results screen → Karen's Shop.
 
-### 4.5. The Final Boss: Karen
-**"The Corporate Director"**
-- **The Concept:** Once Nick reaches the central tower, the devastating truth is revealed. Karen is a cold, calculating corporate director. She used the journey merely to test Nick as the ultimate combat weapon to subjugate the city.
-- **The Betrayal:** The shop where Nick bought all his upgrades was her laboratory, and the drone that served as the player's camera and UI now becomes her primary weapon against him.
-- **Mechanic:** The battle forces Nick to fight the very drone that guided him, blending bullet-hell swarms and heavy beat'em up phases into the ultimate test of the player's mastery.
-- **Checkpoint:** A checkpoint sits immediately before this fight. On death, the player chooses **"Retry Boss"** (re-enter the Karen fight with the current loadout) or **"Full Run"** (restart normally to farm and upgrade). See §5.
-- **Design Note — Camera-as-Weapon (Future Scope):** Making the drone the boss is narratively powerful but mechanically risky, and is **not required for the first playable build**. Guiding principle for when we tackle it: the drone should **degrade the feed, never replace it** — Nick stays visible at all times. Disorientation comes from forced zoom-outs that shrink Nick, brief 90° tilts that invert left/right input for a beat or two, and "signal-loss" static that hides enemy telegraphs (forcing the player to survive on the *audio* heartbeat). It must never blind the player to Nick's own position.
+### 4.5. The Final Boss: Karen **[POST-SLICE]**
+Once Nick reaches the central tower, the truth is revealed: Karen used the journey to test Nick as the ultimate weapon. The shop was her laboratory, and the drone that served as the player's camera becomes her weapon. A checkpoint sits immediately before this fight (**Retry Boss / Full Run** choice). *Camera-as-weapon guiding principle: the drone degrades the feed, never replaces it — Nick stays visible at all times (forced zoom-outs, brief 90° tilts, "signal-loss" static that hides enemy telegraphs so the player survives on the audio heartbeat).*
 
 ---
 
-## 5. Progression: The Roguelite Loop & Karen's Shop
+## 5. Progression: The Roguelite Loop & Karen's Shop **[SLICE]**
 
-Saint Manick is designed to be **tense and short, but fair**. There is no traditional mid-level save-scumming.
-- **The Death Condition (universal):** Nick has an HP battery, a regenerating **shield** that absorbs damage and recharges out of combat, and a pool of **lives**. Taking damage drains the shield, then HP. When **HP reaches 0, Nick loses a life** and respawns at full HP. **Permadeath occurs only when HP hits 0 with 0 lives remaining.** The same rule governs combat, hazards, and QTE failures alike. Because of shields + lives, true death is **rare** — but the fear of it drives the tension.
-- **The Karen Checkpoint:** A checkpoint sits just before the Final Boss. On a permadeath there, the player chooses **"Retry Boss"** (jump straight back to Karen with the current loadout) or **"Full Run"** (restart from the beginning to farm and upgrade). This removes the worst-case of grinding the whole game back just to re-attempt the final fight.
-- **The Meta-Progression & Out-Leveling:** Upgrades bought in Karen's Shop are **permanent**. So after any death, Nick re-enters the early districts *over-leveled* and clears them quickly, making the climb back fast rather than punishing. Higher districts yield more/rarer rewards.
-- **Difficulty Targets:** Tuned (via `tools/balance_tool.html`) so an **average player clears the game in 2–3 runs** and a **weaker player in 4–5**. Defeating Karen is balanced to require most skills/upgrades to be unlocked, so the final clear feels earned without demanding flawless play.
+Saint Manick is **tense and short, but fair**. No mid-level save-scumming.
+- **The universal death rule:** Nick has an HP battery (120), a regenerating **shield** (40; regenerates 12/s after 3 s without damage) and **3 lives**. Damage drains shield, then HP. **HP 0 costs a life**: Nick respawns at full HP/shield at the **last zone checkpoint** (every zone entry is a checkpoint; cleared encounters stay cleared, uncleared ones reset) with 1 s of grace. **Permadeath happens only when HP hits 0 with 0 lives remaining** — three lives are three respawns. Hazards, falls and escape failures obey the same rule through the same component.
+- **Permadeath → Game Over → Karen's Shop.** The run's currencies are banked, permanent upgrades are bought, a Run Booster is equipped, and a new run starts from Zone 1. Abandoning a run from the pause menu banks the currencies the same way.
+- **The Karen Checkpoint** (Retry Boss / Full Run before the final fight) is **[POST-SLICE]**.
+- **Meta-progression & out-levelling:** shop upgrades are permanent, so a returning Nick clears the early zones quickly.
+- **Difficulty targets:** tuned with `tools/balance_tool.html` toward **2–3 runs (average) / 4–5 runs (weaker)**. *(Audit Decision D2: the slice's scrap yield is ~3.7× the tool's assumptions and prices are flat — a cost curve and caps are proposed before the demo is tuned.)*
 
 ### 5.1. Currencies
-- **Common Scrap:** Dropped by standard grunt enemies. Used for basic cumulative stat upgrades.
-- **Rare Scrap:** Dropped by stronger mid-journey enemies and awarded for successfully completing the rhythmic/musical sections. Used for higher-tier upgrades.
-- **Data Cores:** Dropped exclusively by district Bosses. Since Karen is secretly building the ultimate robot, she uses these Cores to recycle parts of defeated bosses to unlock powerful unique items for Nick.
+| Currency (in-game label) | Source in the slice | Sink |
+|---|---|---|
+| **Scrap** (`SCRAP`) — "Common Scrap" | every enemy kill (8–1000, see §4) | cumulative upgrades, Double Jump |
+| **Cells** (`CELLS`) — "Rare Scrap" | the Enforcer (15), the Zone 8 escape (10), the Zone 9 elevator (10) | combo-tree nodes (Sweeper 20, Battery Ram 25) |
+| **Cores** (`CORES`) — "Data Cores" | district bosses only (The Headliner: 1) | the extra Run Booster slot (1) |
 
-### 5.2. The Upgrade Structure
-Karen's shop (her laboratory) features two distinct types of permanent progression:
-- **Cumulative Items:** Multiple different passive upgrades that stack (e.g., buying two different "Greater Damage" items will stack their effects). Players don't have to lock themselves into a single build; they can simply stack power to overcome the punishing difficulty.
-- **Combo Skill Tree:** For clarity and onboarding, combos are structured in a visual branching tree. Nick must unlock basic chains before he can purchase advanced juggles or heavy sweeps.
+### 5.2. The Upgrade Structure *(data: `_core/persistence/shop_upgrades/*.tres`)*
+- **Cumulative items (repeatable, stack):** Max HP +20 (100 Scrap), Max Shield +10 (150), Extra Life (300). **Double Jump** (200, once). *Damage and armour tiers are designed but **[POST-SLICE]**.*
+- **Combo Skill Tree:** a chain — **Tri-Cut → Launcher** (free, granted to every profile) **→ Sweeper (20 Cells) → Battery Ram (25 Cells)**. Nick must own each node before buying the next. Locked routes still work as generic hits. *(A branching visual tree is **[POST-SLICE]**; the slice's tree is linear.)*
 
 ### 5.3. Run Boosters
-Before leaving Karen's Shop for a new run, Nick can equip a temporary Run Booster (e.g., an Overshield, an Extra Life, or a "Suburbs Skip" ticket).
-- **Slot Limit:** Nick is initially limited to equipping only **1 Temporary Boost** per run.
-- **Slot Upgrades:** The player can unlock more Run Booster slots by purchasing specific high-tier skills in the shop, allowing for incredibly powerful starts in the late game.
+Before each run, Nick equips temporary boosters in Karen's Shop:
+- **Tempo Shield** — an *overshield*: +50 % max shield for the run.
+- **Adrenaline** — +20 % move speed.
+- **Scrap Magnet** — ×2 Scrap drops.
+- **Slots:** 1 by default; the **Extra Run Booster Slot** (1 Data Core) adds a second; the same booster cannot occupy two slots. *(Suburbs Skip and Extra-Life boosters are **[POST-SLICE]**.)*
+
+### 5.4. Tempo & Intensity *(see `CodeArchitecture.md` §7)*
+The Conductor rests at **128 BPM**. The IntensityController raises the target by +2 BPM per active enemy (cap +16), sampled on primary beats, and is suspended during boss fights; the Headliner's phase 2 sets **160 BPM** directly. Zone music loops on the Conductor grid (zones 128, boss 160).
 
 ---
 
-## 6. UI/UX Design
+## 6. UI/UX Design **[SLICE]**
 
-The interface is completely diegetic, represented as the camera feed transmitted by Karen's drone. 
+The interface is diegetic: the camera feed transmitted by Karen's drone. The game boots to a **title screen** (START RUN → Karen's Shop → run; QUIT).
 
-### 6.1. The HUD Elements
-The HUD subtly pulses to the beat of the background music, acting as an implicit metronome without cluttering the screen.
-- **Battery Health Bar:** 12 segments representing Nick's health, with the regenerating shield shown as an overlaid layer on top.
-- **Ability Bar:** Occupies the old stamina slot. *Fills* as Nick lands combo hits; drives the partial spenders and full-bar ultimates of §3.3. It is never a movement/attack limiter.
-- **Extra Lives:** Displays Nick's icon followed by a counter.
-- **Epic Combo Multiplier:** A combo counter that grows as Nick lands successive hits without taking damage. When maxed out, the multiplier visually glitches and explodes with intense neon colors to reward the player.
+### 6.1. The HUD
+- **Battery Health Bar:** 12 segments (top-right) with the regenerating **shield** as a thin cyan strip along its top edge.
+- **Ability Bar:** the old stamina slot — a horizontal meter under the battery; fills with hits, drives EMP Dash-Cancel and Bass Drop (§3.3).
+- **Extra Lives:** stacked battery icons (one per remaining life, up to four shown).
+- **Currencies:** SCRAP (cyan), CELLS (magenta), CORES (white), top-left.
+- **Epic Combo Multiplier:** a cyan counter that grows with successive landed hits; a whiff or taking damage drops it; at ×50 it glitches and explodes in neon colours (the cap is cosmetic in the slice).
+- **Beat pulse:** a small ring at the top centre pulses on every beat (cyan) and downbeat (magenta) — an implicit metronome.
+- **Zone title card:** "SECTOR NN — NAME" slides in on every zone entry.
+- **Boss bar:** a magenta bar in a dark panel at the bottom when a boss or mini-boss activates.
 
 ### 6.2. Visual Camera Effects (VCR)
-To constantly remind the player that they are looking through a surveillance drone (and to build nostalgia), the camera features stylized visual artifacts:
-- **Subtle VHS/Scanlines:** A constant, faint overlay giving a retro-tech vibe.
-- **Chromatic Aberration & Glitches:** Whenever Nick takes damage, or during the chaotic Nier Automata-style perspective shifts, the camera briefly suffers from static glitches and chromatic aberration. This enhances the setting and creates striking, memorable visual feedback.
+A constant faint scanline overlay and vignette sell the surveillance feed. Whenever Nick takes damage or the drone changes perspective, the feed suffers a **chromatic-aberration burst** that decays over ~0.45 s. Pause, game over, results, shop and title all live on the same feed.
+
+### 6.3. Controls
+| Action | Keyboard | Gamepad |
+|---|---|---|
+| Move | A/D (←/→) | Left stick / D-pad |
+| Jump | Space | A |
+| Light / Heavy | J / K | X / Y |
+| Dash / Roll | Shift / Ctrl | RB / B |
+| Ultimate (Bass Drop) | L | LB |
+| Pause | Esc | Start |
 
 ---
 
 ## 7. Technical Architecture
+See `CodeArchitecture.md` for the locked contracts. In brief: Godot 4.6 (Forward+), GDScript; node-based state machines for Nick, enemies and the camera; a global `SignalBus` for cross-system events; the **Conductor** autoload as the single tempo authority; one-way damage flow `Hitbox → Hurtbox → HealthComponent`; `Resource` data for every number; `SaveManager` persisting meta-progression only; object pooling for projectiles.
 
-- **Engine Choice:** Godot Engine 4.x. Chosen for its excellent 2.5D integration, rapid prototyping speed, and fully text-based architecture (ideal for AI-assisted development).
-- **Language:** GDScript will be used for the Vertical Slice to iterate and refine mechanics as quickly as possible.
-- **Scene/Node Model:** The game utilizes Godot's Node Hierarchy. Everything is structured as nested node trees (`.tscn` files).
-- **Player Controller (`player.gd`):** A root CharacterBody node handling physics, inputs, and state machines for the beat'em up logic.
-- **Camera Controller (`drone_camera.gd`):** A Camera node that follows the player. It uses `Tween` animations to dynamically interpolate its position and rotation, seamlessly shifting the perspective from a 2.5D side-profile to a Top-Down bullet-hell view.
+---
+
+## Appendix A — What the slice deliberately leaves out (designed, not built)
+Overclock · Ground-Pound · dedicated Air-Combo route · parry · polyrhythm layers · holo-wall / crowd-surge boss hazards · Karen checkpoint (Retry Boss / Full Run) · damage & armour upgrade tiers · branching combo tree · Suburbs Skip / Extra-Life boosters · curved rails with camera yaw · destructible props · Suburbs, Corporate and Tower districts and their bosses · camera-as-weapon.
+
+## Appendix B — Open balance decisions (from the 2026-10-24 audit; numbers in `.tres`, tune in `tools/balance_tool.html`)
+D2 shop economy (cost growth, caps, yields) · D3 combo DPS ordering (heavy windows, finisher damage) · D4 Cells costs vs the 35-per-run income · D6 beat-dodge reward window · D7 Bruiser shield 50 → 80 · D8 Bass Drop radius/damage · D9 Zone 4–7 encounter compositions · D10 escape kill-wall speed · boss HP vs player DPS.

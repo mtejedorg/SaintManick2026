@@ -1,96 +1,84 @@
-# Vertical Slice: Detailed Level Design
+# Vertical Slice: Detailed Level Design (rev. 2 — 2026-10-24, matches the build)
 
-**Objective:** A playable prototype that condenses the core pillars of *Saint Manick* (combat, the beat-driven world, camera shifts, platforming, and the roguelite meta-loop) into a single polished showcase.
+**Objective:** A playable demo that condenses the core pillars of *Saint Manick* — combat, the beat-driven world, camera shifts, platforming and the roguelite meta-loop — into one polished showcase. Scene: `levels/slice/vertical_slice.tscn`; zone names are `"SECTOR NN — NAME"` (the audio and boss activation read the number).
 
-**Theme:** A blend of **District 2 (Factory)** and **District 3 (Neon)**. The slice flows from the toxic, piston-driven factory into the hostile neon market, ending at the Neon district boss.
+**Theme:** **Factory (Zones 1–4) → Neon District (Zones 5–10).** Audio and lighting follow that arc: industrial (1–4), neon market (5–7), neon high-rise ascent (8–9), the boss track (10).
 
-**Music Vibe:** Heavy Industrial Techno Metal. The Slice's **resting tempo is ~128 BPM**, but tempo is **dynamic** — an IntensityController ramps it up with enemy density and during top-down bullet-hell stages, and the boss may layer a polyrhythm (see `CodeArchitecture.md` §7, the Conductor). The tempo *internally* drives every hazard and enemy telegraph — the player is never required to act on the beat (see GDD §1.3), but reading the heartbeat makes survival flow. **Audio is metronome-only for now**; music loops come later, slaved to the Conductor.
+**Music:** heavy industrial techno-metal. The Conductor rests at **128 BPM** and rises with enemy density (+2 per active enemy, cap +16); the Headliner's phase 2 runs at **160 BPM**. The tempo drives every hazard and telegraph; the player is never required to act on the beat (GDD §1.3). Current audio files are placeholder tones on the correct grid.
 
-**Player Loadout:** Nick starts with Double Jump, the basic Combos, Air-Combos, and the Dash/Roll already unlocked. At the start screen the player selects their **1 Temporary Run Booster** to exercise the economy integration.
+**Player loadout:** HP 120, shield 40, 3 lives, Dash and Roll, Tri-Cut and Launcher. **Double Jump, Sweeper and Battery Ram are shop unlocks** (GDD §5.2) — nothing in the slice requires them. Before each run the player equips a Run Booster in Karen's Shop (title screen → shop → run).
 
 ---
 
-## Build Plan: Two Slices
+## The Meta-Loop (present and verified)
+1. Nick dies with 0 lives → **Game Over** → **Karen's Shop** (currencies banked). Abandoning from pause banks them too.
+2. The player spends **Scrap / Cells / Cores** on permanent upgrades and equips a Run Booster.
+3. Nick re-enters from Zone 1, over-levelled for the early zones.
+4. Numbers are tuned in `tools/balance_tool.html` toward 2–3 runs (average) / 4–5 (weaker). *The current yields (≈2385 Scrap for a full clear) are far above the tool's assumptions — see GDD Appendix B.*
 
-The prototype ships in two stages so we can prove the riskiest systems early without building everything at once:
-
-- **Slice A — "First Blood" (Build A):** Zones 1–7, ending at the **Rhythm Enforcer mini-boss**. Proves combat feel, platforming, the first camera shift, beat-driven hazards, and — critically — the **death → shop → retry meta-loop** (see below). This is the minimum that validates the core experience.
-- **Slice B — "The Headliner" (Build B):** Adds Zones 8–10 — the QTE escape, the elevator endurance fight, and the **Neon district boss, The Headliner** (GDD §4.4), including a mid-fight top-down bullet-hell phase.
-
-### The Meta-Loop (must be present in Slice A)
-The slice is **not** a single linear playthrough. The roguelite loop is itself a core pillar and must be testable:
-1. Nick dies (HP 0 with 0 lives) → **Game Over** to **Karen's Shop**.
-2. Player spends collected **Scrap** on permanent upgrades (HP, damage, a life, mitigation, shield, or a combo node) and re-selects a Run Booster.
-3. Player re-enters from **Zone 1**, now over-leveled for the early zones (the climb back is fast).
-4. Numbers tuned via `tools/balance_tool.html` toward the targets: average player clears the slice in 2–3 runs, weaker in 4–5.
-
-> **Universal death rule (everywhere in the slice):** damage drains shield → HP. HP at 0 costs a **life** (respawn at full). Permadeath only at **HP 0 + 0 lives**. QTE and hazard failures obey this same rule — nothing is instant-death.
+> **Universal death rule (everywhere):** damage drains shield → HP. HP 0 costs a **life** and respawns Nick at the last zone checkpoint (full HP/shield, 1 s grace). Permadeath only at **HP 0 + 0 lives**. Hazards, falls (20 HP, back to the last safe ground) and escape failures obey the same rule.
 
 ---
 
 ## The Block-by-Block Path
 
-### Zone 1: The Linear Tutorial (2.5D) — Factory floor
-- **Geometry:** 30-meter straight, flat 2.5D corridor. Safe and predictable. (Depth movement is locked here, as in all 2.5D sections.)
-- **Enemies:** 3x *Runners* (Scrap-Punk Junkies), spawning one at a time.
-- **Purpose:** Teach Light/Heavy attacks, jumping, and the **Dash/Roll** dodge against beat-telegraphed attacks — no environmental distractions.
+### Zone 1 — SECTOR 01 · Street Entrance (2.5D, Factory floor)
+- **Geometry:** 30 m straight corridor, no hazards. Depth locked.
+- **Enemies:** 3 Runners, one wave each, from two spawn points.
+- **Purpose:** teach Light/Heavy, Jump and Dash/Roll against beat-telegraphed attacks.
 
-### Zone 2: The Piston Platforming (2.5D)
-- **Geometry:** A 60-meter hazardous section over a toxic pit (DoT if Nick falls in but survives the landing). Nick jumps across wide, disconnected platforms. The camera begins to curve, introducing curved 2.5D traversal.
-- **Hazards:** 6 ceiling pistons slamming on the **downbeat** (every 4 beats at 128 BPM). The pattern accelerates toward the end of the pit.
-- **Enemies:** 3x *Runners* on the platforms — fight them or juggle them into the pit with Air-Combos while timing jumps against the crushers.
+### Zone 2 — SECTOR 02 · Piston Gauntlet (2.5D)
+- **Geometry:** 60 m of six disconnected 5 m platforms over a toxic pit, with a short depth dip in the rail; a seventh platform bridges the last gap to Zone 3.
+- **Hazards:** 6 ceiling pistons that cock back on beat 4 and **slam on the downbeat**, cascading one beat apart; the last three accelerate to every two beats as Nick approaches. The pit deals **5 damage per beat** while Nick stands in it; its floor lets him climb back out.
+- **Enemies:** 3 Runners, one per platform — fight them or juggle them into the pit.
 
-### Zone 3: The Security Room Shift (Top-Down)
-- **Geometry:** A 25×25 m square room. Nick enters in 2.5D; reaching the center locks the blast doors.
-- **The Shift Trigger:** Center-of-room trigger. Camera tweens to top-down over ~1.5s and **depth movement unlocks** — Nick can now move on Z and X; jumping is suppressed, the roll is the evasion tool.
-- **Enemies (Wave 1):** 4x *Runners* swarm from the corners.
-- **Hazards:** The "Security System" drops bombs in a grid; safe cells alternate every 2 measures of the track.
-- **Enemies (Wave 2):** 1x *Bruiser* (Riot-Shield) — break his shield with the Heavy/B-B combo while dodging bombs.
-- **Exit:** Doors unlock; camera tweens back to 2.5D and re-locks depth.
+### Zone 3 — SECTOR 03 · Security Lock (top-down)
+- **Geometry:** 25×25 m room. Entering the centre locks both blast doors (red holo gates) and the drone climbs to the top-down view; depth movement unlocks, jump is suppressed.
+- **Enemies:** wave 1 — 4 Runners from the corners; wave 2 — 1 Bruiser (break his guard with heavies or Battery Ram while dodging bombs).
+- **Hazard:** the bomb grid — a 5×5 checkerboard; one set warns for a measure (amber) and ignites on the next downbeat (red), so safe cells alternate **every measure**. Active only while the encounter runs.
+- **Exit:** gates open; the drone returns to 2.5D and depth re-locks.
 
-### Zone 4: The Scaffolding & Vista (2.5D)
-- **Geometry:** A 50-meter run of wide construction scaffolding curving around the factory exterior. Forgiving platforming (no pixel-precise jumps).
-- **Visuals:** Camera pans out; the **Central Tower** is fully visible in the parallax background, establishing the city's scale.
-- **Hazards & Enemies:** 2x *Snipers* on elevated, unreachable background platforms; laser sights lock on to the beat. 4x *Runners* spawn on the scaffolding. Manage the melee swarm while dashing through sniper fire.
+### Zone 4 — SECTOR 04 · Scaffolding & Vista (2.5D)
+- **Geometry:** ~50 m of catwalk with two plank gaps and recovery ledges beneath. The **Central Tower** and a skyline of neon-strip towers stand in the fog behind.
+- **Enemies:** three waves (3R+1B · 2R + **2 Snipers on the elevated catwalks** · 2R+2B). Snipers aim on beat 3, lock on 4, fire on 1. *(Composition exceeds the original 4R+2S brief — GDD Decision D9.)*
 
-### Zone 5: Neon Market Entrance (2.5D)
-- **Geometry:** A wide, cluttered neon street with destructible signs, crates, and descending stairs. (Transition from Factory to Neon theme.)
-- **Enemies:** A chaotic mix of 3x *Runners* and 1x *Bruiser*.
+### Zone 5 — SECTOR 05 · Neon Market (2.5D)
+- **Geometry:** a tiered street descending two steps, market stalls and crates (static in the slice).
+- **Enemies:** three waves (3R+1B · 3R+1B · 2R+1B). *(Decision D9.)*
 
-### Zone 6: Market Square Ambush (Top-Down)
-- **Geometry:** A huge circular plaza.
-- **The Shift Trigger:** Entering the plaza seals it with holographic walls; camera shifts top-down (depth unlocked).
-- **Enemies:** A 360° mob — 8x *Runners* backed by 2x *Snipers* on the edges. A pure bullet-hell crowd fight testing crowd-control combos (A-B-B Sweeper) and the roll.
+### Zone 6 — SECTOR 06 · Plaza Brawl (top-down)
+- **Geometry:** a 30×30 m plaza (sunk 4 m) sealed by cyan holo walls at both ends; two cover pillars.
+- **Enemies:** wave 1 — 8 Runners + 2 Bruisers from ten points around the rim; wave 2 — 3 Snipers. A pure crowd fight for the Sweeper and the roll.
 
-### Zone 7: The Mini-Boss Arena  *(← Slice A ends here)*
-- **Geometry:** The end of the plaza.
-- **The Mini-Boss:** **"The Rhythm Enforcer"** — a heavily shielded enforcer. Suggested first-pass: **HP 600, 22 dmg/hit**.
-- **Mechanic:** The first hard **beat-reading test**. The Enforcer attacks in 3-hit bursts locked to the beat; the telegraph is a clear visual+audio cue, so a player who reads the heartbeat can dash/roll each hit and counter. The beat *helps* the player — it never forces input timing.
-- **On defeat (Slice A):** Drops the slice's reward Scrap and returns to a results/shop screen so the meta-loop is exercised end-to-end.
+### Zone 7 — SECTOR 07 · Enforcer (2.5D)
+- **Geometry:** a 37.5 m strip after the plaza; a tall barrier stops Nick skipping the fight; 3 Runners guard the approach.
+- **Mini-boss:** **The Rhythm Enforcer** — HP 600, 22 per hit, 3-hit beat bursts (GDD §4.3). Drops 300 Scrap + 15 Cells. Its death arms the escape.
 
-### Zone 8: The Rhythm-Action Escape (Market Purge)
-- **The Trigger:** The instant the Mini-Boss dies, the market's security purge activates.
-- **Gameplay:** A frenetic, *Rayman Legends*-style escape. The music kicks into overdrive and the world — collapsing floor, falling neon signs, closing blast doors — moves to the beat. Sprint, jump, Double Jump across gaps, and dash through closing doors.
-- **Failure is HP-cost, not death:** Each missed input (clipped by a sign, caught by a closing door) costs **HP**, not an instant kill. Run out of HP → lose a life per the universal rule. This keeps the sequence thrilling rather than a permadeath rug-pull. Suggested per-fail cost: ~1–2 battery segments.
+### Zone 8 — SECTOR 08 · Escape (the Market Purge)
+- **Trigger:** the instant the Enforcer dies, a visible magenta kill wall starts 10 m behind Nick and advances at 3 m/s (15 damage per beat on contact).
+- **Course:** a blast door that closes every 4 beats (12 damage), a falling sign on an 8-beat cycle with a 2-beat flashing warning (15), a collapsing platform (shakes 0.5 s, falls, resets after 3 s), two 30 m floors with a 5 m gap. ~60 m; single jump suffices.
+- **Reward:** 10 Cells at the end trigger. *Length/speed tuning is open (GDD Decision D10).*
 
-### Zone 9: The Classic Elevator
-- **Geometry:** Nick lands on a massive industrial freight elevator ascending the skyscraper exterior toward the boss arena.
-- **Gameplay:** A classic endurance fight on a moving platform — waves of *Runners* and *Bruisers* drop on as it climbs. Shield-regen windows between waves let skilled players reset.
+### Zone 9 — SECTOR 09 · Ascent (the elevator)
+- **Geometry:** an 8×6 m freight elevator rising 19 m to the rooftop. Boarding hands Nick the elevator's own rail; on arrival the rail hands him to the rooftop.
+- **Waves:** 3 Runners · then 2 Bruisers + 2 Runners after a 5 s cooldown, with shield-regen windows between. Dying on the elevator resets it to the bottom.
+- **Reward:** 10 Cells.
 
-### Zone 10: The Headliner — Neon District Boss  *(← Slice B ends here)*
-- **The Climax:** The elevator reaches the rooftop arena where **The Headliner** (GDD §4.4) is projected above the crowd. Suggested first-pass: **HP 1500, multi-phase**.
-- **Gameplay:** A multi-phase fight testing everything in the slice — heavy combo/shield-breaking, beat-reading the holo-wall and crowd-surge hazards, and surviving a mid-fight Nier camera shift into a **top-down bullet-hell** projection-storm phase (roll-dodging beat-driven patterns). Beating The Headliner ends the Vertical Slice.
+### Zone 10 — SECTOR 10 · The Headliner
+- **Geometry:** a 25×14 m rooftop dock; a low holo rail on the camera side, a gate that seals behind Nick, beat-animated stage lighting.
+- **Boss:** **The Headliner** — HP 1500, phase 2 at 50 % with the top-down projection storm at 160 BPM, overheating after 24 beats if no shield-breaker lands; Enraged melee finish (GDD §4.4). Drops 1000 Scrap + 1 Data Core.
+- **Victory:** 2.5 s hold → results screen → shop.
 
 ---
 
-## First-Pass Numbers (tune in `tools/balance_tool.html`)
-| Entity | HP | Hit dmg | Notes |
-|--------|----|---------|-------|
-| Nick | 120 (12 seg) | Light 12 / Heavy 28 | + Shield 40 (regen 12/s after 3s), 3 lives |
-| Runner | 30 | 8 | fast, squishy, swarms |
-| Bruiser | 90 | 20 | shielded; break with B-B |
-| Sniper | 24 | 18 | ranged, locks on-beat |
-| Rhythm Enforcer (mini) | 600 | 22 | Slice A boss |
-| The Headliner (boss) | 1500 | phase-based | Slice B boss |
+## First-Pass Numbers (as built — tune in `tools/balance_tool.html`)
+| Entity | HP | Hit dmg | Shield | Scrap | Cells | Notes |
+|---|---|---|---|---|---|---|
+| Nick | 120 (12 seg) | Light 12 / Heavy 28 | 40 (12/s after 3 s) | — | — | 3 lives |
+| Runner | 30 | 8 | — | 8 | — | aggro range, telegraph → lunge |
+| Bruiser | 90 | 20 | 50 | 50 | — | downbeat only |
+| Sniper | 24 | 18 | — | 25 | — | fires on beat 1 |
+| Rhythm Enforcer | 600 | 22 (third hit 28.6) | state-based | 300 | 15 | Zone 7 |
+| The Headliner | 1500 | 25 / bullets 10 | state-based | 1000 | 1 Core | Zone 10 |
 
-These are starting values, not final balance — load the balance tool, pick the **Slice A** or **Slice B** scope, and tune toward the 2–3 / 4–5 runs-to-clear targets.
+Shop: Max HP +20 = 100 Scrap · Max Shield +10 = 150 · Extra Life = 300 · Double Jump = 200 · Sweeper = 20 Cells · Battery Ram = 25 Cells · Extra Booster Slot = 1 Core.

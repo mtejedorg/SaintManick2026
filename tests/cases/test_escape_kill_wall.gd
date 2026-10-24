@@ -72,10 +72,43 @@ func test_wall_stops_once_it_passes_the_end_trigger() -> void:
 
 func test_each_damage_beat_shakes_the_camera() -> void:
 	var flags := {"shakes": 0}
-	var on_shake := func(_s, _d): flags.shakes += 1
+	# Count only the wall's own (0.1, 0.2) shake: Nick's damage reaction adds its own.
+	var on_shake := func(strength, duration): if is_equal_approx(strength, 0.1) and is_equal_approx(duration, 0.2): flags.shakes += 1
 	SignalBus.camera_shake_requested.connect(on_shake)
 	_wall._on_body_entered(_player)
 	_wall._on_beat("primary", 1)
 	# >= 2: Nick's own damage feedback (F6) adds a shake per hit taken on top of the wall's.
 	assert_true(flags.shakes >= 2, "Entering and each damage beat should both shake the camera")
 	SignalBus.camera_shake_requested.disconnect(on_shake)
+
+func test_respawn_mid_escape_puts_nick_and_his_checkpoint_on_path_z8() -> void:
+	var path_z7 := Path3D.new()
+	var path_z8 := Path3D.new()
+	add_child(path_z7)
+	add_child(path_z8)
+	_seq.path_z8 = path_z8
+	_player.current_path = path_z7
+	GameManager.checkpoint_path = path_z7
+	GameManager.checkpoint_top_down = true
+	SignalBus.miniboss_defeated.emit()
+	GameManager.checkpoint_position = Vector3(270.0, -3.0, 0.0)
+	SignalBus.player_respawned.emit()
+	assert_eq(_player.current_path, path_z8, "Escape active + respawn: Nick walks Path_Z8")
+	assert_eq(GameManager.checkpoint_path, path_z8, "...and so does his checkpoint")
+	assert_false(GameManager.checkpoint_top_down, "...in side-scroll")
+	path_z7.free()
+	path_z8.free()
+
+func test_wall_glow_is_hidden_until_the_chase_starts_and_after_it_ends() -> void:
+	var body := MeshInstance3D.new()
+	body.name = "WallMesh"
+	var core := MeshInstance3D.new()
+	core.name = "HotCore"
+	_wall.add_child(body)
+	_wall.add_child(core)
+	_wall._set_body_visible(false)
+	assert_false(body.visible or core.visible, "Dormant wall must not glow")
+	_wall.start_moving()
+	assert_true(body.visible and core.visible, "Chase start shows the wall")
+	_wall.stop_moving()
+	assert_false(body.visible or core.visible, "Parked wall is hidden again")

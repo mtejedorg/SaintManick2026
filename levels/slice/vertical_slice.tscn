@@ -1,4 +1,4 @@
-[gd_scene load_steps=81 format=3]
+[gd_scene load_steps=82 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -36,6 +36,7 @@
 [ext_resource type="Material" path="res://assets/materials/trim_sodium.tres" id="54_trim_sodium"]
 [ext_resource type="Material" path="res://assets/materials/hazard_orange.tres" id="55_hazard_orange"]
 [ext_resource type="Script" path="res://levels/components/zone_atmosphere.gd" id="56_zone_atmosphere"]
+[ext_resource type="Script" path="res://levels/components/holo_gate.gd" id="57_holo_gate"]
 
 
 ; --- Curve 3D Resources ---
@@ -160,7 +161,7 @@ size = Vector3(1, 4, 14)
 
 [sub_resource type="Curve3D" id="Curve3D_z10"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 345, 15, 0, 0, 0, 0, 0, 0, 0, 377, 15, 0),
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 345, 15, 0, 0, 0, 0, 0, 0, 0, 376.5, 15, 0),
 "tilts": PackedFloat32Array(0, 0)
 }
 point_count = 2
@@ -178,6 +179,7 @@ enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), 
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("5_sniper"), ExtResource("5_sniper")])
 spawn_markers = Array[String](["", "", "SniperSpawnPoint1", "SniperSpawnPoint2"])
+blocking = Array[bool]([true, true, false, false])
 
 [sub_resource type="Resource" id="Resource_z4_w3"]
 script = ExtResource("8_wave_def")
@@ -698,7 +700,7 @@ material = ExtResource("52_trim_cyan")
 [node name="SegA" type="CSGBox3D" parent="Z4_Catwalk" unique_id=410000002]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 131.25, -0.5, 0)
 use_collision = true
-size = Vector3(35, 1, 5)
+size = Vector3(17.5, 1, 5)
 material = ExtResource("50_floor_wet")
 
 [node name="PlankA" type="CSGBox3D" parent="Z4_Catwalk" unique_id=410000003]
@@ -783,13 +785,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -2)
 
 [node name="SpawnPoint5" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000019]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -2)
 
 [node name="SpawnPoint6" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000020]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 2)
 
 [node name="SpawnPoint7" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000021]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 2)
 
 [node name="SniperSpawnPoint1" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000022]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 5, -5.5)
@@ -830,6 +832,12 @@ use_collision = true
 size = Vector3(7.5, 1, 5)
 material = ExtResource("50_floor_wet")
 
+[node name="Z5_ExitRamp" type="CSGBox3D" parent="Z5_Market"]
+transform = Transform3D(0.99124, -0.13216, 0, 0.13216, 0.99124, 0, 0, 0, 1, 206.184, -3.9956, 0)
+use_collision = true
+size = Vector3(7.567, 1, 5)
+material = ExtResource("50_floor_wet")
+
 [node name="MarketStallL" type="CSGBox3D" parent="Z5_Market" unique_id=410000030]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, 0.1, -2)
 use_collision = true
@@ -843,19 +851,19 @@ size = Vector3(2, 1.2, 1.5)
 material = ExtResource("51_wall_dark")
 
 [node name="Crate1" type="CSGBox3D" parent="Z5_Market" unique_id=410000032]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 186, -1, -1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 186, -1, -1.3)
 use_collision = true
 size = Vector3(1.5, 1, 1.5)
 material = ExtResource("51_wall_dark")
 
 [node name="Crate2" type="CSGBox3D" parent="Z5_Market" unique_id=410000033]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 189, -1, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 189, -1, 1.3)
 use_collision = true
 size = Vector3(1.5, 1, 1.5)
 material = ExtResource("51_wall_dark")
 
 [node name="Crate3" type="CSGBox3D" parent="Z5_Market" unique_id=410000034]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 191, -1, -0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 191, -1, -1.3)
 use_collision = true
 size = Vector3(1.5, 1, 1.5)
 material = ExtResource("51_wall_dark")
@@ -1003,19 +1011,21 @@ material = ExtResource("50_floor_wet")
 [node name="Z7_Enemies" type="Node3D" parent="." unique_id=410000047]
 
 [node name="Runner1" parent="Z7_Enemies" unique_id=410000048 instance=ExtResource("3_runner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 230, -3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 244, -3, 0)
 
 [node name="Runner2" parent="Z7_Enemies" unique_id=410000049 instance=ExtResource("3_runner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 237, -3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 246.5, -3, 0)
 
 [node name="Runner3" parent="Z7_Enemies" unique_id=410000050 instance=ExtResource("3_runner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 245, -3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 249, -3, 0)
 
-[node name="Z7_Barrier" type="CSGBox3D" parent="." unique_id=410000051]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 250, -1.0, 0)
+[node name="Z7_Barrier" type="CSGBox3D" parent="." unique_id=410000051 node_paths=PackedStringArray("opened_by")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 279, -1.0, 0)
 use_collision = true
 size = Vector3(0.5, 7, 4)
 material = ExtResource("51_wall_dark")
+script = ExtResource("57_holo_gate")
+opened_by = NodePath("../RhythmEnforcer")
 
 [node name="RhythmEnforcer" parent="." instance=ExtResource("6_enforcer")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)
@@ -1070,10 +1080,12 @@ damage = 15.0
 shape = SubResource("BoxShape3D_kill_wall")
 
 [node name="WallMesh" type="MeshInstance3D" parent="EscapeSequence/EscapeKillWall"]
+visible = false
 mesh = SubResource("BoxMesh_killwall")
 surface_material_override/0 = SubResource("StandardMaterial3D_killwall")
 
 [node name="HotCore" type="MeshInstance3D" parent="EscapeSequence/EscapeKillWall"]
+visible = false
 mesh = SubResource("BoxMesh_killwall_core")
 surface_material_override/0 = SubResource("StandardMaterial3D_killwall_core")
 
@@ -1208,6 +1220,56 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, 2)
 [node name="SpawnPoint4" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 2)
 
+[node name="Z9_Shaft" type="Node3D" parent="."]
+
+[node name="BackWall" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 6, -3.7)
+size = Vector3(10, 20, 0.2)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Strip1" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, -3, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip2" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 0, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip3" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 3, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip4" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 6, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip5" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 9, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip6" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 12, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Strip7" type="CSGBox3D" parent="Z9_Shaft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 349, 15, -3.5)
+size = Vector3(8, 0.12, 0.12)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
 [node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path", "exit_path")]
 script = ExtResource("19_elevator_encounter")
 platform = NodePath("../ElevatorPlatform")
@@ -1265,7 +1327,7 @@ use_collision = true
 size = Vector3(1, 2.5, 1)
 material = ExtResource("51_wall_dark")
 
-[node name="LeftGate" type="StaticBody3D" parent="."]
+[node name="LeftGate" type="StaticBody3D" parent="." groups=["gates"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 352.5, 17, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LeftGate"]
@@ -1365,7 +1427,7 @@ material = ExtResource("52_trim_cyan")
 
 [node name="Z4_TrimA" type="CSGBox3D" parent="Trims"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 131.25, 0.06, -2.44)
-size = Vector3(35, 0.12, 0.12)
+size = Vector3(17.5, 0.12, 0.12)
 material = ExtResource("52_trim_cyan")
 
 [node name="Z4_TrimB" type="CSGBox3D" parent="Trims"]

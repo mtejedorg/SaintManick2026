@@ -3,10 +3,14 @@ extends Node3D
 
 signal wave_cleared
 
+## Enemies that must die for the wave to clear.
 var active_enemies: Array[Node] = []
+## Spawned but not required to clear the wave; freed silently when the wave clears.
+var _non_blocking: Array[Node] = []
 
 func spawn_wave(wave_def: WaveDef) -> void:
 	active_enemies.clear()
+	_non_blocking.clear()
 	if not wave_def or wave_def.enemies.is_empty():
 		wave_cleared.emit()
 		return
@@ -45,8 +49,16 @@ func spawn_wave(wave_def: WaveDef) -> void:
 		enemy.global_position = spawn_pos
 		enemy.global_rotation = spawn_rot
 		
-		active_enemies.append(enemy)
-		enemy.tree_exited.connect(_on_enemy_defeated.bind(enemy))
+		if wave_def.is_blocking(i):
+			active_enemies.append(enemy)
+			enemy.tree_exited.connect(_on_enemy_defeated.bind(enemy))
+		else:
+			_non_blocking.append(enemy)
+
+	# A wave made only of non-blocking enemies has nothing to wait for.
+	if active_enemies.is_empty():
+		_clear_non_blocking()
+		wave_cleared.emit()
 
 ## Marker named by wave_def.spawn_markers[index], or null when the slot is unnamed/unknown.
 func _find_named_marker(markers: Array[Marker3D], wave_def: WaveDef, index: int) -> Marker3D:
@@ -71,7 +83,16 @@ func _on_enemy_defeated(enemy: Node) -> void:
 		return
 	active_enemies.erase(enemy)
 	if active_enemies.is_empty():
+		_clear_non_blocking()
 		wave_cleared.emit()
+
+## Silently free the non-blocking leftovers (no enemy_died, no scrap).
+func _clear_non_blocking() -> void:
+	var leftovers := _non_blocking.duplicate()
+	_non_blocking.clear()
+	for enemy in leftovers:
+		if is_instance_valid(enemy):
+			enemy.queue_free()
 
 ## T3: silently despawn every still-alive spawned enemy — no enemy_died, no scrap,
 ## no wave_cleared. Used when the player loses a life mid-encounter so the refight
@@ -79,6 +100,7 @@ func _on_enemy_defeated(enemy: Node) -> void:
 func reset() -> void:
 	var doomed = active_enemies.duplicate()
 	active_enemies.clear()
+	_clear_non_blocking()
 	for enemy in doomed:
 		if is_instance_valid(enemy):
 			if enemy.tree_exited.is_connected(_on_enemy_defeated.bind(enemy)):

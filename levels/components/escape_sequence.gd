@@ -40,6 +40,14 @@ func _on_player_respawned() -> void:
 	if not is_active or not kill_wall:
 		return
 	kill_wall.global_position.x = GameManager.checkpoint_position.x - wall_start_gap
+	# Dying between the Enforcer's death and the Zone 8 handover leaves Nick on Path_Z7 (which
+	# ends at x=280) in front of the wall: put him, and his checkpoint, on the escape rail.
+	if path_z8:
+		GameManager.checkpoint_path = path_z8
+		GameManager.checkpoint_top_down = false
+		var player := _find_player()
+		if player and "current_path" in player:
+			player.current_path = path_z8
 
 func _physics_process(_delta: float) -> void:
 	if not is_active or not kill_wall or not end_trigger:

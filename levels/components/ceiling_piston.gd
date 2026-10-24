@@ -42,6 +42,8 @@ var _rest_emission_energy: float = 0.0
 
 func _ready() -> void:
 	initial_y = piston_body.position.y
+	# Overhead hazard: solid, but Nick walks under it (see test_golden_path_traversal).
+	piston_body.add_to_group("hazards")
 	hitbox.is_active = false
 
 	hitbox.collision_layer = 8192 # Layer 14

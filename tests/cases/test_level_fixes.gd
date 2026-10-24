@@ -26,6 +26,16 @@ func test_z7_barrier_is_taller_than_a_jump() -> void:
 	assert_gt(top - GROUND_TOP_Z7_Z8, 5.5, "The Zone 7 barrier must stand above the 5.5 m jump height")
 	assert_true(barrier.global_position.y - barrier.size.y * 0.5 <= GROUND_TOP_Z7_Z8, "...and reach the ground")
 
+func test_z7_barrier_sits_behind_the_enforcer_and_opens_when_he_dies() -> void:
+	var barrier := _box("Z7_Barrier")
+	var enforcer: Node3D = _slice.get_node("RhythmEnforcer")
+	assert_gt(barrier.global_position.x, enforcer.global_position.x, "The barrier must be behind the fight (x %.1f), not in front of the Enforcer (x %.1f)" % [barrier.global_position.x, enforcer.global_position.x])
+	assert_true(barrier.use_collision and barrier.visible, "Solid before the Enforcer dies")
+	SignalBus.miniboss_defeated.emit()
+	await get_tree().process_frame
+	assert_false(barrier.use_collision, "Barrier collision opens on miniboss_defeated")
+	assert_false(barrier.visible, "Barrier hides on miniboss_defeated")
+
 func test_zone4_trigger_no_longer_overlaps_the_zone3_room() -> void:
 	var enc: Area3D = _slice.get_node("Z4_Encounter")
 	var shape: CollisionShape3D = enc.get_node("CollisionShape3D")
@@ -129,3 +139,40 @@ func test_escape_kill_wall_has_a_visible_body() -> void:
 	var wall := _slice.get_node("EscapeSequence/EscapeKillWall")
 	var meshes := wall.find_children("*", "MeshInstance3D", false, false)
 	assert_eq(meshes.size(), 2, "Glow body + white-hot core")
+
+func test_zone7_runners_stand_outside_the_zone6_plaza() -> void:
+	var plaza := _box("Z6_Plaza/Floor")
+	var plaza_right := plaza.global_position.x + plaza.size.x * 0.5
+	for n in ["Runner1", "Runner2", "Runner3"]:
+		var runner: Node3D = _slice.get_node("Z7_Enemies/" + n)
+		assert_gt(runner.global_position.x, plaza_right, "%s (x %.1f) must stand beyond the plaza edge (%.1f)" % [n, runner.global_position.x, plaza_right])
+
+func test_zone4_sega_stops_before_the_plank_gap() -> void:
+	var seg_a := _box("Z4_Catwalk/SegA")
+	var seg_b := _box("Z4_Catwalk/SegB")
+	var room := _box("Z3_Room/Floor")
+	var a_left := seg_a.global_position.x - seg_a.size.x * 0.5
+	var a_right := seg_a.global_position.x + seg_a.size.x * 0.5
+	var b_left := seg_b.global_position.x - seg_b.size.x * 0.5
+	assert_gt(a_left, room.global_position.x + room.size.x * 0.5 - 0.001, "SegA must not run back into the Zone 3 room")
+	assert_gt(b_left - a_right, 2.5, "The PlankA gap (%.1f m) must exist again" % (b_left - a_right))
+	for n in ["SpawnPoint5", "SpawnPoint7"]:
+		var marker: Node3D = _slice.get_node("Z4_Encounter/Z4_Spawner/" + n)
+		assert_true(marker.global_position.x >= b_left and marker.global_position.x <= seg_b.global_position.x + seg_b.size.x * 0.5, "%s must land on SegB (x %.1f)" % [n, marker.global_position.x])
+
+func test_zone5_lower_tier_connects_to_the_plaza_by_a_ramp() -> void:
+	var ramp := _box("Z5_Market/Z5_ExitRamp")
+	var lower := _box("Z5_Market/LowerTier")
+	var plaza := _box("Z6_Plaza/Floor")
+	assert_true(ramp.use_collision, "The ramp must be solid")
+	var half_run := ramp.size.x * 0.5 * cos(ramp.rotation.z)
+	var left := ramp.global_position.x - half_run
+	var right := ramp.global_position.x + half_run
+	assert_true(absf(left - (lower.global_position.x + lower.size.x * 0.5)) < 0.6, "Ramp starts at the lower tier's edge (%.2f)" % left)
+	assert_true(absf(right - (plaza.global_position.x - plaza.size.x * 0.5)) < 0.6, "Ramp ends at the plaza's edge (%.2f)" % right)
+
+func test_zone9_shaft_has_a_back_wall_with_strips() -> void:
+	var wall := _box("Z9_Shaft/BackWall")
+	assert_false(wall.use_collision, "The shaft back wall is visual only")
+	assert_true(wall.global_position.y - wall.size.y * 0.5 <= -4.0 and wall.global_position.y + wall.size.y * 0.5 >= 16.0, "Back wall spans y -4..16")
+	assert_gt(_slice.get_node("Z9_Shaft").get_child_count(), 6, "Shaft needs magenta strips every 3 m")

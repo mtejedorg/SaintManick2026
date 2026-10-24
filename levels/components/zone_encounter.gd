@@ -18,6 +18,10 @@ var completed: bool = false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	# Gates are the only legal solid obstacles on the golden path (test_golden_path_traversal).
+	for gate in gates:
+		if gate:
+			gate.add_to_group("gates")
 	set_gate_locked(false)
 	if spawner:
 		spawner.wave_cleared.connect(_on_wave_cleared)

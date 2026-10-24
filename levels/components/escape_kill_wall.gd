@@ -11,6 +11,7 @@ var is_moving: bool = false
 var local_beat_counter: int = 0
 
 func _ready() -> void:
+	_set_body_visible(false) # dormant: no glow in the Enforcer arena
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	SignalBus.beat.connect(_on_beat)
@@ -20,13 +21,22 @@ func _ready() -> void:
 ## inside a physics callback (the Enforcer's death), where monitoring changes are blocked.
 func start_moving() -> void:
 	is_moving = true
+	_set_body_visible(true)
 	set_deferred("monitoring", true)
 
 func stop_moving() -> void:
 	is_moving = false
+	_set_body_visible(false)
 	set_deferred("monitoring", false)
 	is_player_inside = false
 	player_health = null
+
+## Shows/hides the glow body and hot core (children named WallMesh / HotCore).
+func _set_body_visible(shown: bool) -> void:
+	for node_name in ["WallMesh", "HotCore"]:
+		var node := get_node_or_null(node_name) as Node3D
+		if node:
+			node.visible = shown
 
 func _physics_process(delta: float) -> void:
 	if is_moving:

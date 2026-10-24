@@ -72,6 +72,24 @@ func test_wave_spawner_honours_named_spawn_marker() -> void:
 	assert_eq(spawner.active_enemies[0].global_position.x, 50.0, "Enemy 0 should spawn on its named marker")
 	assert_eq(spawner.active_enemies[1].global_position.x, 1.0, "An unnamed slot should fall back to round-robin markers")
 
+func test_non_blocking_enemies_do_not_hold_the_wave_and_are_freed_on_clear() -> void:
+	add_child(spawner)
+	var wave_def := WaveDef.new()
+	var enemies_list: Array[PackedScene] = [dummy_enemy_scene, dummy_enemy_scene, dummy_enemy_scene]
+	wave_def.enemies = enemies_list
+	wave_def.blocking = [true, false, false] as Array[bool]
+	var flags = {"cleared": 0}
+	spawner.wave_cleared.connect(func(): flags.cleared += 1)
+	spawner.spawn_wave(wave_def)
+
+	assert_eq(spawner.active_enemies.size(), 1, "Only the blocking enemy is tracked")
+	assert_eq(spawner.get_child_count(), 3, "All three enemies are spawned")
+	var snipers: Array[Node] = [spawner.get_child(1), spawner.get_child(2)]
+	spawner._on_enemy_defeated(spawner.active_enemies[0])
+	assert_eq(flags.cleared, 1, "Killing the blocking enemy clears the wave")
+	await get_tree().process_frame
+	assert_false(is_instance_valid(snipers[0]) or is_instance_valid(snipers[1]), "Non-blocking enemies are freed when the wave clears")
+
 func test_zone_encounter_gate_locks_and_wave_progression() -> void:
 	var gate = CSGBox3D.new()
 	add_child(gate)

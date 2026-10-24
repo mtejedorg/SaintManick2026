@@ -64,6 +64,34 @@ func test_hazard_collision_configuration() -> void:
 	
 	hazard.queue_free()
 
+# A9: physics BODY layers (separate from hitbox/hurtbox layers). Player = layer 2
+# ("player"), colliding with world (1) + enemies (3). Enemies = layer 3 ("enemies",
+# bit 4), colliding with world (1) + player (2). Triggers mask layer 2.
+func test_body_root_layers() -> void:
+	var player = load("res://characters/player/player.tscn").instantiate()
+	assert_eq(player.collision_layer, 2, "Player body should be on the player layer (2)")
+	assert_eq(player.collision_mask, 5, "Player body should collide with world (1) + enemies (4)")
+	player.free()
+
+	for path in [
+		"res://characters/enemies/runner/runner.tscn",
+		"res://characters/enemies/bruiser/bruiser.tscn",
+		"res://characters/enemies/sniper/sniper.tscn",
+		"res://characters/enemies/enforcer/enforcer.tscn",
+		"res://characters/enemies/headliner/headliner.tscn",
+	]:
+		var enemy = load(path).instantiate()
+		assert_eq(enemy.collision_layer, 4, "%s body should be on the enemies layer (4)" % path)
+		assert_eq(enemy.collision_mask, 3, "%s body should collide with world (1) + player (2)" % path)
+		enemy.free()
+
+	var encounter = load("res://levels/components/zone_encounter.tscn").instantiate()
+	assert_eq(encounter.collision_mask, 2, "ZoneEncounter should detect the player body layer")
+	encounter.free()
+	var pit = load("res://levels/components/toxic_pit.tscn").instantiate()
+	assert_eq(pit.collision_mask, 2, "ToxicPit should detect the player body layer")
+	pit.free()
+
 func _find_hitbox(node: Node) -> Hitbox3D:
 	if node is Hitbox3D:
 		return node

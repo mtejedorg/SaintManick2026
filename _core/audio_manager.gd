@@ -110,6 +110,7 @@ func _connect_signals() -> void:
 	# Combat feedback
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	SignalBus.player_died.connect(_on_player_died)
+	SignalBus.player_respawned.connect(_on_player_respawned)
 	SignalBus.combo_increased.connect(_on_combo_increased)
 
 	# Zone transitions
@@ -132,9 +133,28 @@ func _on_player_hit_landed(damage_info: DamageInfo) -> void:
 		play_sfx("hit_light")
 
 
+## F5: HealthComponent emits player_died on EVERY life lost, before the checkpoint
+## respawn — the music only stops when the death is terminal (game over).
 func _on_player_died() -> void:
-	stop_music()
+	var gm := get_node_or_null("/root/GameManager")
+	if gm == null or should_stop_music_on_death(gm.current_lives):
+		stop_music()
 	play_sfx("death_nick")
+
+## True when a death with `lives_remaining` lives left ends the run (GameManager: the
+## death that finds current_lives == 0 is game over; any other death respawns).
+static func should_stop_music_on_death(lives_remaining: int) -> bool:
+	return lives_remaining <= 0
+
+## F5: back at the checkpoint — make sure its zone track is playing (play_music skips a
+## track that is already running, so a surviving zone track is not restarted).
+func _on_player_respawned() -> void:
+	var gm := get_node_or_null("/root/GameManager")
+	if gm == null:
+		return
+	var clip := music_for_tier(tier_for_zone(gm.checkpoint_zone))
+	if clip != "":
+		play_music(clip)
 
 
 func _on_combo_increased(_current_combo: int) -> void:
@@ -169,19 +189,37 @@ static func tier_for_zone(zone_name: String) -> String:
 	return ""
 
 
-func _on_zone_entered(zone_name: String) -> void:
-	match tier_for_zone(zone_name):
+## Zone music clip per tier ("" for the boss tier — Zone 10 music is triggered by
+## boss_spawned). Filenames keep the old "corporate" naming for the Neon high-rise tier.
+static func music_for_tier(tier: String) -> String:
+	match tier:
 		"industrial":
-			play_music("zone_industrial")
-			play_ambience("industrial_hum")
+			return "zone_industrial"
 		"neon":
-			play_music("zone_neon_market")
-			play_ambience("neon_market_crowd")
+			return "zone_neon_market"
 		"highrise":
-			# Filenames keep the old "corporate" naming; the tier is the Neon high-rise.
-			play_music("zone_corporate")
-			play_ambience("corporate_interior")
-		# "boss": Zone 10 music is triggered by boss_spawned; no ambience during the fight.
+			return "zone_corporate"
+	return ""
+
+## Ambience clip per tier ("" for the boss tier — no ambience during the fight).
+static func ambience_for_tier(tier: String) -> String:
+	match tier:
+		"industrial":
+			return "industrial_hum"
+		"neon":
+			return "neon_market_crowd"
+		"highrise":
+			return "corporate_interior"
+	return ""
+
+func _on_zone_entered(zone_name: String) -> void:
+	var tier := tier_for_zone(zone_name)
+	var music := music_for_tier(tier)
+	if music != "":
+		play_music(music)
+	var ambience := ambience_for_tier(tier)
+	if ambience != "":
+		play_ambience(ambience)
 
 
 func _on_boss_spawned(boss_name: String) -> void:

@@ -221,3 +221,57 @@ func test_move_left_action_drives_movement_x() -> void:
 	Input.action_release("move_left")
 	assert_almost_eq(dir.x, -1.0, 0.001, "move_left should drive x = -1")
 	player.queue_free()
+
+func _hit(amount: float) -> DamageInfo:
+	var info := DamageInfo.new()
+	info.amount = amount
+	return info
+
+func test_damage_requests_hit_stop_shake_and_white_flash() -> void:
+	# F6: any HP/shield loss on Nick reads — hit-stop, shake and a white-hot rim flash.
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	player.health_component.max_health = 100.0
+	player.health_component.current_health = 100.0
+	var got = {"stop": Vector2.ZERO, "shake": Vector2.ZERO}
+	var on_stop = func(d, s): got.stop = Vector2(d, s)
+	var on_shake = func(st, d): got.shake = Vector2(st, d)
+	SignalBus.hit_stop_requested.connect(on_stop)
+	SignalBus.camera_shake_requested.connect(on_shake)
+	player.health_component.take_damage(_hit(10.0))
+	SignalBus.hit_stop_requested.disconnect(on_stop)
+	SignalBus.camera_shake_requested.disconnect(on_shake)
+	Engine.time_scale = 1.0
+	var hs = get_node_or_null("/root/HitStop")
+	if hs:
+		hs.hit_stop_timer = 0.0
+	assert_true(got.stop.is_equal_approx(Vector2(0.06, 0.05)), "Taking damage requests a 0.06 s hit-stop (got %s)" % got.stop)
+	assert_true(got.shake.is_equal_approx(Vector2(0.15, 0.2)), "Taking damage requests a 0.15 / 0.2 s shake (got %s)" % got.shake)
+	assert_eq(player.character_visual.get_current_rim_color(), Color.WHITE, "Nick's rim flashes white on damage")
+	player.queue_free()
+
+func test_invincible_rim_is_pale_cyan_and_restores() -> void:
+	# F6: i-frames read as a pale cyan, dimmed rim.
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	player.health_component.is_invincible = true
+	player._process(0.0)
+	assert_eq(player.character_visual.get_base_rim_color(), PlayerController.INVINCIBLE_RIM_COLOR, "Invincible rim is pale cyan")
+	assert_almost_eq(player.character_visual.get_base_rim_strength(), 2.0, 0.001, "Invincible rim strength is 2")
+	player.health_component.is_invincible = false
+	player._process(0.0)
+	assert_eq(player.character_visual.get_base_rim_color(), CharacterVisual.PLAYER_RIM_COLOR, "The cyan rim returns after the i-frames")
+	assert_almost_eq(player.character_visual.get_base_rim_strength(), 3.5, 0.001, "Strength 3.5 returns too")
+	player.queue_free()
+
+func test_low_health_pulses_magenta_on_the_beat() -> void:
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	player.health_component.max_health = 100.0
+	player.health_component.current_health = 50.0
+	player._on_beat("primary", 1)
+	assert_eq(player.character_visual.get_current_rim_color(), player.character_visual.get_base_rim_color(), "Healthy Nick does not pulse")
+	player.health_component.current_health = 20.0
+	player._on_beat("primary", 1)
+	assert_eq(player.character_visual.get_current_rim_color(), PlayerController.LOW_HP_PULSE_COLOR, "Below 25 % HP the beat pulses the rim magenta")
+	player.queue_free()

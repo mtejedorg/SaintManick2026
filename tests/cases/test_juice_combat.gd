@@ -469,3 +469,17 @@ func test_hitbox_scale_applies_to_arm_hitbox_on_combo_matched_heavy() -> void:
 	if not was_unlocked:
 		SaveManager.profile.unlocked_combos.erase("ABB")
 	player.queue_free()
+
+func test_overlapping_hit_stop_never_shortens_a_running_stop() -> void:
+	# F6: Nick hit (0.06) while his own hit stop (0.08) runs keeps the longer/deeper stop.
+	var hit_stop = get_node("/root/HitStop")
+	Engine.time_scale = 1.0
+	hit_stop.hit_stop_timer = 0.0
+	hit_stop.start_hit_stop(0.08, 0.05)
+	hit_stop.start_hit_stop(0.06, 0.1)
+	assert_almost_eq(hit_stop.hit_stop_timer, 0.08, 0.001, "A shorter request must not cut the running stop")
+	assert_almost_eq(Engine.time_scale, 0.05, 0.001, "A lighter request must not weaken the running stop")
+	hit_stop.start_hit_stop(0.12, 0.05)
+	assert_almost_eq(hit_stop.hit_stop_timer, 0.12, 0.001, "A longer request extends the stop")
+	Engine.time_scale = 1.0
+	hit_stop.hit_stop_timer = 0.0

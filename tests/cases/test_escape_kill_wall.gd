@@ -76,5 +76,6 @@ func test_each_damage_beat_shakes_the_camera() -> void:
 	SignalBus.camera_shake_requested.connect(on_shake)
 	_wall._on_body_entered(_player)
 	_wall._on_beat("primary", 1)
-	assert_eq(flags.shakes, 2, "Entering and each damage beat should both shake the camera")
+	# >= 2: Nick's own damage feedback (F6) adds a shake per hit taken on top of the wall's.
+	assert_true(flags.shakes >= 2, "Entering and each damage beat should both shake the camera")
 	SignalBus.camera_shake_requested.disconnect(on_shake)

@@ -71,13 +71,33 @@ var last_safe_position: Vector3 = Vector3.ZERO
 @export var bass_drop_stun: float = 1.0
 var bass_drop_armed: bool = false
 
+## F6: damage feedback — a short hit-stop, a camera shake and a white-hot rim flash on any
+## HP or shield loss.
+const DAMAGE_HIT_STOP_DURATION := 0.06
+const DAMAGE_HIT_STOP_SCALE := 0.05
+const DAMAGE_SHAKE_STRENGTH := 0.15
+const DAMAGE_SHAKE_DURATION := 0.2
+const DAMAGE_FLASH_STRENGTH := 6.0
+const DAMAGE_FLASH_SECONDS := 0.15
+## F6: rim while invincible (dash/roll i-frames, respawn grace): pale cyan, dimmed.
+const INVINCIBLE_RIM_COLOR := Color(0.6, 1.0, 1.0)
+const INVINCIBLE_RIM_STRENGTH := 2.0
+## F6: below this HP fraction the rim pulses toward magenta on every primary beat.
+const LOW_HP_FRACTION := 0.25
+const LOW_HP_PULSE_COLOR := Color(1.0, 0.0, 0.666667)
+const LOW_HP_PULSE_STRENGTH := 4.0
+const LOW_HP_PULSE_SECONDS := 0.25
+
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
 @onready var bionic_arm_hitbox: Area3D = $MeshInstance3D/BionicArmHitbox
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var animation_controller: PlayerAnimationController = $PlayerAnimationController
+@onready var character_visual: CharacterVisual = get_node_or_null("MeshInstance3D/CharacterVisual")
 var combo_component: Node = null
+## Which resting rim is applied right now ("" = not yet resolved) — see _update_rest_rim().
+var _rest_rim_key: String = ""
 
 func _ready() -> void:
 	var sm = get_node_or_null("/root/SaveManager")
@@ -104,6 +124,7 @@ func _ready() -> void:
 	health_component.damaged.connect(_on_damaged)
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	SignalBus.downbeat.connect(_on_downbeat)
+	SignalBus.beat.connect(_on_beat)
 	last_safe_position = global_position
 
 	# Apply run booster speed multiplier if GameManager set one
@@ -146,6 +167,7 @@ func try_beat_aligned_dodge_reward() -> bool:
 	return false
 
 func _process(delta: float) -> void:
+	_update_rest_rim()
 	if _dodge_cooldown_timer > 0.0:
 		_dodge_cooldown_timer -= delta
 	if ability_meter <= 0.0:
@@ -220,6 +242,39 @@ func _on_damaged(info: DamageInfo) -> void:
 	if animation_controller:
 		animation_controller.play_once("hit_react")
 	SignalBus.player_damaged.emit(info)
+	# F6: make every hit taken read — HP and shield losses alike.
+	SignalBus.hit_stop_requested.emit(DAMAGE_HIT_STOP_DURATION, DAMAGE_HIT_STOP_SCALE)
+	SignalBus.camera_shake_requested.emit(DAMAGE_SHAKE_STRENGTH, DAMAGE_SHAKE_DURATION)
+	if character_visual:
+		character_visual.flash_rim(Color.WHITE, DAMAGE_FLASH_STRENGTH, DAMAGE_FLASH_SECONDS)
+
+## F6: below LOW_HP_FRACTION the rim pulses toward magenta on every primary beat.
+func _on_beat(layer: String, _beat_index: int) -> void:
+	if layer != "primary" or character_visual == null:
+		return
+	if is_low_health():
+		character_visual.flash_rim(LOW_HP_PULSE_COLOR, LOW_HP_PULSE_STRENGTH, LOW_HP_PULSE_SECONDS)
+
+func is_low_health() -> bool:
+	var hc := health_component
+	return hc.max_health > 0.0 and hc.current_health > 0.0 and hc.current_health / hc.max_health < LOW_HP_FRACTION
+
+## The rim Nick rests at: pale cyan while invincible, otherwise his authored cyan.
+## Flashes (damage, low-HP pulse) play on top and return to it.
+func _update_rest_rim() -> void:
+	if character_visual == null:
+		return
+	var key := "invincible" if health_component.is_invincible else "default"
+	if key == _rest_rim_key:
+		return
+	_rest_rim_key = key
+	match key:
+		"invincible":
+			character_visual.update_rim_color(INVINCIBLE_RIM_COLOR)
+			character_visual.update_rim_strength(INVINCIBLE_RIM_STRENGTH)
+		_:
+			character_visual.update_rim_color(character_visual.get_default_rim_color())
+			character_visual.update_rim_strength(character_visual.rim_strength)
 
 func _physics_process(delta: float) -> void:
 	if current_path and current_path.curve:

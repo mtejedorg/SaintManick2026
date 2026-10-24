@@ -205,6 +205,37 @@ func test_boss_bullet_hell_shield_break() -> void:
 	SignalBus.camera_shift_requested.disconnect(camera_connection)
 	boss.queue_free()
 
+func test_boss_bullet_hell_overheats_after_max_beats() -> void:
+	var boss_scene = load("res://characters/enemies/headliner/headliner.tscn")
+	var boss = boss_scene.instantiate()
+	add_child(boss)
+	boss.activate_boss()
+
+	boss.phase_2_triggered = true
+	boss.state_machine.transition_to("StateBulletHell")
+	var bullet_hell = boss.state_machine.current_state
+	assert_eq(bullet_hell.name, "StateBulletHell")
+
+	var flags = {"camera_shifted": false, "top_down": true}
+	var camera_connection = func(top_down, path, transition_time):
+		flags.camera_shifted = true
+		flags.top_down = top_down
+	SignalBus.camera_shift_requested.connect(camera_connection)
+
+	# No shield-breaker hit at all — the phase must still end on its own.
+	for i in range(bullet_hell.max_beats - 1):
+		bullet_hell.on_beat("primary", (i % 4) + 1)
+	assert_eq(boss.state_machine.current_state.name, "StateBulletHell", "Bullet hell should persist until max_beats")
+	bullet_hell.on_beat("primary", ((bullet_hell.max_beats - 1) % 4) + 1)
+
+	assert_eq(boss.state_machine.current_state.name, "StateEnraged", "Bullet hell should overheat into StateEnraged after max_beats")
+	assert_false(boss.is_shield_active, "Overheated shield should be down")
+	assert_true(flags.camera_shifted, "Camera shift back should be requested on overheat")
+	assert_false(flags.top_down, "Overheat camera shift should request sidescroll (top_down = false)")
+
+	SignalBus.camera_shift_requested.disconnect(camera_connection)
+	boss.queue_free()
+
 func test_boss_death_complete_run() -> void:
 	var boss_scene = load("res://characters/enemies/headliner/headliner.tscn")
 	var boss = boss_scene.instantiate()

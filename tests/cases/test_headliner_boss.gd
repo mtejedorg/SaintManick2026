@@ -388,3 +388,24 @@ func test_headliner_visual_stands_six_metres_on_its_capsule() -> void:
 	assert_almost_eq(merged.position.y - boss.global_position.y, -3.0, 0.15, "Headliner feet sit on the 6 m capsule bottom")
 	assert_almost_eq(merged.size.y, 6.0, 0.4, "Headliner stands ~6 m tall (upright, not lying down)")
 	boss.queue_free()
+
+func test_left_gate_visual_shows_only_while_sealed() -> void:
+	# E8: the slice hides LeftGate/Visual while the gate is open; the fight shows it when the
+	# gate seals and the respawn reset hides it again with the collision.
+	var arena := Node3D.new()
+	add_child(arena)
+	var gate := Node3D.new()
+	gate.name = "LeftGate"
+	arena.add_child(gate)
+	var gate_visual := MeshInstance3D.new()
+	gate_visual.name = "Visual"
+	gate_visual.visible = false
+	gate.add_child(gate_visual)
+	var boss: HeadlinerBoss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	arena.add_child(boss)
+
+	boss.activate_boss()
+	assert_true(gate_visual.visible, "LeftGate/Visual appears when the boss seals the arena")
+	boss._on_player_respawned()
+	assert_false(gate_visual.visible, "LeftGate/Visual hides again when the respawn reset re-opens the gate")
+	arena.queue_free()

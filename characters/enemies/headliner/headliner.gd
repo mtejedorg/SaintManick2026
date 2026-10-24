@@ -105,6 +105,7 @@ func _on_player_respawned() -> void:
 		var col = gate.get_node_or_null("CollisionShape3D")
 		if col:
 			col.set_deferred("disabled", true)
+		_set_gate_visual(gate, false)
 	# StateDormant.enter() clears is_active_boss/is_shield_active and hides the bubble.
 	if state_machine:
 		state_machine.transition_to("StateDormant")
@@ -150,10 +151,17 @@ func activate_boss(body: Node3D = null) -> void:
 		var col = gate.get_node_or_null("CollisionShape3D")
 		if col:
 			col.set_deferred("disabled", false)
+		_set_gate_visual(gate, true)
 
 	if state_machine:
 		state_machine.transition_to("StateShield")
 
+
+## The LeftGate slab is only shown while it actually blocks (the slice hides it while open).
+func _set_gate_visual(gate: Node, shown: bool) -> void:
+	var visual := gate.get_node_or_null("Visual") as Node3D
+	if visual:
+		visual.visible = shown
 
 func break_shield() -> void:
 	if state_machine and state_machine.current_state and state_machine.current_state.has_method("on_shield_broken"):

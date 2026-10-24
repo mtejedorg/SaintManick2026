@@ -38,6 +38,10 @@ var buffered_attack: bool = false
 var buffered_heavy: bool = false
 var current_sequence: Array[String] = []
 
+## Bumped on every new hit and on exit(): a pending one-frame hitbox re-arm only fires if
+## no newer hit started and the state wasn't left in between.
+var _hitbox_token: int = 0
+
 func _ensure_combo_defs_loaded() -> void:
 	if not _combo_defs_by_chain.is_empty():
 		return
@@ -61,6 +65,8 @@ func _is_combo_unlocked(seq: String) -> bool:
 func enter() -> void:
 	_ensure_combo_defs_loaded()
 	combo_step = 0
+	# A matched route caps the chain (see _start_attack); every fresh attack starts uncapped.
+	max_combo_step = attack_durations.size() - 1
 	current_sequence.clear()
 	buffered_attack = false
 	buffered_heavy = false
@@ -82,6 +88,10 @@ func _start_attack(is_heavy: bool) -> void:
 		# behaves like an unmatched sequence — generic mashed light/heavy values instead
 		# of the route's tuned damage/knockback/flags.
 		combo_def = null
+
+	# A matched route ENDS the chain: Battery Ram (B-B) must not run into a generic third hit.
+	if combo_def and current_sequence.size() == combo_def.input_chain.size():
+		max_combo_step = combo_step
 
 	attack_timer = combo_def.duration if combo_def else attack_durations[combo_step]
 	current_hit_duration = attack_timer
@@ -131,9 +141,25 @@ func _start_attack(is_heavy: bool) -> void:
 
 	active_hitbox.damage_info.source = player
 	inactive_hitbox.is_active = false
-	active_hitbox.is_active = true
+	_hitbox_token += 1
+	if combo_step == 0:
+		active_hitbox.is_active = true
+	else:
+		# Chained hit: the box may still overlap the target from the previous hit, and
+		# Area3D.area_entered only fires on a NEW overlap. Switch it off now and back on one
+		# physics frame later so the physics server sees a fresh overlap (setting false and
+		# true in the same frame collapses into a no-op — the shape toggle is deferred).
+		active_hitbox.is_active = false
+		_rearm_hitbox_next_physics_frame(active_hitbox, _hitbox_token)
+
+func _rearm_hitbox_next_physics_frame(hitbox: Area3D, token: int) -> void:
+	await get_tree().physics_frame
+	if token != _hitbox_token or not is_instance_valid(hitbox):
+		return # a newer hit started, or the state exited
+	hitbox.is_active = true
 
 func exit() -> void:
+	_hitbox_token += 1
 	player.katana_hitbox.is_active = false
 	player.bionic_arm_hitbox.is_active = false
 	if player.combo_component:

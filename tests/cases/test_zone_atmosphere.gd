@@ -24,11 +24,11 @@ func test_lookup_returns_the_zone_5_palette() -> void:
 	var z5 := Atmo.get_atmosphere(5)
 	assert_eq(z5["ambient"], Color("#120F24"), "Zone 5 ambient")
 	assert_eq(z5["fog_albedo"], Color("#2A1A5A"), "Zone 5 fog albedo")
-	assert_almost_eq(z5["density"], 0.03, 0.00001, "Zone 5 fog density")
+	assert_almost_eq(z5["density"], 0.048, 0.00001, "Zone 5 fog density")
 	var fog: Color = z5["fog_albedo"]
 	var emission: Color = z5["fog_emission"]
-	assert_almost_eq(emission.r, fog.r * 0.1, 0.00001, "Fog emission is 10% of fog albedo (r)")
-	assert_almost_eq(emission.b, fog.b * 0.1, 0.00001, "Fog emission is 10% of fog albedo (b)")
+	assert_almost_eq(emission.r, fog.r * 0.4, 0.00001, "Fog emission is 40% of fog albedo (r)")
+	assert_almost_eq(emission.b, fog.b * 0.4, 0.00001, "Fog emission is 40% of fog albedo (b)")
 
 func test_all_ten_zones_are_defined_and_unknown_zones_are_empty() -> void:
 	for zone in range(1, 11):
@@ -54,7 +54,7 @@ func test_zone_entered_targets_the_entered_zones_values_and_tweens_the_environme
 	var env := _holder.environment
 	assert_eq(env.ambient_light_color, Color("#120F24"), "Environment ambient reaches Zone 5")
 	assert_eq(env.volumetric_fog_albedo, Color("#2A1A5A"), "Environment fog albedo reaches Zone 5")
-	assert_almost_eq(env.volumetric_fog_density, 0.03, 0.00001, "Environment fog density reaches Zone 5")
+	assert_almost_eq(env.volumetric_fog_density, 0.048, 0.00001, "Environment fog density reaches Zone 5")
 
 func test_private_environment_copy_leaves_the_authored_resource_untouched() -> void:
 	var authored := Environment.new()

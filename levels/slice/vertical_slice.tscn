@@ -1,4 +1,4 @@
-[gd_scene load_steps=82 format=3]
+[gd_scene load_steps=84 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -241,9 +241,21 @@ emission_enabled = true
 emission = Color(1, 0.690196, 0, 1)
 emission_energy_multiplier = 2.0
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_void"]
+sky_top_color = Color(0.0196078, 0.0196078, 0.0588235, 1)
+sky_horizon_color = Color(0.227451, 0.0392157, 0.227451, 1)
+sky_energy_multiplier = 0.25
+ground_bottom_color = Color(0.0196078, 0.0196078, 0.0392157, 1)
+ground_horizon_color = Color(0.101961, 0.0392157, 0.164706, 1)
+sun_angle_max = 0.0
+
+[sub_resource type="Sky" id="Sky_void"]
+sky_material = SubResource("ProceduralSkyMaterial_void")
+
 [sub_resource type="Environment" id="Environment_glow"]
-background_mode = 1
+background_mode = 2
 background_color = Color(0.02, 0.02, 0.05, 1)
+sky = SubResource("Sky_void")
 ambient_light_source = 2
 ambient_light_color = Color(0.063, 0.063, 0.141, 1)
 ambient_light_energy = 2.2
@@ -284,6 +296,7 @@ script = ExtResource("33_vs_script")
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
 light_color = Color(0.35, 0.42, 1, 1)
 light_energy = 0.45
+sky_mode = 1
 shadow_enabled = true
 shadow_blur = 1.5
 directional_shadow_mode = 0
@@ -294,6 +307,7 @@ transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 15, 0)
 light_color = Color(0, 0.960784, 1, 1)
 light_energy = 0.15
 light_specular = 0.0
+sky_mode = 1
 shadow_enabled = false
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -1204,6 +1218,7 @@ size = Vector3(8, 0.12, 0.12)
 material = ExtResource("53_trim_magenta")
 
 [node name="Z9_ElevatorLight" type="OmniLight3D" parent="ElevatorPlatform"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 2.5
@@ -1520,42 +1535,49 @@ material = ExtResource("53_trim_magenta")
 [node name="ZoneLights" type="Node3D" parent="."]
 
 [node name="Z1_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 6, 0)
 light_color = Color(1, 0.603922, 0.235294, 1)
 light_energy = 2.2
 omni_range = 16
 
 [node name="Z1_AccentLight" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.5, -2)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 0.8
 omni_range = 10
 
 [node name="Z2_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 6, 0)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 1
 omni_range = 20
 
 [node name="Z2_PitLight1" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
 light_energy = 1.2
 omni_range = 16
 
 [node name="Z2_PitLight2" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
 light_energy = 1.2
 omni_range = 16
 
 [node name="Z2_PitLight3" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 1, 0)
 light_color = Color(0.0980392, 1, 0.352941, 1)
 light_energy = 1.2
 omni_range = 16
 
 [node name="Z2_PistonLight1" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 2.5, 2.5)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1567,6 +1589,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z2_PistonLight2" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 2.5, 0.5)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1578,6 +1601,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z2_PistonLight3" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 2.5, -1)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1589,6 +1613,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z2_PistonLight4" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 2.5, -1)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1600,6 +1625,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z2_PistonLight5" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 2.5, 0.5)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1611,6 +1637,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z2_PistonLight6" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 2.5, 2.5)
 light_color = Color(1, 0.352941, 0, 1)
 light_energy = 1.5
@@ -1622,6 +1649,7 @@ downbeat_energy_boost = 1.5
 palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z3_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 8, 0)
 light_color = Color(1, 0.164706, 0.101961, 1)
 light_energy = 2.5
@@ -1633,66 +1661,77 @@ downbeat_energy_boost = 2
 palette = Array[Color]([Color(1, 0.352941, 0, 1), Color(1, 0.164706, 0.101961, 1)])
 
 [node name="Z4_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147.5, 10, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 2.2
 omni_range = 24
 
 [node name="Z4_RimLight" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147, 15, -10)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 3
 omni_range = 40
 
 [node name="Z5_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 170, 4, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 2.2
 omni_range = 16
 
 [node name="Z5_LightB" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 185, 4, 0)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 2.2
 omni_range = 16
 
 [node name="Z5_LightC" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 200, 4, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 2.2
 omni_range = 16
 
 [node name="Z6_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, 8, 0)
 light_color = Color(0, 0.847059, 1, 1)
 light_energy = 2.5
 omni_range = 26
 
 [node name="Z6_EdgeLightL" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 212, 0, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 1.5
 omni_range = 16
 
 [node name="Z6_EdgeLightR" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 238, 0, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 1.5
 omni_range = 16
 
 [node name="Z7_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, 6, 0)
 light_color = Color(1, 0.0392157, 0.54902, 1)
 light_energy = 2.4
 omni_range = 22
 
 [node name="Z7_FillLight" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, 4, -6)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 1
 omni_range = 20
 
 [node name="Z8_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281, 6, 0)
 light_color = Color(1, 0.117647, 0.352941, 1)
 light_energy = 2.5
@@ -1704,6 +1743,7 @@ downbeat_energy_boost = 2
 palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
 
 [node name="Z8_LightB" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, 6, 0)
 light_color = Color(1, 0.117647, 0.352941, 1)
 light_energy = 2.5
@@ -1715,6 +1755,7 @@ downbeat_energy_boost = 2
 palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
 
 [node name="Z8_LightC" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 330, 6, 0)
 light_color = Color(1, 0.117647, 0.352941, 1)
 light_energy = 2.5
@@ -1726,18 +1767,21 @@ downbeat_energy_boost = 2
 palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
 
 [node name="Z9_Light" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 343, 10, 0)
 light_color = Color(0, 0.847059, 1, 1)
 light_energy = 1.6
 omni_range = 24
 
 [node name="Z9_GapLight" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 319, 6, 0)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 2
 omni_range = 20
 
 [node name="Z10_StageLight" type="OmniLight3D" parent="ZoneLights"]
+light_volumetric_fog_energy = 2.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 18, 0)
 light_color = Color(0.0, 0.949, 1.0, 1)
 light_energy = 2.0

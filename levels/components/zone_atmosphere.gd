@@ -10,24 +10,24 @@ extends Node
 ## ambient energy alone were undone by this per-zone tween).
 ##
 ## Factory (1-4) is warm/industrial haze, Neon District (5-10) is saturated magenta/cyan.
-## Fog emission is always FOG_EMISSION_RATIO of the fog albedo: a faint self-glow so fog
-## never goes fully black between the neon lights.
+## Fog emission is always FOG_EMISSION_RATIO of the fog albedo: a self-glow so fog never goes
+## black between the neon lights and the haze reads against the void (G2: 0.1 -> 0.4).
 
 const TWEEN_TIME := 1.5
-const FOG_EMISSION_RATIO := 0.1
+const FOG_EMISSION_RATIO := 0.4
 
 ## zone number -> { ambient, fog (albedo), density }
 const TABLE := {
-	1: {"ambient": Color("#1B120C"), "fog": Color("#3A2410"), "density": 0.025},
-	2: {"ambient": Color("#0A1B0F"), "fog": Color("#0E3A18"), "density": 0.03},
-	3: {"ambient": Color("#180C0C"), "fog": Color("#3A0F0A"), "density": 0.02},
-	4: {"ambient": Color("#1B0F1E"), "fog": Color("#5C1F6E"), "density": 0.012},
-	5: {"ambient": Color("#120F24"), "fog": Color("#2A1A5A"), "density": 0.03},
-	6: {"ambient": Color("#0F1227"), "fog": Color("#103A5A"), "density": 0.018},
-	7: {"ambient": Color("#1E0C1E"), "fog": Color("#4A0A3A"), "density": 0.025},
-	8: {"ambient": Color("#1E0918"), "fog": Color("#5A0A28"), "density": 0.02},
-	9: {"ambient": Color("#090F1E"), "fog": Color("#1A2A5A"), "density": 0.012},
-	10: {"ambient": Color("#0F091E"), "fog": Color("#301040"), "density": 0.035},
+	1: {"ambient": Color("#1B120C"), "fog": Color("#3A2410"), "density": 0.04},
+	2: {"ambient": Color("#0A1B0F"), "fog": Color("#0E3A18"), "density": 0.048},
+	3: {"ambient": Color("#180C0C"), "fog": Color("#3A0F0A"), "density": 0.032},
+	4: {"ambient": Color("#1B0F1E"), "fog": Color("#5C1F6E"), "density": 0.019},
+	5: {"ambient": Color("#120F24"), "fog": Color("#2A1A5A"), "density": 0.048},
+	6: {"ambient": Color("#0F1227"), "fog": Color("#103A5A"), "density": 0.029},
+	7: {"ambient": Color("#1E0C1E"), "fog": Color("#4A0A3A"), "density": 0.04},
+	8: {"ambient": Color("#1E0918"), "fog": Color("#5A0A28"), "density": 0.032},
+	9: {"ambient": Color("#090F1E"), "fog": Color("#1A2A5A"), "density": 0.019},
+	10: {"ambient": Color("#0F091E"), "fog": Color("#301040"), "density": 0.056},
 }
 
 ## The WorldEnvironment whose Environment is driven. Defaults to this node's parent.

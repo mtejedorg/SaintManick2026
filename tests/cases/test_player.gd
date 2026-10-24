@@ -108,3 +108,32 @@ func test_nick_visual_feet_rest_on_capsule_bottom() -> void:
 
 	player.queue_free()
 	floor_body.queue_free()
+
+func test_new_rail_is_eased_onto_not_snapped() -> void:
+	# D9: assigning a rail 10 m away must not teleport Nick in one frame.
+	var rail := Path3D.new()
+	rail.curve = Curve3D.new()
+	rail.curve.add_point(Vector3(-50.0, 0.0, -10.0))
+	rail.curve.add_point(Vector3(50.0, 0.0, -10.0))
+	rail.position = Vector3(0.0, 0.0, 4000.0)
+	add_child(rail)
+
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	player.position = Vector3(0.0, 0.0, 4000.0)
+	add_child(player)
+	player.current_path = null
+	player.set_physics_process(false) # drive the ticks by hand
+	var start := player.global_position
+
+	player.current_path = rail
+	player._physics_process(0.1)
+	var moved := start.distance_to(player.global_position)
+	assert_gt(moved, 0.0, "Nick should start moving toward the new rail")
+	assert_lt(moved, 5.0, "One 0.1 s tick must move Nick less than 5 m toward a rail 10 m away (moved %.2f)" % moved)
+
+	for i in 3:
+		player._physics_process(0.1)
+	assert_almost_eq(player.global_position.z, 4000.0 - 10.0, 0.01, "After rail_blend_time Nick should be locked onto the rail")
+
+	player.queue_free()
+	rail.queue_free()

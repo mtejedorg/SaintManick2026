@@ -22,7 +22,18 @@ extends CharacterBody3D
 @export var beat_aligned_dodge_meter: float = 4.0
 var _dodge_cooldown_timer: float = 0.0
 
-@export var current_path: Path3D
+## The rail Nick is plane-locked to (null = free top-down movement). Switching to a new
+## rail eases him onto it over rail_blend_time instead of hard-snapping in one frame (the
+## Zone 7 -> 8 hand-off alone is up to 25 m).
+@export var current_path: Path3D:
+	set(value):
+		if value != null and value != current_path:
+			_rail_blend = 0.0
+		current_path = value
+## Seconds to ease onto a newly assigned rail.
+@export var rail_blend_time: float = 0.3
+## 0 -> 1 progress of the ease onto the current rail; 1 = locked (snap every frame).
+var _rail_blend: float = 1.0
 
 ## Y below which the player is considered to have fallen out of the world. Below every
 ## legitimate floor in the slice (lowest arena floor ~ -4.5); the elevator rises well above 0.
@@ -207,13 +218,19 @@ func _on_damaged(info: DamageInfo) -> void:
 		animation_controller.play_once("hit_react")
 	SignalBus.player_damaged.emit(info)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if current_path and current_path.curve:
-		# Snap the player X and Z to the closest point on the path to prevent drifting
+		# Snap the player X and Z to the closest point on the path to prevent drifting —
+		# eased over rail_blend_time right after a rail switch.
 		var local_pos = current_path.to_local(global_position)
 		var closest_pt = current_path.to_global(current_path.curve.get_closest_point(local_pos))
-		global_position.x = closest_pt.x
-		global_position.z = closest_pt.z
+		if _rail_blend < 1.0:
+			_rail_blend = minf(1.0, _rail_blend + delta / maxf(rail_blend_time, 0.001))
+			global_position.x = lerpf(global_position.x, closest_pt.x, _rail_blend)
+			global_position.z = lerpf(global_position.z, closest_pt.z, _rail_blend)
+		else:
+			global_position.x = closest_pt.x
+			global_position.z = closest_pt.z
 
 	# Remember the last solid ground so a fall can return Nick there.
 	if is_on_floor():

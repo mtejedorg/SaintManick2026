@@ -4,8 +4,8 @@
 
 [resource]
 shader = ExtResource("1_vcr")
-shader_parameter/scanline_strength = 0.12
-shader_parameter/scanline_count = 540.0
-shader_parameter/scanline_speed = 0.15
+shader_parameter/scanline_strength = 0.06
+shader_parameter/scanline_count = 1700.0
+shader_parameter/scanline_speed = 0.0
 shader_parameter/aberration_strength = 0.0
-shader_parameter/vignette_strength = 0.25
+shader_parameter/vignette_strength = 0.3

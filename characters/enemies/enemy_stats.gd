@@ -21,7 +21,7 @@ const KILL_PLANE_Y: float = -20.0
 ## Ranged attackers (Sniper) only start an attack cycle while the player is within this
 ## distance. 0 = no limit.
 @export var attack_range: float = 0.0
-## Starting shield (hyper-armor while > 0; only guard-breaking hits get through). 0 = no shield.
+## Starting shield: soaks every hit's damage first; while > 0 only guard-breaking hits knock back/stun. 0 = no shield.
 @export var shield: float = 0.0
 ## Rare Scrap ("cells" in code, GDD §5.1) awarded on this enemy's death. 0 = doesn't drop any
 ## (most grunts only drop scrap; cells are reserved for stronger mid-journey enemies like

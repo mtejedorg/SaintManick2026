@@ -3,6 +3,10 @@ extends Area3D
 
 signal hit_received(damage_info: DamageInfo)
 
+## F12: a light shake so an absorbed (blocked) hit still reads as contact.
+const BLOCKED_SHAKE_STRENGTH := 0.03
+const BLOCKED_SHAKE_DURATION := 0.08
+
 @export var health_component: HealthComponent
 
 func _ready() -> void:
@@ -13,6 +17,16 @@ func _ready() -> void:
 	# than health_component.is_player, which children's _ready() can race against (the
 	# owning controller sets is_player in its own _ready(), which runs AFTER its children's).
 	add_to_group("player_hurtbox" if owner is PlayerController else "enemy_hurtbox")
+
+## F12: a hit absorbed by a state shield (EnforcerHurtbox/HeadlinerHurtbox). The combat
+## component still hears it (hit_received — it ignores absorbed hits itself); when Nick
+## threw it, it counts as contact for the combo (hit_blocked) with a light shake. No damage,
+## no player_hit_landed, no meter.
+func receive_blocked_hit(damage_info: DamageInfo) -> void:
+	hit_received.emit(damage_info)
+	if damage_info.source is PlayerController:
+		SignalBus.hit_blocked.emit(global_position)
+		SignalBus.camera_shake_requested.emit(BLOCKED_SHAKE_STRENGTH, BLOCKED_SHAKE_DURATION)
 
 func receive_hit(damage_info: DamageInfo) -> void:
 	var was_invincible = health_component and health_component.is_invincible

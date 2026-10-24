@@ -12,7 +12,8 @@ func receive_hit(damage_info: DamageInfo) -> void:
 			# Shield breaks!
 			owner.break_shield()
 		else:
-			hit_received.emit(damage_info)
+			# F12: absorbed — still contact (combo keeps going), never damage.
+			receive_blocked_hit(damage_info)
 			return
 	else:
 		# If the boss is vulnerable, increase damage by 1.5x

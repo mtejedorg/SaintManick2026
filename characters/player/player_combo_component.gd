@@ -13,6 +13,7 @@ var has_hit_this_attack: bool = false
 func _ready() -> void:
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	SignalBus.player_damaged.connect(_on_player_damaged)
+	SignalBus.hit_blocked.connect(_on_hit_blocked)
 
 func _process(delta: float) -> void:
 	if combo_count > 0:
@@ -34,6 +35,13 @@ func _on_player_hit_landed(_damage_info: DamageInfo) -> void:
 	SignalBus.combo_increased.emit(combo_count)
 	if combo_count >= MAX_COMBO:
 		SignalBus.combo_capped.emit()
+
+## F12: a hit absorbed by a boss shield connected — not a whiff. Keeps the chain alive
+## (no increment, no celebration, no meter).
+func _on_hit_blocked(_position: Vector3) -> void:
+	has_hit_this_attack = true
+	if combo_count > 0:
+		combo_timer = combo_timeout
 
 ## GDD §6.1's "combo counter that grows... without taking damage" — a hit taken drops
 ## the combo immediately, same as a whiffed attack (_drop_combo below), regardless of

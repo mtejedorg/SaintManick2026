@@ -38,6 +38,10 @@ signal camera_shake_requested(strength: float, duration: float)
 signal player_hit_landed(damage_info: DamageInfo)
 ## Emitted by Hurtbox3D when a player attack connects. hit_type: "light" or "heavy".
 signal hit_landed(position: Vector3, hit_type: String)
+## F12: a player attack connected with a boss state shield (Enforcer/Headliner) and was
+## absorbed — no damage, no meter, but it is NOT a whiff: the combo counter keeps the chain
+## alive (without incrementing) and VFX may spark at `position`.
+signal hit_blocked(position: Vector3)
 ## Emitted by enemy _on_died() before queue_free so VFX can burst at the death position.
 signal enemy_died(position: Vector3)
 

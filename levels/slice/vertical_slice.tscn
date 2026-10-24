@@ -327,6 +327,283 @@ world_environment = NodePath("..")
 
 [node name="VcrOverlay" parent="." instance=ExtResource("34_vcr_overlay")]
 
+; --- Skyline backdrops (G5): no collision, no shadows, they only exist to be silhouettes in the haze ---
+[node name="Skyline_Z1_2" type="Node3D" parent="."]
+
+[node name="Tower1" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 5.0, -42)
+size = Vector3(12, 26, 10)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 6, -42)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower1Strip2" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 12, -42)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 10.0, -55)
+size = Vector3(14, 36, 12)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 9, -55)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip2" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 17, -55)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip3" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 24, -55)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower3" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 7.0, -48)
+size = Vector3(12, 30, 10)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower3Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 8, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower3Strip2" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 15, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower4" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 11.0, -58)
+size = Vector3(16, 38, 12)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower4Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 10, -58)
+size = Vector3(16.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip2" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 19, -58)
+size = Vector3(16.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip3" type="CSGBox3D" parent="Skyline_Z1_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 26, -58)
+size = Vector3(16.2, 0.15, 12.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Skyline_Z7_9" type="Node3D" parent="."]
+
+[node name="Tower1" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 11.0, -50)
+size = Vector3(14, 46, 12)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 2, -50)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower1Strip2" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 10, -50)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower1Strip3" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 18, -50)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower1Strip4" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 26, -50)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower2" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 16.0, -62)
+size = Vector3(16, 56, 14)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 0, -62)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip2" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 9, -62)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip3" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 18, -62)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip4" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 27, -62)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2Strip5" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 36, -62)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower3" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 8.0, -48)
+size = Vector3(12, 40, 10)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower3Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 0, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower3Strip2" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 8, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower3Strip3" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 16, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower3Strip4" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 22, -48)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower4" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 15.0, -68)
+size = Vector3(16, 54, 14)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower4Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, -2, -68)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip2" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 8, -68)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip3" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 18, -68)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip4" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 28, -68)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower4Strip5" type="CSGBox3D" parent="Skyline_Z7_9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 36, -68)
+size = Vector3(16.2, 0.15, 14.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Skyline_Z10" type="Node3D" parent="."]
+
+[node name="Tower1" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358, 23.0, -30)
+size = Vector3(12, 58, 10)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358, 10, -30)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower1Strip2" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358, 20, -30)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower1Strip3" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358, 30, -30)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower1Strip4" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358, 40, -30)
+size = Vector3(12.2, 0.15, 10.2)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="Tower2" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376, 19.0, -34)
+size = Vector3(14, 50, 12)
+material = ExtResource("51_wall_dark")
+cast_shadow = 0
+
+[node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376, 12, -34)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower2Strip2" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376, 22, -34)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Tower2Strip3" type="CSGBox3D" parent="Skyline_Z10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376, 32, -34)
+size = Vector3(14.2, 0.15, 12.2)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
 ; --- Walkable Paths ---
 [node name="Path_Z1_2_3" type="Path3D" parent="."]
 curve = SubResource("Curve3D_z1_2_3")

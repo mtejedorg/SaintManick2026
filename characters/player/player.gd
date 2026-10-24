@@ -238,10 +238,12 @@ func apply_gravity(delta: float) -> void:
 		can_double_jump = double_jump_unlocked
 
 func get_movement_input() -> Vector2:
-	return Vector2(
-		Input.get_axis("ui_left", "ui_right"),
-		Input.get_axis("ui_up", "ui_down")
-	)
+	var x := Input.get_axis("ui_left", "ui_right")
+	# GDD §3.1: while plane-locked to a Path3D (side-scroll), up/down do nothing — they
+	# must not flip facing or enter StateRun while Nick stands still.
+	if current_path != null:
+		return Vector2(x, 0.0)
+	return Vector2(x, Input.get_axis("ui_up", "ui_down"))
 
 func get_path_direction(input_dir: Vector2) -> Vector3:
 	if not current_path or not current_path.curve:

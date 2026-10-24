@@ -275,3 +275,48 @@ func test_low_health_pulses_magenta_on_the_beat() -> void:
 	player._on_beat("primary", 1)
 	assert_eq(player.character_visual.get_current_rim_color(), PlayerController.LOW_HP_PULSE_COLOR, "Below 25 % HP the beat pulses the rim magenta")
 	player.queue_free()
+
+func _floor_under(origin: Vector3) -> StaticBody3D:
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(20.0, 1.0, 20.0)
+	shape.shape = box
+	floor_body.add_child(shape)
+	add_child(floor_body)
+	floor_body.global_position = origin - Vector3(0.0, 1.5, 0.0) # top at the capsule bottom
+	return floor_body
+
+func test_unsafe_floor_does_not_become_the_fall_return_point() -> void:
+	# F14: standing on a floor in the unsafe_floor group (Zone 8 collapsing platform) must not
+	# overwrite last_safe_position — after it collapses every fall would return over the void.
+	var origin := Vector3(0.0, 0.0, 7000.0)
+	var floor_body := _floor_under(origin)
+	floor_body.add_to_group("unsafe_floor")
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	player.position = origin
+	add_child(player)
+	player.current_path = null
+	var marker := Vector3(1.0, 2.0, 3.0)
+	player.last_safe_position = marker
+	for i in 4:
+		await get_tree().physics_frame
+	assert_true(player.is_on_floor(), "Precondition: Nick stands on the unsafe floor")
+	assert_eq(player.last_safe_position, marker, "An unsafe floor never becomes the fall-return point")
+
+	floor_body.remove_from_group("unsafe_floor")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	assert_true(player.last_safe_position.distance_to(player.global_position) < 0.01, "A normal floor still records the safe position")
+	player.queue_free()
+	floor_body.queue_free()
+
+func test_collapsing_hazard_platform_counts_as_unsafe() -> void:
+	var hazard := EscapeCollapsingHazard.new()
+	var body := StaticBody3D.new()
+	hazard.add_child(body)
+	assert_true(PlayerController.is_unsafe_floor(body), "A StaticBody3D under an EscapeCollapsingHazard is unsafe")
+	var plain := StaticBody3D.new()
+	assert_false(PlayerController.is_unsafe_floor(plain), "A plain floor is safe")
+	plain.free()
+	hazard.free()

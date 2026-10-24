@@ -51,6 +51,9 @@ var _rail_blend: float = 1.0
 ## Y below which the player is considered to have fallen out of the world. Below every
 ## legitimate floor in the slice (lowest arena floor ~ -4.5); the elevator rises well above 0.
 const FALL_KILL_Y: float = -15.0
+## F14: floors that must never become the fall-return point (the Zone 8 collapsing
+## platform drops away — returning Nick over the void would chain fall damage).
+const UNSAFE_FLOOR_GROUP := &"unsafe_floor"
 ## HP cost paid when falling out of the world (shield absorbs first, per the universal rule).
 @export var fall_damage: float = 20.0
 
@@ -408,8 +411,9 @@ func _physics_process(delta: float) -> void:
 			global_position.x = closest_pt.x
 			global_position.z = closest_pt.z
 
-	# Remember the last solid ground so a fall can return Nick there.
-	if is_on_floor():
+	# Remember the last solid ground so a fall can return Nick there — never a floor that
+	# can vanish under him (F14).
+	if is_on_floor() and _is_standing_on_safe_floor():
 		last_safe_position = global_position
 
 	# Fell out of the world -> snap back to the last safe ground and pay HP (shield absorbs first;
@@ -423,6 +427,25 @@ func _physics_process(delta: float) -> void:
 		fall_hit.amount = fall_damage
 		fall_hit.source = self
 		health_component.take_damage(fall_hit)
+
+## F14: false when any floor contact of the last move_and_slide is an unsafe floor.
+func _is_standing_on_safe_floor() -> bool:
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		if col.get_angle(0, up_direction) > floor_max_angle + 0.01:
+			continue # a wall/ceiling contact, not the floor
+		if is_unsafe_floor(col.get_collider() as Node):
+			return false
+	return true
+
+## A floor body Nick must not respawn on after a fall: in the unsafe_floor group, or (until
+## the level tags it) the PlatformBody of an EscapeCollapsingHazard.
+static func is_unsafe_floor(body: Node) -> bool:
+	if body == null:
+		return false
+	if body.is_in_group(UNSAFE_FLOOR_GROUP):
+		return true
+	return body is StaticBody3D and body.get_parent() is EscapeCollapsingHazard
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():

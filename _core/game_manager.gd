@@ -21,6 +21,9 @@ var current_lives: int = 3
 var current_hp: float = 120.0
 var current_shield: float = 40.0
 
+## GDD §5.3 "Overshield": Tempo Shield raises max shield by 50% for the run.
+const TEMPO_SHIELD_MULTIPLIER: float = 1.5
+
 # Run booster modifiers — reset each run in start_new_run()
 var run_speed_multiplier: float = 1.0
 var scrap_multiplier: int = 1
@@ -58,6 +61,19 @@ func start_new_run() -> void:
 		max_lives = 3
 		max_shield = 40.0
 
+	# Reset booster modifiers, then apply the equipped run booster on top of the
+	# profile upgrades (before the volatile pools are filled from the maxima).
+	run_speed_multiplier = 1.0
+	scrap_multiplier = 1
+	if SaveManager and SaveManager.profile:
+		match SaveManager.profile.equipped_run_booster:
+			"Tempo Shield":
+				max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
+			"Adrenaline":
+				run_speed_multiplier = 1.2
+			"Scrap Magnet":
+				scrap_multiplier = 2
+
 	scrap = 0
 	cells = 0
 	cores = 0
@@ -65,38 +81,14 @@ func start_new_run() -> void:
 	current_hp = max_hp
 	current_shield = max_shield
 
-	# Reset booster modifiers before applying new ones
-	run_speed_multiplier = 1.0
-	scrap_multiplier = 1
 	enemies_defeated = 0
 	zones_cleared = 0
 	_zones_seen.clear()
-
-	# Apply equipped run booster
-	if SaveManager and SaveManager.profile:
-		match SaveManager.profile.equipped_run_booster:
-			"Tempo Shield":
-				# Shield starts full — already set above; signal the player after scene is ready
-				call_deferred("_apply_tempo_shield")
-			"Adrenaline":
-				run_speed_multiplier = 1.2
-			"Scrap Magnet":
-				scrap_multiplier = 2
 
 	scrap_changed.emit(scrap)
 	cells_changed.emit(cells)
 	cores_changed.emit(cores)
 	lives_changed.emit(current_lives)
-
-func _apply_tempo_shield() -> void:
-	# Restore full shield on the player's HealthComponent if one exists in the tree.
-	var player = get_tree().current_scene.get_node_or_null("Player") if get_tree().current_scene else null
-	if player and player.has_node("HealthComponent"):
-		var hc: HealthComponent = player.get_node("HealthComponent")
-		hc.current_shield = hc.max_shield
-		hc.shield_changed.emit(hc.current_shield, hc.max_shield)
-		if hc.is_player:
-			SignalBus.player_shield_changed.emit(hc.current_shield, hc.max_shield)
 
 func add_scrap(amount: int) -> void:
 	scrap += amount * scrap_multiplier

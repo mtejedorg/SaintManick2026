@@ -6,6 +6,7 @@ var original_shield_upgrades: int
 var original_scrap: int
 var original_cells: int
 var original_cores: int
+var original_booster: String
 
 func before_each() -> void:
 	# Backup original profile state if it exists
@@ -16,6 +17,9 @@ func before_each() -> void:
 		original_scrap = SaveManager.profile.scrap
 		original_cells = SaveManager.profile.cells
 		original_cores = SaveManager.profile.cores
+		original_booster = SaveManager.profile.equipped_run_booster
+		# Isolate from whatever booster the local save has equipped.
+		SaveManager.profile.equipped_run_booster = ""
 
 	GameManager.is_test = true
 
@@ -28,7 +32,9 @@ func after_each() -> void:
 		SaveManager.profile.scrap = original_scrap
 		SaveManager.profile.cells = original_cells
 		SaveManager.profile.cores = original_cores
+		SaveManager.profile.equipped_run_booster = original_booster
 		SaveManager.save_profile()
+	GameManager.start_new_run() # don't leak booster modifiers into later tests
 
 func test_start_new_run_resets_and_applies_upgrades() -> void:
 	if not SaveManager or not SaveManager.profile:
@@ -189,3 +195,16 @@ func test_cells_and_cores_transfer_on_game_over_too() -> void:
 	assert_eq(SaveManager.profile.cells, 15, "Cells should transfer to profile on game over, not just full clear")
 	assert_eq(SaveManager.profile.cores, 1, "Cores should transfer to profile on game over, not just full clear")
 
+
+func test_tempo_shield_booster_is_an_overshield() -> void:
+	if not SaveManager or not SaveManager.profile:
+		_fail("SaveManager profile not available")
+		return
+
+	SaveManager.profile.shield_upgrades = 0
+	SaveManager.profile.equipped_run_booster = "Tempo Shield"
+
+	GameManager.start_new_run()
+
+	assert_eq(GameManager.max_shield, 60.0, "Tempo Shield should raise max shield by 50% (40 -> 60)")
+	assert_eq(GameManager.current_shield, 60.0, "Run should start with the overshield full")

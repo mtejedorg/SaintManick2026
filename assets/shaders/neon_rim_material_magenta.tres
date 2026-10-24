@@ -6,7 +6,7 @@
 shader = ExtResource("1_shader")
 shader_parameter/albedo = Color(0, 0, 0, 0)
 shader_parameter/rim_color = Color(1, 0, 0.666667, 1)
-shader_parameter/rim_power = 3.5
-shader_parameter/rim_strength = 2.5
+shader_parameter/rim_power = 1.9
+shader_parameter/rim_strength = 3.0
 shader_parameter/emission_color = Color(0, 0, 0, 1)
 shader_parameter/emission_strength = 0.0

@@ -4,7 +4,10 @@
 // used_by: neon_rim_material.tres, neon_rim_material_magenta.tres
 //
 // Fresnel-based neon rim glow applied as material_overlay on CharacterVisual meshes.
-// Does not replace the base material — stacks additively via EMISSION.
+// Does not replace the base material — it is ADDED on top (blend_add) via EMISSION.
+// NOTE: in Godot 4 `unshaded` outputs ALBEDO only and drops EMISSION, so the old unshaded
+// blend_mix overlay painted black over every silhouette edge. This version is lit-but-black
+// (ALBEDO = 0, no specular) and emits the rim, which blend_add then sums onto the mesh.
 //
 // === Driven from GDScript ===
 // CharacterVisual.update_rim_color(color)  — live rim color swap (telegraph flash)
@@ -12,12 +15,11 @@
 // material.set_shader_parameter("rim_strength", 0.0)  — disable rim (e.g. dead state)
 
 shader_type spatial;
-// blend_mix + depth_draw_never: overlay is transparent in flat areas and never
-// writes to the depth buffer, preventing z-fighting with the base mesh beneath it.
-render_mode blend_mix, depth_draw_never, cull_back, diffuse_lambert, specular_disabled, unshaded;
+// blend_add + depth_draw_never: the overlay only ever ADDS light (flat areas add 0) and never
+// writes depth, so it can't z-fight with the base mesh beneath it.
+render_mode blend_add, depth_draw_never, cull_back, specular_disabled;
 
-// Base albedo — kept fully transparent so the underlying material shows through.
-// Alpha is ignored by the blend mode on overlay; this slot exists for shader completeness.
+// Legacy slot (kept so existing .tres parameter sets still load); ALBEDO is forced to black.
 uniform vec4 albedo : source_color = vec4(0.0, 0.0, 0.0, 0.0);
 
 // --- Rim ---
@@ -35,8 +37,10 @@ void fragment() {
 
 	vec3 rim = rim_color.rgb * fresnel * rim_strength;
 
-	ALBEDO = albedo.rgb;
+	// Black albedo + no specular: the only light this overlay contributes is EMISSION.
+	ALBEDO = vec3(0.0);
 	EMISSION = rim + emission_color.rgb * emission_strength;
-	// Keep the overlay transparent in non-rim regions so the base mesh albedo is unaffected.
-	ALPHA = clamp(fresnel * rim_strength * 0.5, 0.0, 1.0);
+	// Fully opaque in blend_add terms: ALPHA scales the added color, and fresnel already
+	// fades the rim to zero in flat areas.
+	ALPHA = 1.0;
 }

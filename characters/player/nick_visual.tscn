@@ -10,6 +10,7 @@ albedo_texture = ExtResource("4_tex")
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
 script = ExtResource("1_visual")
+rim_strength = 3.5
 
 [node name="NickBody" parent="." instance=ExtResource("2_body")]
 transform = Transform3D(2.045, 0, 0, 0, 2.045, 0, 0, 0, 2.045, 0, -0.95, 0)

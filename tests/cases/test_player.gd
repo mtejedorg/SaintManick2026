@@ -199,3 +199,14 @@ func test_nick_faces_right_before_first_move() -> void:
 	add_child(player)
 	assert_almost_eq(player.mesh.rotation.y, PI / 2.0, 0.001, "Nick's visual should face right (+X) from spawn")
 	player.queue_free()
+
+func test_nick_rim_is_cyan_at_strength_3_5() -> void:
+	# E6: the cyan edge must read over the magenta panels of Nick's texture.
+	var player: PlayerController = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	var visual: CharacterVisual = player.get_node("MeshInstance3D/CharacterVisual")
+	assert_eq(visual.get_base_rim_color(), CharacterVisual.PLAYER_RIM_COLOR, "Nick's rim is cyan #00F5FF")
+	assert_almost_eq(visual.get_base_rim_strength(), 3.5, 0.001, "Nick's rim strength is 3.5")
+	for sm in visual.skinned_meshes:
+		assert_null(sm.material_override, "Nick keeps his textured materials (WHITE tint)")
+	player.queue_free()

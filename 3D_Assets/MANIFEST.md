@@ -8,7 +8,10 @@ Maintained by `artist-3d`. Check this before generating a new mesh — most dupl
 
 | File | Size | used_by | Tris | Accent |
 |---|---|---|---|---|
-| `Characters/Nick/NickProto.fbx` | — | `characters/shared/character_visual.tscn` | unverified | unverified |
+| `Characters/Nick/NickProto.fbx` | — | `characters/shared/character_visual.tscn` (Runner, Bruiser — scale 1.0, 1.9 m) | ~171k, 75 bones | dark base + magenta rim (CharacterVisual tint) |
+| `enforcers_ai/clean/Enforcer_Hammer.glb` | 503 KB | `characters/enemies/enforcer/enforcer_visual.tscn` (x1.51 -> 3.0 m, 2026-10-24) | 22,280 — static, unrigged | magenta rim 3.5; body surface's baked full-body pink emission (energy 4) is overridden with dark metal in the scene, pink wire surface kept |
+| `generated/headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | `characters/enemies/headliner/headliner_visual.tscn` (rotated upright, x6 -> 6 m, 2026-10-24) | 11,276 — static, unrigged | texture kept; amber rim 4 (magenta in phase 2). Ships WITHOUT normals — CharacterVisual generates them at runtime |
+| `Props_and_Misc/dron fbx 2.fbx` | — | `characters/enemies/sniper/sniper_visual.tscn` (x22 -> ~1.1 m, 2026-10-24) | 2,552 — static, empty "Take 001" clip | dark-metal override, orange rim |
 | `Characters/Nick/nick_body_v2_0.png` | — | `characters/player/nick_visual.tscn` (texture) | n/a | unverified |
 
 ## Characters/ — not currently wired (check before assuming stale)
@@ -21,15 +24,15 @@ Maintained by `artist-3d`. Check this before generating a new mesh — most dupl
 | `Characters/Nick/nick_body_v2.glb` | 1.24 MB | Larger revision of `nick_body.glb`. Not referenced directly (only its `_0.png` texture is). Confirm with senior-dev whether the mesh itself is pending integration or the texture-only reference is intentional. |
 | `Characters/Nick/nick_body_v2.fbx` | — | FBX counterpart to `nick_body_v2.glb`. |
 | `Characters/Nick/Nick.max` | — | 3ds Max source file — not a Godot-importable asset, source/reference only. |
-| `Characters/Headliner/boss_brutalizer_base.glb` | 14.5 KB | Zone 10 boss base mesh. Not referenced by any `.tscn` found — check with senior-dev/level-designer whether the Headliner encounter scene wires this some other way (e.g. runtime-loaded, not `ext_resource`). |
+| `Characters/Headliner/boss_brutalizer_base.glb` | 14.5 KB | **DEGENERATE — never wire.** Not referenced by any scene. The Headliner uses `generated/headliner_brutalizer_raw.glb` (see In use). |
 
 ## enforcers_ai/ — cleaned pipeline output vs. raw generation
 
 | File | Size | Notes |
 |---|---|---|
-| `enforcers_ai/clean/Enforcer_Fists.glb` | 503 KB | Cleaned/rigged variant — check with artist-3d whether this or `generated/enforcer_fists_rigged.glb` is canonical before generating a new one. |
-| `enforcers_ai/clean/Enforcer_Hammer.glb` | 503 KB | |
-| `enforcers_ai/clean/Enforcer_Sword.glb` | 503 KB | |
+| `enforcers_ai/clean/Enforcer_Fists.glb` | 503 KB | Static, unrigged, 22,280 tris (2.1 m, pivot offset x~-3.2, cyan accent). Not wired. `generated/enforcer_fists_rigged.glb` is the rigged attempt. |
+| `enforcers_ai/clean/Enforcer_Hammer.glb` | 503 KB | Static, unrigged, 22,280 tris (1.99 m, pivot at the feet). **IN USE** — see In use. |
+| `enforcers_ai/clean/Enforcer_Sword.glb` | 503 KB | Static, unrigged, 22,280 tris (1.89 m, pivot x~+3.0, flat white). Not wired. |
 | `enforcers_ai/clean/Weapon_FistL.glb` | 5.3 KB | |
 | `enforcers_ai/clean/Weapon_FistR.glb` | 5.3 KB | |
 | `enforcers_ai/clean/Weapon_Hammer.glb` | 12.5 KB | |
@@ -41,7 +44,7 @@ Maintained by `artist-3d`. Check this before generating a new mesh — most dupl
 
 ## generated/ — pipeline iteration history (cleanup candidates)
 
-Not referenced by any scene. This looks like the raw output trail from multiple mesh-gen attempts across the modelgen/assetforge pipeline (TripoSR, TRELLIS, Hunyuan, ComfyUI backends) rather than shippable assets. **Do not delete without confirming with artist-3d/senior-dev** — but also don't treat any of these as "the" Enforcer/Nick mesh without checking scene wiring first; none of them currently are it.
+Not referenced by any scene (except `headliner_brutalizer_raw.glb`, IN USE since 2026-10-24). This looks like the raw output trail from multiple mesh-gen attempts across the modelgen/assetforge pipeline (TripoSR, TRELLIS, Hunyuan, ComfyUI backends) rather than shippable assets. **Do not delete without confirming with artist-3d/senior-dev** — but also don't treat any of these as "the" Enforcer/Nick mesh without checking scene wiring first; none of them currently are it.
 
 | File | Size |
 |---|---|
@@ -52,7 +55,7 @@ Not referenced by any scene. This looks like the raw output trail from multiple 
 | `enforcer_fists_rigged.glb` | 742 KB |
 | `enforcer_trellis.glb` (+ `enforcer_trellis_0.png`) | 326 KB |
 | `enforcer_trellis_textured.glb` (+ `_0.png`) | 1.4 MB |
-| `boss_brutalizer_base.glb` | 14.5 KB — identical size to `Characters/Headliner/boss_brutalizer_base.glb`, likely the same file duplicated across folders |
+| `boss_brutalizer_base.glb` | 14.5 KB — identical size to `Characters/Headliner/boss_brutalizer_base.glb`. **DEGENERATE — never wire.** |
 | `boss_brutalizer_base_comfyui.glb` (+ `_0.png`) | 1.6 MB |
 | `nick_body.glb` | 13.4 KB — duplicate of `Characters/Nick/nick_body.glb` |
 | `nick_body_comfyui.glb` (+ `_0.png`) | 918 KB |
@@ -60,9 +63,9 @@ Not referenced by any scene. This looks like the raw output trail from multiple 
 | `nick_bionic_arm_comfyui.glb` | 1.9 MB |
 | `nick_katana.glb` | 8.6 KB — duplicate of `Props_and_Misc/nick_katana.glb` |
 | `nick_katana_comfyui.glb` | 918 KB |
-| `headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | Raw mesh-gen output from `AIConcepts/headliner_brutalizer_tpose_v2.png`. **Probe 2026-07-11: this is the GOOD one** — 8892 verts, detailed textured mech with glowing accents. Needs scale (normalized ~1 m, lying horizontal) but is sound source material. |
-| `headliner_brutalizer_rigged.glb` | 19.7 KB | Rigged pass (22 bones) — **probe 2026-07-11: geometry destroyed**; decimated to 209 verts, a flat blob. Rig salvageable only as reference. |
-| `headliner_brutalizer.glb` | 10.2 KB | "Polished" output — **probe 2026-07-11: unusable**. Same 209-vert flat blob as `_rigged`, AND the skeleton was stripped (no Skeleton3D). Same failure class as `nick_bionic_arm.glb`. **Do NOT wire this into the Headliner scene.** The pipeline must be re-run from `_raw` with a sane decimation target for a 6 m boss. (Boss scene currently uses no mesh at all — capsule + shared `character_visual.tscn`.) |
+| `headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | Raw mesh-gen output from `AIConcepts/headliner_brutalizer_tpose_v2.png`. **IN USE (2026-10-24)** by `characters/enemies/headliner/headliner_visual.tscn` — see In use. 8892 verts / 11,276 tris, textured, no normals in the file. |
+| `headliner_brutalizer_rigged.glb` | 19.7 KB | **DEGENERATE — never wire.** Rigged pass (22 bones) — **probe 2026-07-11: geometry destroyed**; decimated to 209 verts, a flat blob. Rig salvageable only as reference. |
+| `headliner_brutalizer.glb` | 10.2 KB | **DEGENERATE — never wire.** "Polished" output — **probe 2026-07-11: unusable**. Same 209-vert flat blob as `_rigged`, AND the skeleton was stripped (no Skeleton3D). Same failure class as `nick_bionic_arm.glb`. **Do NOT wire this into the Headliner scene.** A rigged Headliner must be re-run from `_raw` with a sane decimation target for a 6 m boss. |
 
 ## Root-level
 

@@ -1,0 +1,87 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://ui/menus/title_screen.gd" id="1_title"]
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://2D_Assets/Logos_and_Branding/logo1.png" id="3_logo"]
+[ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="4_vcr"]
+
+[node name="TitleScreen" type="CanvasLayer"]
+script = ExtResource("1_title")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+
+[node name="Background" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039, 0.039, 0.071, 1)
+
+[node name="Logo" type="TextureRect" parent="Root"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.28
+anchor_right = 0.5
+anchor_bottom = 0.28
+offset_left = -450.0
+offset_top = -201.0
+offset_right = 450.0
+offset_bottom = 201.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ButtonContainer" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.58
+anchor_right = 0.5
+anchor_bottom = 0.58
+offset_left = -180.0
+offset_top = 0.0
+offset_right = 180.0
+offset_bottom = 150.0
+grow_horizontal = 2
+theme_override_constants/separation = 18
+
+[node name="StartButton" type="Button" parent="Root/ButtonContainer"]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+text = "START RUN"
+
+[node name="QuitButton" type="Button" parent="Root/ButtonContainer"]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+text = "QUIT"
+
+[node name="FooterLabel" type="Label" parent="Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -48.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "DRONE FEED // KAREN-SURVEILLANCE v0.1 — VERTICAL SLICE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VcrOverlay" parent="." instance=ExtResource("4_vcr")]

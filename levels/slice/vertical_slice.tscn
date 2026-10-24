@@ -263,7 +263,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
 [node name="Z2_Trigger" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 0, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 script = ExtResource("22_zone_trigger")
 zone_name = "SECTOR 02 — PISTON GAUNTLET"
 
@@ -670,7 +670,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 14)
 [node name="Z7_Trigger" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, -4, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 script = ExtResource("22_zone_trigger")
 zone_name = "SECTOR 07 — ENFORCER"
 
@@ -705,7 +705,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)
 [node name="Z8_Trigger" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281, -4, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 script = ExtResource("22_zone_trigger")
 zone_name = "SECTOR 08 — ESCAPE"
 
@@ -738,6 +738,8 @@ end_trigger = NodePath("EscapeEndTrigger")
 
 [node name="EscapeKillWall" type="Area3D" parent="EscapeSequence"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 275, -4, 0)
+collision_layer = 0
+collision_mask = 2
 script = ExtResource("15_kill_wall")
 speed = 3.0
 damage = 15.0
@@ -748,7 +750,7 @@ shape = SubResource("BoxShape3D_kill_wall")
 [node name="EscapeEndTrigger" type="Area3D" parent="EscapeSequence"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 338, -4, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeSequence/EscapeEndTrigger"]
 shape = SubResource("BoxShape3D_escape_end")
@@ -810,7 +812,7 @@ size = Vector3(4, 1, 4)
 
 [node name="StepDetector" type="Area3D" parent="EscapeCollapsingHazard"]
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeCollapsingHazard/StepDetector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
@@ -820,7 +822,7 @@ shape = SubResource("BoxShape3D_step_detector")
 [node name="Z9_Trigger" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 343, -4, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 script = ExtResource("22_zone_trigger")
 zone_name = "SECTOR 09 — ASCENT"
 
@@ -868,7 +870,7 @@ waves = [SubResource("Resource_z9_w1"), SubResource("Resource_z9_w2")]
 [node name="ElevatorEntryTrigger" type="Area3D" parent="ElevatorEncounter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 347, -4.0, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ElevatorEncounter/ElevatorEntryTrigger"]
 shape = SubResource("BoxShape3D_elevator_entry")
@@ -920,7 +922,7 @@ curve = SubResource("Curve3D_z10")
 [node name="Zone10_Trigger" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 354, 17, 0)
 collision_layer = 0
-collision_mask = 1024
+collision_mask = 2
 script = ExtResource("22_zone_trigger")
 zone_name = "SECTOR 10 — THE HEADLINER"
 

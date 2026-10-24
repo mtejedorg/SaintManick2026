@@ -3,17 +3,17 @@
 [ext_resource type="Script" path="res://ui/hud/ability_bar.gd" id="1_xxx"]
 
 [node name="AbilityBar" type="Control"]
+custom_minimum_size = Vector2(265, 64)
 layout_mode = 2
-custom_minimum_size = Vector2(180, 24)
-size_flags_vertical = 4
 script = ExtResource("1_xxx")
 
 [node name="ProgressBar" type="TextureProgressBar" parent="."]
-layout_mode = 2
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 value = 0.0
+fill_mode = 0
 nine_patch_stretch = true

@@ -37,3 +37,6 @@ Thumbs.db
 
 # Cravify / Antigravity temp files
 .gemini/
+
+# game-audit evidence captures (regenerate with tools/capture)
+Captures/

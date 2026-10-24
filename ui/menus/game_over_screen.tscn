@@ -1,27 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://ui/menus/game_over_screen.gd" id="1_govr"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
-bg_color = Color(1, 0, 0.667, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
-bg_color = Color(1, 0.2, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
-bg_color = Color(0.8, 0, 0.53, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="3_vcr"]
 
 [node name="GameOverScreen" type="CanvasLayer"]
 layer = 10
@@ -34,6 +15,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 
 [node name="Background" type="ColorRect" parent="Root"]
 layout_mode = 1
@@ -44,61 +26,55 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.039, 0.039, 0.071, 1)
 
-[node name="Degradado" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 6
-
-[node name="Capa1" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 6
-
-[node name="GameOverText" type="TextureRect" parent="Root"]
+[node name="CenterBox" type="VBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 0.3
+anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.3
-offset_left = -200.0
-offset_top = -60.0
-offset_right = 200.0
-offset_bottom = 60.0
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -220.0
+offset_right = 420.0
+offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 5
+theme_override_constants/separation = 14
+alignment = 1
 
-[node name="ReturnButton" type="Button" parent="Root"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.65
-anchor_right = 0.5
-anchor_bottom = 0.65
-offset_left = -140.0
-offset_top = -30.0
-offset_right = 140.0
-offset_bottom = 30.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="EyebrowLabel" type="Label" parent="Root/CenterBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_font_sizes/font_size = 20
+text = "SIGNAL LOST"
+horizontal_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Root/CenterBox"]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(1, 0, 0.667, 0.9)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 80
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="SubLabel" type="Label" parent="Root/CenterBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.88, 1)
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
-text = "Return to Shop"
+text = "Karen is recalling the drone.
+Scrap banked."
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Root/CenterBox"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="ReturnButton" type="Button" parent="Root/CenterBox"]
+custom_minimum_size = Vector2(320, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "RETURN TO SHOP"
+
+[node name="VcrOverlay" parent="." instance=ExtResource("3_vcr")]

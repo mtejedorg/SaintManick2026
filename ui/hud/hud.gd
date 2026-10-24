@@ -5,15 +5,21 @@ extends CanvasLayer
 ## the battery (GDD §6.1: "regenerating shield shown as an overlaid layer on top"), not a
 ## separate slot using the stamina textures — the Ability Bar owns that slot now.
 @onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
-@onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LivesRect
+@onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LowerRow/LivesRect
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
-@onready var boss_bar_container: VBoxContainer = $BossBarContainer
-@onready var boss_name_label: Label = $BossBarContainer/BossNameLabel
-@onready var boss_health_bar: ProgressBar = $BossBarContainer/BossHealthBar
+@onready var boss_bar_container: PanelContainer = $BossBarContainer
+@onready var boss_name_label: Label = $BossBarContainer/BossBarVBox/BossNameLabel
+@onready var boss_health_bar: ProgressBar = $BossBarContainer/BossBarVBox/BossHealthBar
+
 @onready var scrap_label: Label = $ScrapLabel
 @onready var cells_label: Label = $CellsLabel
 @onready var cores_label: Label = $CoresLabel
+
+## Cropped HUD art (res://ui/hud/art/). Loaded through ResourceLoader — FileAccess.file_exists
+## on a res:// png is false in exported builds (only the imported .ctex ships).
+const ART_DIR := "res://ui/hud/art/"
+const COMBO_CYAN := Color(0.0, 0.961, 1.0, 1.0)
 
 var beat_tween: Tween
 var combo_tween: Tween
@@ -41,7 +47,7 @@ func _ready() -> void:
 	_update_battery_ui(GameManager.current_hp, GameManager.max_hp)
 	_update_shield_ui(GameManager.current_shield, GameManager.max_shield)
 	_update_lives_ui(GameManager.current_lives)
-	scrap_label.text = "SCR  %d" % GameManager.scrap
+	scrap_label.text = "SCRAP  %d" % GameManager.scrap
 	cells_label.text = "CELLS  %d" % GameManager.cells
 	cores_label.text = "CORES  %d" % GameManager.cores
 	
@@ -50,17 +56,16 @@ func _ready() -> void:
 	beat_pulse_node.modulate = Color(1.0, 1.0, 1.0, 0.5)
 
 func _setup_textures() -> void:
-	# GAP-8 fix (M12): the shield used to borrow the estamina (stamina) textures — those
-	# now belong to the Ability Bar (its actual GDD-designated slot). The shield is a
-	# plain tinted overlay directly on top of the battery, so it just needs a flat fill
-	# texture rather than a themed asset.
+	# The shield is a thin 6 px strip along the TOP edge of the battery (same 265 px width),
+	# so it never hides the battery art. Flat white fill, tinted cyan by the node's modulate.
 	var flat_fill = GradientTexture2D.new()
 	var gradient = Gradient.new()
 	gradient.set_color(0, Color(1, 1, 1, 1))
 	gradient.set_color(1, Color(1, 1, 1, 1))
 	flat_fill.gradient = gradient
-	flat_fill.width = 4
-	flat_fill.height = 4
+	flat_fill.width = 265
+	flat_fill.height = 6
+	shield_bar.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
 	shield_bar.texture_progress = flat_fill
 
 func _on_player_health_changed(new_health: float, max_health: float) -> void:
@@ -76,17 +81,15 @@ func _update_battery_ui(current: float, max_val: float) -> void:
 	var ratio = current / max_val if max_val > 0.0 else 0.0
 	var segments = clamp(round(ratio * 12.0), 0, 12)
 	
-	var path = ""
+	var path := ""
 	if segments == 0:
 		path = _get_battery_empty_path()
 	elif segments == 12:
 		path = _get_battery_full_path()
-		if path == "" or not FileAccess.file_exists(path):
-			path = _get_battery_texture_path(12)
 	else:
-		path = _get_battery_texture_path(segments)
-		
-	if path != "" and FileAccess.file_exists(path):
+		path = _get_battery_texture_path(int(segments))
+
+	if ResourceLoader.exists(path):
 		battery_rect.texture = load(path)
 
 func _update_shield_ui(current: float, max_val: float) -> void:
@@ -98,18 +101,8 @@ func _update_lives_ui(lives: int) -> void:
 		lives_rect.visible = false
 	else:
 		lives_rect.visible = true
-		var count = clamp(lives, 1, 4)
-		var path = ""
-		if count == 1:
-			path = "res://2D_Assets/UI_and_Menus/1-vida-extra.png"
-		elif count == 2:
-			path = "res://2D_Assets/UI_and_Menus/2-vidas-extra.png"
-		elif count == 3:
-			path = "res://2D_Assets/UI_and_Menus/3-vidas-extra.png"
-		else:
-			path = "res://2D_Assets/UI_and_Menus/4-vidas-extra.png"
-			
-		if FileAccess.file_exists(path):
+		var path: String = _get_lives_path(clampi(lives, 1, 4))
+		if ResourceLoader.exists(path):
 			lives_rect.texture = load(path)
 
 func _on_beat(layer: String, _beat_index: int) -> void:
@@ -147,6 +140,8 @@ func _on_downbeat(layer: String, _measure_index: int) -> void:
 func _on_combo_increased(current_combo: int) -> void:
 	combo_label.text = "x%d" % current_combo
 	combo_label.visible = true
+	# The cap "glitch" tween leaves modulate white — restore the base cyan on every increase.
+	combo_label.modulate = COMBO_CYAN
 	combo_label.pivot_offset = combo_label.size / 2.0
 	if combo_tween:
 		combo_tween.kill()
@@ -186,7 +181,7 @@ func _on_boss_reset() -> void:
 	boss_bar_container.visible = false
 
 func _on_scrap_changed(new_amount: int) -> void:
-	scrap_label.text = "SCR  %d" % new_amount
+	scrap_label.text = "SCRAP  %d" % new_amount
 
 func _on_cells_changed(new_amount: int) -> void:
 	cells_label.text = "CELLS  %d" % new_amount
@@ -204,30 +199,15 @@ func _on_combo_reset() -> void:
 		combo_label.modulate.a = 1.0
 	)
 
-# Path Helpers for accented files
+# Art path helpers (ASCII-named, cropped copies in res://ui/hud/art/)
 func _get_battery_texture_path(index: int) -> String:
-	var p1 = "res://2D_Assets/UI_and_Menus/batería-%d.png" % index
-	if FileAccess.file_exists(p1):
-		return p1
-	var p2 = "res://2D_Assets/UI_and_Menus/baterÃa-%d.png" % index
-	if FileAccess.file_exists(p2):
-		return p2
-	return ""
+	return ART_DIR + "battery_%02d.png" % index
 
 func _get_battery_full_path() -> String:
-	var p1 = "res://2D_Assets/UI_and_Menus/batería-llena.png"
-	if FileAccess.file_exists(p1):
-		return p1
-	var p2 = "res://2D_Assets/UI_and_Menus/baterÃa-llena.png"
-	if FileAccess.file_exists(p2):
-		return p2
-	return ""
+	return ART_DIR + "battery_full.png"
 
 func _get_battery_empty_path() -> String:
-	var p1 = "res://2D_Assets/UI_and_Menus/batería-vacía.png"
-	if FileAccess.file_exists(p1):
-		return p1
-	var p2 = "res://2D_Assets/UI_and_Menus/baterÃa-vacÃa.png"
-	if FileAccess.file_exists(p2):
-		return p2
-	return ""
+	return ART_DIR + "battery_empty.png"
+
+func _get_lives_path(count: int) -> String:
+	return ART_DIR + "lives_%d.png" % count

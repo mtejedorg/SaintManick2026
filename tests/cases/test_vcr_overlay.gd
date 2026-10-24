@@ -32,6 +32,7 @@ func test_burst_decays_over_time() -> void:
 	overlay._process(0.1)
 	var decayed = material.get_shader_parameter("aberration_strength")
 	assert_lt(decayed, 0.02, "Aberration should decay over time")
+	assert_gt(decayed, 0.0, "Burst should still be visible after 0.1s (fades over its duration, not in one frame)")
 
 	overlay._process(1.0)
 	assert_eq(material.get_shader_parameter("aberration_strength"), 0.0, "Aberration should not go negative")

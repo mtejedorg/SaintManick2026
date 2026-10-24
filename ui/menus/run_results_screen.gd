@@ -3,6 +3,8 @@ extends CanvasLayer
 func _ready() -> void:
 	$CenterBox/ContinueButton.pressed.connect(_on_continue)
 	_populate_stats()
+	# Gamepad navigation: focus the only button.
+	$CenterBox/ContinueButton.grab_focus()
 
 func _populate_stats() -> void:
 	var gm = get_node_or_null("/root/GameManager")

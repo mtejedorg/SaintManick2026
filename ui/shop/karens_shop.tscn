@@ -1,27 +1,22 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://ui/shop/karens_shop.gd" id="1_xxx"]
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="3_vcr"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
-bg_color = Color(1, 0, 0.667, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
-bg_color = Color(1, 0.2, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
-bg_color = Color(0.8, 0, 0.53, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.961, 1, 0.85)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0, 0.961, 1, 0.3)
+shadow_size = 12
 
 [node name="KarensShop" type="Control"]
 layout_mode = 3
@@ -40,6 +35,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.039, 0.039, 0.071, 1)
+
+[node name="Frame" type="Panel" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
 
 [node name="Margin" type="MarginContainer" parent="Background"]
 layout_mode = 1
@@ -90,7 +99,7 @@ theme_override_constants/separation = 10
 
 [node name="CumulativeHeader" type="Label" parent="Background/Margin/VBox/HBox/CumulativeColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_colors/font_color = Color(0, 0.961, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "UPGRADES"
 
@@ -105,7 +114,7 @@ theme_override_constants/separation = 10
 
 [node name="ComboHeader" type="Label" parent="Background/Margin/VBox/HBox/ComboColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_colors/font_color = Color(0, 0.961, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "COMBO SKILL TREE"
 
@@ -120,19 +129,14 @@ layout_mode = 2
 [node name="BoosterButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+theme = ExtResource("2_theme")
 text = "Equipped Booster: None  (Slots: 1)"
 
 [node name="StartRunButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme = ExtResource("2_theme")
 theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
 text = "START RUN"
+
+[node name="VcrOverlay" parent="." instance=ExtResource("3_vcr")]

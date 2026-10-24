@@ -5,15 +5,17 @@ extends CanvasLayer
 ## shift. Screen-space canvas_item shader (assets/shaders/vcr_overlay.gdshader) — no
 ## spatial depth buffer involved.
 
-@export var burst_strength: float = 0.02
-@export var burst_duration: float = 0.35
-## How fast the aberration decays back to 0 once a burst fires, in units/sec.
-@export var burst_decay_rate: float = 0.08
+@export var burst_strength: float = 0.035
+@export var burst_duration: float = 0.45
 
 @onready var overlay_rect: ColorRect = $OverlayRect
 
 var _material: ShaderMaterial
 var _burst_timer: float = 0.0
+## Strength passed to the last trigger_burst(); the decay rate (units/sec) is derived
+## from it so every burst fades linearly to 0 over its own duration.
+var _burst_peak: float = 0.0
+var _burst_total: float = 0.0
 
 func _ready() -> void:
 	# load() caches and shares .tres resources across every instance — duplicate so each
@@ -30,8 +32,11 @@ func _process(delta: float) -> void:
 		return
 	if _burst_timer > 0.0:
 		_burst_timer -= delta
-		var current = _material.get_shader_parameter("aberration_strength")
-		var decayed = max(0.0, current - burst_decay_rate)
+		var current: float = _material.get_shader_parameter("aberration_strength")
+		var decay_rate: float = _burst_peak / maxf(_burst_total, 0.001)
+		var decayed: float = maxf(0.0, current - decay_rate * delta)
+		if _burst_timer <= 0.0:
+			decayed = 0.0
 		_material.set_shader_parameter("aberration_strength", decayed)
 
 func _on_player_damaged(_damage_info: DamageInfo) -> void:
@@ -47,4 +52,6 @@ func trigger_burst(strength: float, duration: float) -> void:
 	if not _material:
 		return
 	_material.set_shader_parameter("aberration_strength", strength)
+	_burst_peak = strength
+	_burst_total = duration
 	_burst_timer = duration

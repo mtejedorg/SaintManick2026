@@ -1,27 +1,22 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://ui/menus/run_results_screen.gd" id="1_rrs"]
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="3_vcr"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
-bg_color = Color(1, 0, 0.667, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
-bg_color = Color(1, 0.2, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
-bg_color = Color(0.8, 0, 0.53, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.961, 1, 0.85)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0, 0.961, 1, 0.3)
+shadow_size = 12
 
 [node name="RunResultsScreen" type="CanvasLayer"]
 layer = 10
@@ -36,6 +31,21 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.039, 0.039, 0.071, 0.95)
 
+[node name="Frame" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -370.0
+offset_right = 380.0
+offset_bottom = 370.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
+
 [node name="CenterBox" type="VBoxContainer" parent="."]
 layout_mode = 3
 anchors_preset = 8
@@ -43,14 +53,21 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -200.0
-offset_right = 300.0
-offset_bottom = 200.0
+offset_left = -320.0
+offset_top = -330.0
+offset_right = 320.0
+offset_bottom = 330.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 16
 alignment = 1
-theme_override_constants/separation = 20
+
+[node name="EyebrowLabel" type="Label" parent="CenterBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_font_sizes/font_size = 20
+text = "THE HEADLINER IS DOWN"
+horizontal_alignment = 1
 
 [node name="TitleLabel" type="Label" parent="CenterBox"]
 layout_mode = 2
@@ -106,15 +123,15 @@ text = "ZONES CLEARED      0 / 10"
 horizontal_alignment = 1
 
 [node name="Sep2" type="HSeparator" parent="CenterBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
 [node name="ContinueButton" type="Button" parent="CenterBox"]
 custom_minimum_size = Vector2(400, 72)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 48
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+size_flags_horizontal = 4
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 32
 text = "CONTINUE TO SHOP"
+
+[node name="VcrOverlay" parent="." instance=ExtResource("3_vcr")]

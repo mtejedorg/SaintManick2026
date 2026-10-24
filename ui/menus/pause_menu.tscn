@@ -1,31 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://ui/menus/pause_menu.gd" id="1_pause"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
-bg_color = Color(1, 0, 0.667, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
-bg_color = Color(1, 0.2, 0.75, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
-bg_color = Color(0.8, 0, 0.53, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
 
 [node name="PauseMenu" type="CanvasLayer"]
-layer = 20
 process_mode = 3
+layer = 20
 script = ExtResource("1_pause")
 
 [node name="Root" type="Control" parent="."]
@@ -35,6 +15,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 
 [node name="Background" type="ColorRect" parent="Root"]
 layout_mode = 1
@@ -43,95 +24,46 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.039, 0.039, 0.071, 0.92)
+color = Color(0.039, 0.039, 0.071, 0.78)
 
-[node name="Degradado" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 6
-
-[node name="Capa5" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 6
-
-[node name="Semicirculo" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.0
-anchor_right = 0.5
-anchor_bottom = 0.0
-offset_left = -200.0
-offset_top = 0.0
-offset_right = 200.0
-offset_bottom = 160.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PauseTitle" type="TextureRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.2
-anchor_right = 0.5
-anchor_bottom = 0.2
-offset_left = -150.0
-offset_top = -40.0
-offset_right = 150.0
-offset_bottom = 40.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = null
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ButtonContainer" type="VBoxContainer" parent="Root"]
+[node name="MenuPanel" type="PanelContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = -60.0
-offset_right = 120.0
-offset_bottom = 60.0
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="PanelVBox" type="VBoxContainer" parent="Root/MenuPanel"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="PauseTitle" type="Label" parent="Root/MenuPanel/PanelVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.961, 1, 0.8)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 56
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ButtonContainer" type="VBoxContainer" parent="Root/MenuPanel/PanelVBox"]
+layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="ResumeButton" type="Button" parent="Root/ButtonContainer"]
+[node name="ResumeButton" type="Button" parent="Root/MenuPanel/PanelVBox/ButtonContainer"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
-text = "Resume"
+text = "RESUME"
 
-[node name="QuitButton" type="Button" parent="Root/ButtonContainer"]
+[node name="QuitButton" type="Button" parent="Root/MenuPanel/PanelVBox/ButtonContainer"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
-text = "Quit to Menu"
+text = "ABANDON RUN"

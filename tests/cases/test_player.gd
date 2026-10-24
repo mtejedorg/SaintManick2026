@@ -62,3 +62,49 @@ func test_up_down_ignored_while_plane_locked() -> void:
 
 	path.queue_free()
 	player.queue_free()
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node
+	for child in node.get_children():
+		var found := _find_skeleton(child)
+		if found:
+			return found
+	return null
+
+# A11: Nick's feet must sit on the bottom of his 2 m capsule (origin is the capsule
+# centre, so the ground is origin.y - 1.0) — a floating visual detaches his shadow.
+# Measured standing on a floor with the idle clip playing: the bind pose (no clip) and
+# the airborne "fall" clip (feet tucked) legitimately put the toes elsewhere.
+func test_nick_visual_feet_rest_on_capsule_bottom() -> void:
+	var origin := Vector3(0.0, 200.0, -3000.0)
+	var floor_body := StaticBody3D.new()
+	var floor_shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(20.0, 1.0, 20.0)
+	floor_shape.shape = box
+	floor_body.add_child(floor_shape)
+	add_child(floor_body)
+	floor_body.global_position = origin - Vector3(0.0, 0.5, 0.0) # top face at origin.y
+
+	var player = load("res://characters/player/player.tscn").instantiate()
+	add_child(player)
+	player.current_path = null
+	player.global_position = origin + Vector3(0.0, 1.0, 0.0) # capsule bottom on the floor
+	player.animation_controller.play("idle")
+
+	for i in 3:
+		await get_tree().process_frame
+
+	var skeleton := _find_skeleton(player)
+	assert_not_null(skeleton, "Player visual should contain a Skeleton3D")
+	if skeleton:
+		var lowest := INF
+		for bone in skeleton.get_bone_count():
+			var y: float = (skeleton.global_transform * skeleton.get_bone_global_pose(bone)).origin.y
+			lowest = min(lowest, y)
+		var ground: float = player.global_position.y - 1.0
+		assert_true(absf(lowest - ground) <= 0.15, "Lowest bone y %.3f should be within 0.15 of the capsule bottom %.3f" % [lowest, ground])
+
+	player.queue_free()
+	floor_body.queue_free()

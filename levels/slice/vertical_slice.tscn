@@ -1,4 +1,4 @@
-[gd_scene load_steps=80 format=3]
+[gd_scene load_steps=81 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -35,6 +35,7 @@
 [ext_resource type="Material" path="res://assets/materials/trim_magenta.tres" id="53_trim_magenta"]
 [ext_resource type="Material" path="res://assets/materials/trim_sodium.tres" id="54_trim_sodium"]
 [ext_resource type="Material" path="res://assets/materials/hazard_orange.tres" id="55_hazard_orange"]
+[ext_resource type="Script" path="res://levels/components/zone_atmosphere.gd" id="56_zone_atmosphere"]
 
 
 ; --- Curve 3D Resources ---
@@ -288,6 +289,10 @@ directional_shadow_max_distance = 40.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_glow")
+
+[node name="ZoneAtmosphere" type="Node" parent="WorldEnvironment" node_paths=PackedStringArray("world_environment")]
+script = ExtResource("56_zone_atmosphere")
+world_environment = NodePath("..")
 
 [node name="HUD" parent="." instance=ExtResource("7_hud")]
 
@@ -1179,6 +1184,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.56, -2.94)
 size = Vector3(8, 0.12, 0.12)
 material = ExtResource("53_trim_magenta")
 
+[node name="Z9_ElevatorLight" type="OmniLight3D" parent="ElevatorPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 2.5
+omni_range = 20
+
 [node name="Path_Z9" type="Path3D" parent="ElevatorPlatform"]
 curve = SubResource("Curve3D_z9")
 
@@ -1433,66 +1444,229 @@ size = Vector3(0.12, 0.12, 13)
 material = ExtResource("53_trim_magenta")
 
 ; ================= Per-Zone Lighting (M13 first pass) =================
-; Zone-tinted OmniLight3Ds layered on top of the global WorldEnvironment (C2), positioned
-; near each zone's entry X (see the "ZONE N:" comment markers above for reference X's).
-; Zones 1-3: warm sodium + cyan accent. Zones 4-6: magenta/cyan (Neon District identity).
-; Zones 7-9: cold white/blue (Corporate High-Rise identity). Zone 10: beat-animated
-; stage lighting (stage_light.gd).
+; Zone-tinted lights layered on top of the global WorldEnvironment (C5). Factory (zones 1-4):
+; sodium/orange/red with cyan accents. Neon District (zones 5-10): magenta + cyan, with
+; beat-pulsed stage_light.gd lights in zones 2, 3, 8 and 10. Fog/ambient per zone are tweened
+; by ZoneAtmosphere (child of WorldEnvironment) on SignalBus.zone_entered.
 [node name="ZoneLights" type="Node3D" parent="."]
 
 [node name="Z1_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 6, 0)
-light_color = Color(1.0, 0.6, 0.2, 1)
-light_energy = 1.4
-omni_range = 20.0
+light_color = Color(1, 0.603922, 0.235294, 1)
+light_energy = 2.2
+omni_range = 16
+
+[node name="Z1_AccentLight" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.5, -2)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 0.8
+omni_range = 10
 
 [node name="Z2_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 6, 0)
-light_color = Color(0.0, 0.949, 1.0, 1)
-light_energy = 1.0
-omni_range = 20.0
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 1
+omni_range = 20
+
+[node name="Z2_PitLight1" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 1, 0)
+light_color = Color(0.0980392, 1, 0.352941, 1)
+light_energy = 1.2
+omni_range = 16
+
+[node name="Z2_PitLight2" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 1, 0)
+light_color = Color(0.0980392, 1, 0.352941, 1)
+light_energy = 1.2
+omni_range = 16
+
+[node name="Z2_PitLight3" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 1, 0)
+light_color = Color(0.0980392, 1, 0.352941, 1)
+light_energy = 1.2
+omni_range = 16
+
+[node name="Z2_PistonLight1" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 2.5, 2.5)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
+
+[node name="Z2_PistonLight2" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 2.5, 0.5)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
+
+[node name="Z2_PistonLight3" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 2.5, -1)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
+
+[node name="Z2_PistonLight4" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 2.5, -1)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
+
+[node name="Z2_PistonLight5" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 2.5, 0.5)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
+
+[node name="Z2_PistonLight6" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 2.5, 2.5)
+light_color = Color(1, 0.352941, 0, 1)
+light_energy = 1.5
+omni_range = 12
+script = ExtResource("35_stage_light")
+base_energy = 1.5
+beat_energy_boost = 1
+downbeat_energy_boost = 1.5
+palette = Array[Color]([Color(1, 0.352941, 0, 1)])
 
 [node name="Z3_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 8, 0)
-light_color = Color(1.0, 0.65, 0.25, 1)
-light_energy = 1.4
-omni_range = 24.0
+light_color = Color(1, 0.164706, 0.101961, 1)
+light_energy = 2.5
+omni_range = 24
+script = ExtResource("35_stage_light")
+base_energy = 2
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0.352941, 0, 1), Color(1, 0.164706, 0.101961, 1)])
 
 [node name="Z4_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147.5, 10, 0)
-light_color = Color(1.0, 0.0, 0.667, 1)
-light_energy = 1.4
-omni_range = 24.0
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 2.2
+omni_range = 24
+
+[node name="Z4_RimLight" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 147, 15, -10)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 3
+omni_range = 40
 
 [node name="Z5_Light" type="OmniLight3D" parent="ZoneLights"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 177.25, 6, 0)
-light_color = Color(0.0, 0.949, 1.0, 1)
-light_energy = 1.4
-omni_range = 22.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 170, 4, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 2.2
+omni_range = 16
+
+[node name="Z5_LightB" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 185, 4, 0)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 2.2
+omni_range = 16
+
+[node name="Z5_LightC" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 200, 4, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 2.2
+omni_range = 16
 
 [node name="Z6_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, 8, 0)
-light_color = Color(1.0, 0.0, 0.667, 1)
-light_energy = 1.6
-omni_range = 26.0
+light_color = Color(0, 0.847059, 1, 1)
+light_energy = 2.5
+omni_range = 26
+
+[node name="Z6_EdgeLightL" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 212, 0, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 1.5
+omni_range = 16
+
+[node name="Z6_EdgeLightR" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 238, 0, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 1.5
+omni_range = 16
 
 [node name="Z7_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, 6, 0)
-light_color = Color(0.75, 0.85, 1.0, 1)
-light_energy = 1.4
-omni_range = 20.0
+light_color = Color(1, 0.0392157, 0.54902, 1)
+light_energy = 2.4
+omni_range = 22
+
+[node name="Z7_FillLight" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242, 4, -6)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 1
+omni_range = 20
 
 [node name="Z8_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281, 6, 0)
-light_color = Color(0.6, 0.75, 1.0, 1)
-light_energy = 1.4
-omni_range = 22.0
+light_color = Color(1, 0.117647, 0.352941, 1)
+light_energy = 2.5
+omni_range = 22
+script = ExtResource("35_stage_light")
+base_energy = 2.5
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
+
+[node name="Z8_LightB" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 295, 6, 0)
+light_color = Color(1, 0.117647, 0.352941, 1)
+light_energy = 2.5
+omni_range = 22
+script = ExtResource("35_stage_light")
+base_energy = 2.5
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
+
+[node name="Z8_LightC" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 330, 6, 0)
+light_color = Color(1, 0.117647, 0.352941, 1)
+light_energy = 2.5
+omni_range = 22
+script = ExtResource("35_stage_light")
+base_energy = 2.5
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(1, 0.117647, 0.352941, 1)])
 
 [node name="Z9_Light" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 343, 10, 0)
-light_color = Color(0.7, 0.8, 1.0, 1)
-light_energy = 1.4
-omni_range = 24.0
+light_color = Color(0, 0.847059, 1, 1)
+light_energy = 1.6
+omni_range = 24
+
+[node name="Z9_GapLight" type="OmniLight3D" parent="ZoneLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 319, 6, 0)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 2
+omni_range = 20
 
 [node name="Z10_StageLight" type="OmniLight3D" parent="ZoneLights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 365, 18, 0)
@@ -1500,6 +1674,22 @@ light_color = Color(0.0, 0.949, 1.0, 1)
 light_energy = 2.0
 omni_range = 30.0
 script = ExtResource("35_stage_light")
+
+[node name="Z10_SpotL" type="SpotLight3D" parent="ZoneLights"]
+transform = Transform3D(-0.287348, -0.0913252, -0.953463, 0, 0.995444, -0.0953463, 0.957826, -0.0273975, -0.286039, 355, 14, -3)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 6.0
+light_volumetric_fog_energy = 4.0
+spot_range = 32.0
+spot_angle = 16.0
+
+[node name="Z10_SpotR" type="SpotLight3D" parent="ZoneLights"]
+transform = Transform3D(-0.287348, 0.0913252, 0.953463, 0, 0.995444, -0.0953463, -0.957826, -0.0273975, -0.286039, 375, 14, -3)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 6.0
+light_volumetric_fog_energy = 4.0
+spot_range = 32.0
+spot_angle = 16.0
 
 [connection signal="body_entered" from="Zone10_Trigger" to="Headliner" method="activate_boss"]
 

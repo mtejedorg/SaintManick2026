@@ -72,3 +72,40 @@ func test_zone_10_stage_light_cycles_palette_on_downbeat() -> void:
 	assert_true(first_color != second_color, "Downbeat should cycle the stage light to the next palette color")
 
 	stage_light.queue_free()
+
+# C5: the recoloured / extended light coverage.
+func _node_block(text: String, node_name: String) -> String:
+	var i := text.find("[node name=\"%s\"" % node_name)
+	assert_gt(i, -1, "%s should exist" % node_name)
+	var j := text.find("[node name=", i + 1)
+	var k := text.find("[connection", i + 1)
+	var end := text.length()
+	if j != -1:
+		end = j
+	if k != -1 and k < end:
+		end = k
+	return text.substr(i, end - i)
+
+func test_zone_light_coverage_additions_exist() -> void:
+	var text := _read_scene_text()
+	for light_name in ["Z1_AccentLight", "Z2_PitLight1", "Z2_PistonLight6", "Z4_RimLight", "Z5_LightB", "Z5_LightC",
+			"Z6_EdgeLightL", "Z6_EdgeLightR", "Z7_FillLight", "Z8_LightB", "Z8_LightC", "Z9_GapLight", "Z9_ElevatorLight"]:
+		assert_true(text.contains("[node name=\"%s\" type=\"OmniLight3D\"" % light_name), "%s should be declared" % light_name)
+
+func test_zone_3_and_8_lights_pulse_with_the_beat() -> void:
+	var text := _read_scene_text()
+	for light_name in ["Z3_Light", "Z8_Light", "Z8_LightB", "Z8_LightC", "Z2_PistonLight1"]:
+		assert_true(_node_block(text, light_name).contains("script = ExtResource(\"35_stage_light\")"), "%s should use stage_light.gd" % light_name)
+
+func test_zone_10_has_two_volumetric_spotlights() -> void:
+	var text := _read_scene_text()
+	for spot_name in ["Z10_SpotL", "Z10_SpotR"]:
+		var block := _node_block(text, spot_name)
+		assert_true(block.contains("type=\"SpotLight3D\""), "%s is a SpotLight3D" % spot_name)
+		assert_true(block.contains("spot_angle = 16.0"), "%s cone angle" % spot_name)
+		assert_true(block.contains("light_volumetric_fog_energy = 4.0"), "%s should light the volumetric fog" % spot_name)
+
+func test_zone_atmosphere_node_is_wired_under_world_environment() -> void:
+	var text := _read_scene_text()
+	assert_true(text.contains("[node name=\"ZoneAtmosphere\" type=\"Node\" parent=\"WorldEnvironment\""), "ZoneAtmosphere should be a child of WorldEnvironment")
+	assert_true(text.contains("res://levels/components/zone_atmosphere.gd"), "zone_atmosphere.gd should be referenced")

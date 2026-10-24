@@ -42,9 +42,10 @@ func _on_body_entered(body: Node3D) -> void:
 		if is_top_down:
 			SignalBus.camera_shift_requested.emit(true, null, 1.5)
 			
-		# Start spawning waves
+		# Start spawning waves. Deferred: this runs inside the Area3D body_entered
+		# callback, where add_child()/monitorable changes are blocked by the physics server.
 		current_wave_index = 0
-		_spawn_current_wave()
+		_spawn_current_wave.call_deferred()
 
 func _spawn_current_wave() -> void:
 	if current_wave_index < waves.size():
@@ -59,7 +60,9 @@ func _spawn_current_wave() -> void:
 
 func _on_wave_cleared() -> void:
 	current_wave_index += 1
-	_spawn_current_wave()
+	# Deferred: wave_cleared fires from the last enemy's tree_exited, i.e. while the
+	# spawner is mid remove_child() — add_child() of the next wave would fail ("busy").
+	_spawn_current_wave.call_deferred()
 
 func _complete_encounter() -> void:
 	completed = true

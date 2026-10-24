@@ -51,6 +51,27 @@ func test_wave_spawner_clears_wave_on_enemy_tree_exit() -> void:
 	assert_eq(spawner.active_enemies.size(), 0, "Spawner should have 0 active enemies")
 	assert_true(flags.wave_cleared, "Wave should be cleared")
 
+func test_wave_spawner_honours_named_spawn_marker() -> void:
+	add_child(spawner)
+	var marker_a := Marker3D.new()
+	marker_a.name = "MarkerA"
+	spawner.add_child(marker_a)
+	marker_a.position = Vector3(1.0, 0.0, 0.0)
+	var marker_b := Marker3D.new()
+	marker_b.name = "MarkerB"
+	spawner.add_child(marker_b)
+	marker_b.position = Vector3(50.0, 0.0, 0.0)
+
+	var wave_def := WaveDef.new()
+	var enemies_list: Array[PackedScene] = [dummy_enemy_scene, dummy_enemy_scene]
+	wave_def.enemies = enemies_list
+	wave_def.spawn_markers = ["MarkerB", ""] as Array[String]
+	spawner.spawn_wave(wave_def)
+
+	assert_eq(spawner.active_enemies.size(), 2, "Both enemies should spawn")
+	assert_eq(spawner.active_enemies[0].global_position.x, 50.0, "Enemy 0 should spawn on its named marker")
+	assert_eq(spawner.active_enemies[1].global_position.x, 1.0, "An unnamed slot should fall back to round-robin markers")
+
 func test_zone_encounter_gate_locks_and_wave_progression() -> void:
 	var gate = CSGBox3D.new()
 	add_child(gate)
@@ -82,6 +103,7 @@ func test_zone_encounter_gate_locks_and_wave_progression() -> void:
 	
 	# Player enters
 	encounter._on_body_entered(mock_player)
+	await get_tree().process_frame # C15: the first wave spawns deferred, out of the physics callback
 	
 	assert_true(encounter.active, "Encounter should be active")
 	assert_true(gate.visible, "Gate should lock (become visible)")
@@ -92,6 +114,7 @@ func test_zone_encounter_gate_locks_and_wave_progression() -> void:
 	# Defeat enemy of wave 1
 	var enemy1 = spawner.active_enemies[0]
 	spawner._on_enemy_defeated(enemy1)
+	await get_tree().process_frame # C15: next wave is deferred out of the tree_exited callback
 	
 	assert_eq(encounter.current_wave_index, 1, "Should advance to wave index 1")
 	assert_eq(spawner.active_enemies.size(), 1, "Spawner should spawn 1 enemy for wave 2")
@@ -100,6 +123,7 @@ func test_zone_encounter_gate_locks_and_wave_progression() -> void:
 	# Defeat enemy of wave 2
 	var enemy2 = spawner.active_enemies[0]
 	spawner._on_enemy_defeated(enemy2)
+	await get_tree().process_frame
 	
 	assert_true(flags.encounter_completed, "Encounter should complete")
 	assert_false(gate.visible, "Gate should unlock (become invisible)")

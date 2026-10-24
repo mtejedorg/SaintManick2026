@@ -168,6 +168,7 @@ enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), 
 [sub_resource type="Resource" id="Resource_z4_w2"]
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("5_sniper"), ExtResource("5_sniper")])
+spawn_markers = Array[String](["", "", "SniperSpawnPoint1", "SniperSpawnPoint2"])
 
 [sub_resource type="Resource" id="Resource_z4_w3"]
 script = ExtResource("8_wave_def")
@@ -258,6 +259,12 @@ shape = SubResource("BoxShape3D_z1_trig")
 
 [node name="Z1_Spawner" parent="Z1_Encounter" instance=ExtResource("9_spawner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+
+[node name="SpawnPoint1" type="Marker3D" parent="Z1_Encounter/Z1_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+
+[node name="SpawnPoint2" type="Marker3D" parent="Z1_Encounter/Z1_Spawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
 
 ; ================= ZONE 2: Piston Platforming (2.5D) =================
 [node name="Z2_Trigger" type="Area3D" parent="."]
@@ -505,7 +512,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 5, -5.5)
 
 [node name="SniperSpawnPoint2" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000023]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 5, -5.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 5, -5.5)
 
 ; ================= ZONE 5: Neon Market Entrance (2.5D) =================
 [node name="Z5_Market" type="Node3D" parent="." unique_id=410000024]
@@ -573,16 +580,16 @@ shape = SubResource("BoxShape3D_z5_trig")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
 
 [node name="SpawnPoint4" type="Marker3D" parent="Z5_Encounter/Z5_Spawner" unique_id=410000038]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -1.5)
 
 [node name="SpawnPoint5" type="Marker3D" parent="Z5_Encounter/Z5_Spawner" unique_id=410000039]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -1.5)
 
 [node name="SpawnPoint6" type="Marker3D" parent="Z5_Encounter/Z5_Spawner" unique_id=410000040]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 1.5)
 
 [node name="SpawnPoint7" type="Marker3D" parent="Z5_Encounter/Z5_Spawner" unique_id=410000041]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 1.5)
 
 ; ================= ZONE 6: Market Square Ambush (Top-Down) =================
 [node name="Z6_Plaza" type="Node3D" parent="."]

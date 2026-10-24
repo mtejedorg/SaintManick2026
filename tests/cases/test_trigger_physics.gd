@@ -34,6 +34,7 @@ func test_player_body_trips_zone_encounter_through_physics() -> void:
 
 	for i in 3:
 		await get_tree().physics_frame
+	await get_tree().process_frame # C15: the first wave spawns deferred, after the body_entered callback
 
 	assert_true(encounter.active, "Walking Nick into the encounter volume should activate it via physics")
 	assert_eq(spawner.active_enemies.size(), 1, "Activated encounter should spawn its first wave")

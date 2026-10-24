@@ -35,8 +35,8 @@ func _on_entry_trigger_entered(body: Node3D) -> void:
 		# Shift camera from Path_Z8 to Path_Z9
 		SignalBus.camera_shift_requested.emit(false, target_path, 1.5)
 		
-		# Start encounter
-		start_encounter()
+		# Start encounter (deferred: spawning inside the body_entered callback is blocked)
+		start_encounter.call_deferred()
 
 func start_encounter() -> void:
 	is_active = true

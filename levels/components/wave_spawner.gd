@@ -20,6 +20,7 @@ func spawn_wave(wave_def: WaveDef) -> void:
 	if markers.is_empty():
 		push_warning("WaveSpawner: No Marker3D children found. Spawning at spawner position.")
 
+	var round_robin := 0
 	for i in range(wave_def.enemies.size()):
 		var enemy_scene = wave_def.enemies[i]
 		if not enemy_scene:
@@ -27,11 +28,15 @@ func spawn_wave(wave_def: WaveDef) -> void:
 			
 		var enemy = enemy_scene.instantiate()
 		
-		# Determine spawn position
+		# Determine spawn position: a named marker (WaveDef.spawn_markers) wins, otherwise
+		# unnamed enemies take the spawner's markers in order.
 		var spawn_pos = global_position
 		var spawn_rot = global_rotation
 		if not markers.is_empty():
-			var marker = markers[i % markers.size()]
+			var marker: Marker3D = _find_named_marker(markers, wave_def, i)
+			if marker == null:
+				marker = markers[round_robin % markers.size()]
+				round_robin += 1
 			spawn_pos = marker.global_position
 			spawn_rot = marker.global_rotation
 			
@@ -43,7 +48,22 @@ func spawn_wave(wave_def: WaveDef) -> void:
 		active_enemies.append(enemy)
 		enemy.tree_exited.connect(_on_enemy_defeated.bind(enemy))
 
+## Marker named by wave_def.spawn_markers[index], or null when the slot is unnamed/unknown.
+func _find_named_marker(markers: Array[Marker3D], wave_def: WaveDef, index: int) -> Marker3D:
+	if index >= wave_def.spawn_markers.size():
+		return null
+	var wanted: String = wave_def.spawn_markers[index]
+	if wanted == "":
+		return null
+	for marker in markers:
+		if String(marker.name) == wanted:
+			return marker
+	push_warning("WaveSpawner: named spawn marker '%s' not found; using round-robin." % wanted)
+	return null
+
 func _on_enemy_defeated(enemy: Node) -> void:
+	if not is_inside_tree():
+		return
 	# Only tracked enemies count toward wave completion — reset() silently frees its
 	# enemies AFTER clearing this list, and those frees must not emit wave_cleared
 	# (which would advance the encounter mid-reset).

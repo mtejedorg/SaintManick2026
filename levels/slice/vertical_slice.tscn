@@ -198,12 +198,38 @@ enemies = Array[PackedScene]([ExtResource("5_sniper"), ExtResource("5_sniper"), 
 
 [sub_resource type="Environment" id="Environment_glow"]
 background_mode = 1
-background_color = Color(0, 0, 0, 1)
+background_color = Color(0.02, 0.02, 0.05, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.0392, 0.0392, 0.0706, 1)
-tonemap_mode = 3
+ambient_light_color = Color(0.063, 0.063, 0.141, 1)
+ambient_light_energy = 1.0
+tonemap_mode = 2
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 0.5
+ssao_intensity = 2.0
+ssao_power = 1.5
+ssao_detail = 0.5
+ssao_light_affect = 0.25
+ssil_enabled = true
+ssil_radius = 4.0
+ssil_intensity = 1.0
 glow_enabled = true
+glow_intensity = 0.8
+glow_strength = 1.0
+glow_bloom = 0.0
+glow_blend_mode = 1
 glow_hdr_threshold = 1.0
+glow_hdr_scale = 2.0
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.02
+volumetric_fog_albedo = Color(0.227451, 0.141176, 0.0627451, 1)
+volumetric_fog_emission = Color(0.0227451, 0.0141176, 0.00627451, 1)
+volumetric_fog_anisotropy = 0.4
+volumetric_fog_length = 48.0
+volumetric_fog_temporal_reprojection_enabled = true
+adjustment_enabled = true
+adjustment_contrast = 1.12
+adjustment_saturation = 1.15
 
 ; --- Main Node ---
 [node name="VerticalSlice" type="Node3D"]
@@ -211,7 +237,12 @@ script = ExtResource("33_vs_script")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
+light_color = Color(0.35, 0.42, 1, 1)
+light_energy = 0.2
 shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_mode = 0
+directional_shadow_max_distance = 40.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_glow")
@@ -240,6 +271,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
 current_path = NodePath("../Path_Z1_2_3")
 
 [node name="DroneCamera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("2_camera")]
+far = 400.0
 target = NodePath("../Player")
 
 ; ================= ZONE 1: Linear Tutorial (2.5D) =================

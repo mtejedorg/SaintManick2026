@@ -26,8 +26,11 @@ var speed_multiplier: float = 1.0
 var phase_2_triggered: bool = false
 ## Phase 2 swaps the resting rim to magenta (phase 1 rests at the authored amber).
 const PHASE_2_RIM_COLOR := CharacterVisual.ENEMY_RIM_COLOR
-## Authored scale of the visual (headliner.tscn sets MeshInstance3D to scale 3). The beat
-## pulse and the respawn reset are relative to this, never to Vector3.ONE.
+## Enraged pushes the rim hotter than the authored strength.
+const ENRAGED_RIM_STRENGTH := 5.0
+## Authored scale of the visual root (headliner_visual.tscn sizes the model on its Pivot,
+## so this is normally ONE). The beat pulse, the respawn reset and the death squash are
+## relative to this, never to a hard-coded scale.
 var _base_scale: Vector3 = Vector3.ONE
 
 func _ready() -> void:
@@ -91,6 +94,7 @@ func _on_player_respawned() -> void:
 	# Restore the pre-phase-2 look (phase 2 swapped the resting rim).
 	if character_visual:
 		character_visual.update_rim_color(character_visual.get_default_rim_color())
+		character_visual.update_rim_strength(character_visual.rim_strength)
 	if mesh_instance:
 		mesh_instance.scale = _base_scale
 	if Conductor:

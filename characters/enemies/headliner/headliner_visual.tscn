@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://3D_Assets/generated/headliner_brutalizer_raw.glb" id="2_model"]
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+script = ExtResource("1_visual")
+rim_color = Color(1, 0.54902, 0.101961, 1)
+rim_strength = 4.0
+
+[node name="Pivot" type="Node3D" parent="."]
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0)
+
+[node name="HeadlinerBrutalizer" parent="Pivot" instance=ExtResource("2_model")]
+transform = Transform3D(0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0)

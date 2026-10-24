@@ -12,7 +12,7 @@ func enter() -> void:
 	if boss.player:
 		var dir = (boss.player.global_position - boss.global_position).normalized()
 		dir.y = 0
-		boss.look_at(boss.player.global_position, Vector3.UP)
+		boss.look_at(boss.player.global_position, Vector3.UP, true) # mesh faces +Z
 		var lunge_speed = boss.stats.speed * 2.0 * boss.speed_multiplier
 		boss.velocity.x = dir.x * lunge_speed
 		boss.velocity.z = dir.z * lunge_speed

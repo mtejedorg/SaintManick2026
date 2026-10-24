@@ -275,9 +275,12 @@ func test_boss_bullet_hell_overheats_after_max_beats() -> void:
 
 func test_phase_2_beat_pulse_returns_to_authored_scale() -> void:
 	var boss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	# headliner_visual.tscn sizes the model on its Pivot (root scale ONE); author a non-unit
+	# root scale here so the test still proves the pulse is relative, not Vector3.ONE.
+	boss.get_node("MeshInstance3D").scale = Vector3(1.5, 1.5, 1.5)
 	add_child(boss)
 	var authored: Vector3 = boss.mesh_instance.scale
-	assert_gt(authored.x, 1.0, "headliner.tscn authors the visual above unit scale")
+	assert_true(boss._base_scale.is_equal_approx(authored), "_base_scale captures the authored root scale")
 
 	boss.activate_boss()
 	boss.phase_2_triggered = true
@@ -343,4 +346,45 @@ func test_player_respawn_releases_every_in_flight_bullet() -> void:
 	# release_all is idempotent — nothing is double-listed.
 	pool.release_all()
 	assert_eq(pool.inactive_pool.size(), total, "release_all must not duplicate pool entries")
+	boss.queue_free()
+
+func test_headliner_rim_follows_phase_and_resets_on_respawn() -> void:
+	var boss: HeadlinerBoss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	add_child(boss)
+	var visual: CharacterVisual = boss.character_visual
+	var amber := Color(1.0, 0.54902, 0.101961, 1.0)
+	assert_true(visual.get_base_rim_color().is_equal_approx(amber), "Phase 1 rests at the amber rim")
+	assert_almost_eq(visual.get_base_rim_strength(), 4.0, 0.001, "Headliner rim strength 4")
+	for sm in visual.skinned_meshes:
+		assert_null(sm.material_override, "The textured Headliner mesh keeps its own material")
+		assert_true((sm.mesh.surface_get_format(0) & Mesh.ARRAY_FORMAT_NORMAL) != 0, "Normals are generated for the normal-less GLB (else the rim floods the whole body)")
+
+	boss.activate_boss()
+	boss.health_component.current_health = boss.stats.max_health * 0.4
+	boss._on_health_changed(boss.health_component.current_health, boss.stats.max_health)
+	assert_true(boss.phase_2_triggered, "Precondition: phase 2 triggered")
+	assert_eq(visual.get_base_rim_color(), CharacterVisual.ENEMY_RIM_COLOR, "Phase 2 rests at the magenta rim")
+	boss.state_machine.transition_to("StateEnraged")
+	assert_almost_eq(visual.get_base_rim_strength(), HeadlinerBoss.ENRAGED_RIM_STRENGTH, 0.001, "Enraged drives the rim to strength 5")
+
+	boss._on_player_respawned()
+	assert_true(visual.get_base_rim_color().is_equal_approx(amber), "Respawn restores the amber rim")
+	assert_almost_eq(visual.get_base_rim_strength(), 4.0, 0.001, "Respawn restores the rim strength")
+	boss.queue_free()
+
+func test_headliner_visual_stands_six_metres_on_its_capsule() -> void:
+	var boss: HeadlinerBoss = load("res://characters/enemies/headliner/headliner.tscn").instantiate()
+	boss.position = Vector3(0.0, 300.0, 4200.0)
+	add_child(boss)
+	var merged := AABB()
+	var first := true
+	for mi in boss.mesh_instance.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var box: AABB = m.global_transform * m.get_aabb()
+		merged = box if first else merged.merge(box)
+		first = false
+	assert_almost_eq(merged.position.y - boss.global_position.y, -3.0, 0.15, "Headliner feet sit on the 6 m capsule bottom")
+	assert_almost_eq(merged.size.y, 6.0, 0.4, "Headliner stands ~6 m tall (upright, not lying down)")
 	boss.queue_free()

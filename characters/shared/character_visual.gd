@@ -33,6 +33,10 @@ const DARK_BASE_ROUGHNESS := 0.55
 const RIM_MATERIAL := preload("res://assets/shaders/neon_rim_material.tres")
 
 var skinned_meshes: Array[MeshInstance3D] = []
+## Generated meshes exported without a normal array (headliner_brutalizer_raw.glb) make the
+## rim fresnel saturate (NORMAL = 0 -> the whole body glows). Their normals are generated
+## once per source mesh and shared by every instance.
+static var _normal_fixed_meshes: Dictionary = {}
 ## The dark base material (null for a WHITE tint — the model keeps its own materials).
 var base_material: StandardMaterial3D = null
 ## Per-instance rim overlay so changing one character's rim never touches another's.
@@ -53,6 +57,8 @@ var _lean_tween: Tween = null
 func _ready() -> void:
 	skinned_meshes.clear()
 	_find_mesh_instances_recursive(self)
+	for sm in skinned_meshes:
+		_ensure_normals(sm)
 	pivot = get_node_or_null("Pivot") as Node3D
 	if pivot:
 		_pivot_base_scale = pivot.scale
@@ -92,6 +98,28 @@ func _find_mesh_instances_recursive(node: Node) -> void:
 		if child is MeshInstance3D:
 			skinned_meshes.append(child)
 		_find_mesh_instances_recursive(child)
+
+func _ensure_normals(sm: MeshInstance3D) -> void:
+	var src := sm.mesh
+	if src == null or sm.skin != null:
+		return
+	var missing := false
+	for s in src.get_surface_count():
+		if (src.surface_get_format(s) & Mesh.ARRAY_FORMAT_NORMAL) == 0:
+			missing = true
+	if not missing:
+		return
+	if not _normal_fixed_meshes.has(src):
+		var fixed := ArrayMesh.new()
+		for s in src.get_surface_count():
+			var st := SurfaceTool.new()
+			st.create_from(src, s)
+			if (src.surface_get_format(s) & Mesh.ARRAY_FORMAT_NORMAL) == 0:
+				st.generate_normals()
+			st.commit(fixed)
+			fixed.surface_set_material(s, src.surface_get_material(s))
+		_normal_fixed_meshes[src] = fixed
+	sm.mesh = _normal_fixed_meshes[src]
 
 func _find_animation_player_recursive(node: Node) -> AnimationPlayer:
 	for child in node.get_children():

@@ -17,7 +17,7 @@ func enter() -> void:
 	# Play a simple premium-feeling death tween (pulsing/shrinking)
 	if boss.mesh_instance:
 		var tween = boss.create_tween()
-		tween.tween_property(boss.mesh_instance, "scale", Vector3(1.5, 0.1, 1.5), 0.5)
+		tween.tween_property(boss.mesh_instance, "scale", boss._base_scale * Vector3(1.3, 0.1, 1.3), 0.5)
 		tween.tween_property(boss.mesh_instance, "scale", Vector3.ZERO, 0.5)
 
 	# Scrap is awarded once by headliner._on_died() — do not award again here.

@@ -19,7 +19,7 @@ func physics_update(delta: float) -> void:
 		var target_pos = boss.player.global_position
 		target_pos.y = boss.global_position.y
 		if boss.global_position.distance_to(target_pos) > 0.1:
-			boss.look_at(target_pos, Vector3.UP)
+			boss.look_at(target_pos, Vector3.UP, true) # mesh faces +Z
 			
 		var dist = boss.global_position.distance_to(boss.player.global_position)
 		if dist > 3.0:

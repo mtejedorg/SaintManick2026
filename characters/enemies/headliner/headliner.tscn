@@ -17,7 +17,7 @@
 [ext_resource type="Script" path="res://characters/enemies/headliner/projectile_emitter.gd" id="15_emitter"]
 [ext_resource type="Script" path="res://_core/pool/object_pool.gd" id="16_pool"]
 [ext_resource type="PackedScene" path="res://levels/components/pooled_projectile.tscn" id="17_proj_scene"]
-[ext_resource type="PackedScene" path="res://characters/shared/character_visual.tscn" id="18_visual"]
+[ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner_visual.tscn" id="18_visual"]
 [ext_resource type="AudioStream" path="res://audio/music/boss_headliner.ogg" id="19_boss_music_a"]
 [ext_resource type="AudioStream" path="res://audio/music/boss_headliner.ogg" id="20_boss_music_b"]
 
@@ -44,8 +44,6 @@ script = ExtResource("1_headliner")
 shape = SubResource("CapsuleShape3D_headliner")
 
 [node name="MeshInstance3D" parent="." instance=ExtResource("18_visual")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)
-tint = Color(0.8, 0, 0.8, 1)
 
 [node name="ShieldBubble" type="MeshInstance3D" parent="."]
 visible = false

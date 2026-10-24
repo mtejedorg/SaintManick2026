@@ -35,7 +35,7 @@ var _boss_music_b: AudioStreamPlayer = null
 var _boss_music_active: bool = false
 
 # Currently playing music clip — lets zone re-entries within the same tier
-# (e.g. Zones 1→2→3 all industrial) skip restarting the track from the top.
+# (e.g. Zones 1→2→3→4 all industrial) skip restarting the track from the top.
 var _current_music: String = ""
 
 func _ready() -> void:
@@ -138,8 +138,16 @@ func _on_combo_increased(_current_combo: int) -> void:
 	play_sfx("combo_tick")
 
 
-func _on_zone_entered(zone_name: String) -> void:
-	# Zone names are "SECTOR 01 — DESCRIPTION". Find the first numeric token.
+## Maps a zone name to its audio tier, following the slice's Factory→Neon arc
+## (Documents/VerticalSlice.md):
+##   Zones 1–4  → "industrial" (Factory)
+##   Zones 5–7  → "neon"       (Neon district streets)
+##   Zones 8–9  → "highrise"   (Neon high-rise ascent — Zone 9 elevator climbs the
+##                              skyscraper exterior; reuses the zone_corporate clips)
+##   Zone 10    → "boss"       (music driven by boss_spawned, no ambience)
+## Returns "" when the name carries no zone number. Zone names are
+## "SECTOR NN — DESCRIPTION"; the first positive integer token is the zone number.
+static func tier_for_zone(zone_name: String) -> String:
 	var zone_number := 0
 	for part in zone_name.split(" "):
 		var n := part.to_int()
@@ -147,16 +155,30 @@ func _on_zone_entered(zone_name: String) -> void:
 			zone_number = n
 			break
 
-	if zone_number >= 1 and zone_number <= 3:
-		play_music("zone_industrial")
-		play_ambience("industrial_hum")
-	elif zone_number >= 4 and zone_number <= 6:
-		play_music("zone_neon_market")
-		play_ambience("neon_market_crowd")
-	elif zone_number >= 7 and zone_number <= 9:
-		play_music("zone_corporate")
-		play_ambience("corporate_interior")
-	# Zone 10 music is triggered by boss_spawned; no ambience during boss fight.
+	if zone_number >= 1 and zone_number <= 4:
+		return "industrial"
+	elif zone_number >= 5 and zone_number <= 7:
+		return "neon"
+	elif zone_number >= 8 and zone_number <= 9:
+		return "highrise"
+	elif zone_number == 10:
+		return "boss"
+	return ""
+
+
+func _on_zone_entered(zone_name: String) -> void:
+	match tier_for_zone(zone_name):
+		"industrial":
+			play_music("zone_industrial")
+			play_ambience("industrial_hum")
+		"neon":
+			play_music("zone_neon_market")
+			play_ambience("neon_market_crowd")
+		"highrise":
+			# Filenames keep the old "corporate" naming; the tier is the Neon high-rise.
+			play_music("zone_corporate")
+			play_ambience("corporate_interior")
+		# "boss": Zone 10 music is triggered by boss_spawned; no ambience during the fight.
 
 
 func _on_boss_spawned(boss_name: String) -> void:

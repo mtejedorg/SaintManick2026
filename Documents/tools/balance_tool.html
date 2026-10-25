@@ -8,6 +8,7 @@
     --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 system-ui,Segoe UI,sans-serif;padding:24px}
   h1{font-size:20px;margin:0 0 2px;letter-spacing:.5px}
   h1 span{color:var(--neon)}
@@ -19,11 +20,15 @@
   .row label{color:var(--dim);font-size:12px}
   input[type=number]{width:74px;background:#0b0e18;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 6px;font:12px var(--mono);text-align:right}
   input[type=range]{width:140px;accent-color:var(--neon)}
+  select{background:#0b0e18;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 6px;font:12px var(--mono);max-width:170px}
   table{width:100%;border-collapse:collapse;font:12px var(--mono)}
   th,td{padding:5px 7px;text-align:right;border-bottom:1px solid var(--line)}
   th:first-child,td:first-child{text-align:left}
+  td.l,th.l{text-align:left}
   th{color:var(--dim);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
   td input{width:60px}
+  tr.dim td{opacity:.35}
+  tr.tot td{border-top:2px solid var(--line);font-weight:700}
   .tag{font:10px var(--mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--dim)}
   .boss{color:var(--neon)} .mini{color:var(--warn)} .topdown{color:var(--cyan)}
   button{background:var(--neon);color:#0b0d14;border:0;border-radius:7px;padding:9px 16px;font-weight:700;cursor:pointer;letter-spacing:.5px}
@@ -32,11 +37,15 @@
   .card{background:#0b0e18;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
   .card .big{font:28px var(--mono);font-weight:700}
   .card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-top:2px}
-  .ok{color:var(--good)} .miss{color:var(--bad)}
+  .ok{color:var(--good)} .miss{color:var(--bad)} .warn{color:var(--warn)}
   .note{font-size:11px;color:var(--dim);margin-top:6px}
   .seg{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 12px}
   .seg button{background:#0b0e18;border:1px solid var(--line);color:var(--dim);font-weight:600;padding:5px 10px;font-size:11px}
   .seg button.on{border-color:var(--neon);color:var(--neon)}
+  .pre{display:flex;gap:6px;margin:0 0 16px}
+  .pre button{background:#0b0e18;border:1px solid var(--line);color:var(--dim);font-weight:700;padding:7px 14px;font-size:12px}
+  .pre button.on{border-color:var(--cyan);color:var(--cyan)}
+  .src{color:var(--dim);font-size:10px}
   details{margin-top:8px}
   summary{cursor:pointer;color:var(--cyan);font-size:12px}
   .died{color:var(--bad)} .cleared{color:var(--good)}
@@ -45,6 +54,13 @@
 <h1>SAINT <span>MANICK</span> — Balance Simulator</h1>
 <p class="sub">Tunes meta-progression so weak players clear in 4–5 runs, average in 2–3. Threat = damage if a fight were fully tanked. All values editable; sim re-runs live.</p>
 
+<div class="pre" id="preset">
+  <button data-p="slice" id="pSlice">SLICE · the built game (10 zones, shipped .tres)</button>
+  <button data-p="orig" id="pOrig">ORIGINAL · district model (18 rows)</button>
+</div>
+<div id="sliceMissing" class="note miss" hidden>The SLICE preset failed to start (script error) — showing the original model. Open the browser console for details.</div>
+
+<div id="origView">
 <div class="grid">
   <!-- LEFT: globals -->
   <div>
@@ -111,6 +127,162 @@
       </details>
     </div>
   </div>
+</div>
+</div>
+
+<!-- =====================================================================
+     SLICE preset — models the BUILT vertical slice (levels/slice/vertical_slice.tscn).
+     Every number below is read from a file, cited in the "source" columns;
+     only the THREAT model is an assumption (see its panel).
+     Original view above is untouched; this block has its own ids (s_*).
+     ===================================================================== -->
+<div id="sliceView" hidden>
+<div class="grid">
+  <!-- LEFT -->
+  <div>
+    <div class="panel">
+      <h2>Nick — shipped base stats</h2>
+      <div class="row"><label>Base HP</label><input type="number" id="s_hp" value="120"></div>
+      <div class="row"><label>+HP per “Max HP” buy</label><input type="number" id="s_hpStep" value="20"></div>
+      <div class="row"><label>Base shield (absorb / zone)</label><input type="number" id="s_sh" value="40"></div>
+      <div class="row"><label>+shield per buy</label><input type="number" id="s_shStep" value="10"></div>
+      <div class="row"><label>Base lives (= respawns)</label><input type="number" id="s_lives" value="3"></div>
+      <div class="note">_core/game_manager.gd:70-72 (120 + 20·n, 3 + n, 40 + 10·n). N lives = N respawns, so Nick has <b>lives + 1</b> HP bars before game over (game_manager.gd:137-160). HP never heals mid-run; a death respawns at the last zone entry with full HP/shield and cleared kills stay dead.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Skill presets — % damage avoided</h2>
+      <div class="row"><label>Weak</label><input type="range" id="s_skWeak" min="0" max="90" value="35"><span id="s_skWeakV" class="tag">35%</span></div>
+      <div class="row"><label>Average</label><input type="range" id="s_skAvg" min="0" max="90" value="58"><span id="s_skAvgV" class="tag">58%</span></div>
+      <div class="row"><label>Good</label><input type="range" id="s_skGood" min="0" max="95" value="75"><span id="s_skGoodV" class="tag">75%</span></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Threat model — MODELLED, not measured</h2>
+      <div class="row"><label>Nick sustained DPS</label><input type="number" id="s_dps" value="20"></div>
+      <div class="row"><label>Max simultaneous attackers</label><input type="number" id="s_cap" value="3"></div>
+      <div class="row"><label>Resting tempo (BPM)</label><input type="number" id="s_bpm" value="128"></div>
+      <div class="row"><label>Exposure factor</label><input type="number" id="s_expo" value="0.13" step="0.01"></div>
+      <div class="row"><label>Sweeper DPS gain %</label><input type="number" id="s_swe" value="0"></div>
+      <div class="row"><label>Battery Ram DPS gain %</label><input type="number" id="s_ram" value="0"></div>
+      <div class="note">Per enemy group: threat = min(cap,n)/n · Σ(dmg ÷ cycle s) · Σ(effHP ÷ DPS), then × exposure factor. Cycle = beats × 60 / BPM. <b>Exposure 0.13</b> is calibrated so the Enforcer/Headliner at shipped HP land near the old tool's mini-boss/boss rows (55 / 110). DPS (≈ Tri-Cut 33 dps × ~60 % uptime), Enforcer/Headliner cycles and the exposure factor are <b>placeholders for the playtest gauntlet (HANDOFF H6)</b>. Combo DPS gains are unmeasured (D3) and default to 0. Hazards (pistons, bomb grid, kill wall, doors) are not in the threat.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Shop — _core/persistence/shop_upgrades/*.tres</h2>
+      <table id="s_shopTbl">
+        <thead><tr><th>Item</th><th>Cur</th><th>Price</th><th class="l">Rep / prereq</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:8px"><label>Cost growth ×/buy (shipped: flat 1.0)</label><input type="number" id="s_growth" value="1" step="0.1"></div>
+      <div class="row"><label>Max buys / repeatable (0 = none)</label><input type="number" id="s_capBuys" value="0"></div>
+      <div class="row"><label>Shop buying policy</label>
+        <select id="s_policy">
+          <option value="rr">Round-robin HP / Shield / Life</option>
+          <option value="cheapest">Cheapest first (old tool)</option>
+          <option value="life">Lives first</option>
+        </select></div>
+      <div class="row"><label>Run booster</label>
+        <select id="s_booster">
+          <option value="none">None</option>
+          <option value="tempo">Tempo Shield (+50% shield)</option>
+          <option value="magnet">Scrap Magnet (×2 Scrap)</option>
+        </select></div>
+      <div class="row"><label>Scrap kept on game over (%)</label><input type="number" id="s_keep" value="100"></div>
+      <div class="row"><label>Fatal-zone Scrap share (%)</label><input type="number" id="s_fatal" value="40"></div>
+      <div class="note">Shipped repeatables are flat-priced and uncapped (karens_shop.gd has no growth or cap). Currencies bank 100 % on game over, clear and abandon (game_manager.gd:199-204). Double Jump is utility and not bought by the sim.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div>
+    <div class="panel">
+      <h2>Active content — the 10 built zones</h2>
+      <div class="seg" id="s_scope">
+        <button data-n="10" class="on">Full clear Z1–Z10</button>
+        <button data-n="9">Z1–Z9 (no Headliner)</button>
+        <button data-n="6">Dies before Z7 (Z1–Z6)</button>
+      </div>
+      <table id="s_zoneTbl">
+        <thead><tr><th>#</th><th class="l">Zone</th><th>Cam</th><th class="l">Waves (R runner · B bruiser · S sniper · E enforcer · H headliner)</th><th>Enemies</th><th>Eff HP</th><th>Threat</th><th>Scrap</th><th>Cells</th><th>Cores</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="note">Counts: WaveDef sub-resources and scene-placed enemies in levels/slice/vertical_slice.tscn (Z1 :65-75, Z3 :77-83, Z4 :174-186, Z5 :191-201, Z6 :85-87 + :206-208, Z9 :127-133; scene-placed Z2 :753-762, Z7 :1357-1376, Z8 :1402-1408, Headliner :1703). Threat is at 0 % avoided. Cells: Enforcer stats cells = 15, Z8 escape_sequence.gd:12 = 10, Z9 elevator_encounter.gd:20 = 10. Core: headliner.gd:207. Scrap shown before any booster.</div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="alt" id="s_pD2">Apply D2: growth ×1.5</button>
+        <button class="alt" id="s_pD4">Apply D4: Sweeper 15 / Ram 20</button>
+        <button class="alt" id="s_pD13">Apply boss HP: Enforcer 900 / Headliner 2800</button>
+        <button class="alt" id="s_reset">Reset to shipped</button>
+      </div>
+      <div class="note">Proposal values come from HANDOFF.md §3-D (D2 growth ×1.5, caps unspecified; D4 Sweeper 15 + Ram 20 = one run's Cells; boss HP 900 / 2800). They are <b>not shipped</b>: the .tres hold 20 / 25 and 600 / 1500.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Enemy archetypes — enemy stats .tres (editable)</h2>
+      <table id="s_archTbl">
+        <thead><tr><th>Archetype</th><th>HP</th><th>Shield</th><th>Dmg</th><th>Cycle beats</th><th>Scrap</th><th>Cells</th><th>Cores</th><th class="l">Source</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Runs to clear</h2>
+      <div class="cards">
+        <div class="card"><div class="big" id="s_rWeak">–</div><div class="lbl">Weak player<br>target 4–5</div></div>
+        <div class="card"><div class="big" id="s_rAvg">–</div><div class="lbl">Average<br>target 2–3</div></div>
+        <div class="card"><div class="big" id="s_rGood">–</div><div class="lbl">Good</div></div>
+      </div>
+      <div class="note" id="s_verdict"></div>
+      <details open><summary>Average-player run-by-run trace</summary>
+        <div id="s_trace" style="font:11px var(--mono);margin-top:8px;white-space:pre-wrap"></div>
+      </details>
+      <details open><summary>Sensitivity — runs to clear vs threat exposure factor (selected scope and shop settings)</summary>
+        <table id="s_sensTbl" style="margin-top:8px">
+          <thead><tr><th>Exposure factor</th><th>Weak</th><th>Average</th><th>Good</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="note">Because the threat scale is the one unmeasured input, read this table rather than the single card: it shows how far the threat model has to move before the economy starts to gate a clear.</div>
+      </details>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Economy — what a run pays vs what the shop charges (no threat model involved)</h2>
+      <table id="s_incTbl">
+        <thead><tr><th class="l">Income if the run ends…</th><th>Scrap</th><th>Cells</th><th>Cores</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <table id="s_priceTbl" style="margin-top:14px">
+        <thead><tr><th class="l">Shop item (first buy)</th><th>Price</th><th>Dies before Z7</th><th>Through Z7</th><th>Through Z8</th><th>Full clear</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="note">Right-hand columns are price ÷ that run's income in the item's currency: 1.00 = exactly one run pays for it, above 1.00 it takes several runs of that kind, “never” = that run type pays 0 of the currency. Scrap income includes the booster multiplier selected above.</div>
+      <table id="s_curveTbl" style="margin-top:14px">
+        <thead><tr><th>Buys of each</th><th>Max HP</th><th>Max Shield</th><th>Extra Life</th><th>All three</th><th>… in full-clear Scrap</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="note">Cumulative Scrap for the first n buys under the cost growth and cap set above.</div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Where the original model and the shipped .tres disagree</h2>
+      <table>
+        <thead><tr><th class="l">Quantity</th><th class="l">Original tool</th><th class="l">Shipped file</th></tr></thead>
+        <tbody>
+          <tr><td class="l">Max HP node</td><td class="l">+25 HP for 40</td><td class="l">+20 HP for 100 (upgrade_max_hp.tres; GameManager 120 + 20n)</td></tr>
+          <tr><td class="l">Shield node</td><td class="l">+15 absorb for 40</td><td class="l">+10 for 150 (upgrade_max_shield.tres; GameManager 40 + 10n)</td></tr>
+          <tr><td class="l">Life node</td><td class="l">+1 life for 90</td><td class="l">+1 life for 300 (upgrade_extra_life.tres)</td></tr>
+          <tr><td class="l">Damage / Armor nodes</td><td class="l">+12 % dmg for 45, +6 % mit for 50</td><td class="l">do not exist (GDD Appendix A: damage and armour tiers are not built)</td></tr>
+          <tr><td class="l">Cost growth</td><td class="l">×1.5 per buy</td><td class="l">flat, uncapped (karens_shop.gd)</td></tr>
+          <tr><td class="l">Lives → HP bars</td><td class="l">3 lives = 3 bars</td><td class="l">3 lives = 3 respawns = 4 bars (game_manager.gd:139-160)</td></tr>
+          <tr><td class="l">Scrap on a death</td><td class="l">40 % of the fatal encounter</td><td class="l">every kill pays immediately; 100 % banked (editable above)</td></tr>
+          <tr><td class="l">Cells costs</td><td class="l">no Cells at all</td><td class="l">Sweeper 20 + Battery Ram 25 = 45 (HANDOFF D4 text says 15 + 20 = 35)</td></tr>
+          <tr><td class="l">Boss HP</td><td class="l">threat rows only</td><td class="l">Enforcer 600, Headliner 1500 (HANDOFF boss-HP text says 900 / 2800)</td></tr>
+          <tr><td class="l">Yield vs tool</td><td class="l">Slice-B scope Scrap 307, full game 556</td><td class="l">full clear 2319 → 7.6× / 4.2×; the HANDOFF “≈3.7×” does not reproduce</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -271,4 +443,327 @@ function run(){
 
 // init
 buildEnc(); buildUp(); run();
+</script>
+
+<script>
+// =======================================================================
+// SLICE preset. Self-contained IIFE: its own state, its own s_* ids.
+// A failure here cannot break the original model above.
+// =======================================================================
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const num=id=>{ const v=+$("#"+id).value; return isFinite(v)?v:0; };
+const r0=n=>String(Math.round(n));
+const r1=n=>(Math.round(n*10)/10).toFixed(1);
+const r2=n=>(Math.round(n*100)/100).toFixed(2);
+
+// ---- enemy archetypes: values mirror characters/enemies/*/*_stats.tres ----
+const ARCH_KEYS=["runner","bruiser","sniper","enforcer","headliner"];
+const ARCH_TAG={runner:"R",bruiser:"B",sniper:"S",enforcer:"E",headliner:"H"};
+const ARCH_DEF={
+  runner:   {name:"Runner",              hp:30,   shield:0,  dmg:8,  beats:3, scrap:8,    cells:0,  cores:0, src:"runner/runner_stats.tres; 3-beat telegraph/active/recovery (runner.gd _on_beat)"},
+  bruiser:  {name:"Bruiser",             hp:90,   shield:50, dmg:20, beats:4, scrap:50,   cells:0,  cores:0, src:"bruiser/bruiser_stats.tres; downbeat-gated, 1 attack per measure (bruiser.gd)"},
+  sniper:   {name:"Sniper",              hp:24,   shield:0,  dmg:18, beats:4, scrap:25,   cells:0,  cores:0, src:"sniper/sniper_stats.tres; 4-beat aim/lock/fire (sniper.gd)"},
+  enforcer: {name:"Enforcer (mini-boss)",hp:600,  shield:0,  dmg:22, beats:4, scrap:300,  cells:15, cores:0, src:"enforcer/enforcer_stats.tres; cycle = PLACEHOLDER"},
+  headliner:{name:"Headliner (boss)",    hp:1500, shield:0,  dmg:25, beats:4, scrap:1000, cells:0,  cores:1, src:"headliner/headliner_stats.tres; Core is headliner.gd:207, not in .tres; cycle = PLACEHOLDER"}
+};
+let arch=structuredClone(ARCH_DEF);
+
+// ---- the 10 built zones (counts read from levels/slice/vertical_slice.tscn) ----
+// g = list of enemy groups that fight together (a WaveDef, or a cluster of scene-placed enemies)
+const ZONES=[
+  {n:1, name:"SECTOR 01 — STREET ENTRANCE", cam:"side",     g:[{runner:1},{runner:1},{runner:1}], bC:0,  bK:0},
+  {n:2, name:"SECTOR 02 — PISTON GAUNTLET", cam:"side",     g:[{runner:1},{runner:1},{runner:1}], bC:0,  bK:0},
+  {n:3, name:"SECTOR 03 — SECURITY LOCK",   cam:"top-down", g:[{runner:4},{bruiser:1}],           bC:0,  bK:0},
+  {n:4, name:"SECTOR 04 — SCAFFOLDING",     cam:"side",     g:[{runner:3,bruiser:1},{runner:2,sniper:2},{runner:2,bruiser:2}], bC:0, bK:0},
+  {n:5, name:"SECTOR 05 — NEON MARKET",     cam:"side",     g:[{runner:3,bruiser:1},{runner:3,bruiser:1},{runner:2,bruiser:1}], bC:0, bK:0},
+  {n:6, name:"SECTOR 06 — PLAZA BRAWL",     cam:"top-down", g:[{runner:8,bruiser:2},{sniper:3}],  bC:0,  bK:0},
+  {n:7, name:"SECTOR 07 — ENFORCER",        cam:"side",     g:[{runner:3},{enforcer:1}],          bC:0,  bK:0},
+  {n:8, name:"SECTOR 08 — ESCAPE",          cam:"side",     g:[{runner:1},{runner:1}],            bC:10, bK:0},
+  {n:9, name:"SECTOR 09 — ELEVATOR",        cam:"side",     g:[{runner:3},{bruiser:2,runner:2}],  bC:10, bK:0},
+  {n:10,name:"SECTOR 10 — THE HEADLINER",   cam:"side",     g:[{headliner:1}],                    bC:0,  bK:0}
+];
+
+// ---- shop: values mirror _core/persistence/shop_upgrades/*.tres ----
+const SHOP_DEF=[
+  {key:"hp",    id:"max_hp",            name:"Max HP +20",                cur:"scrap", cost:100, rep:true,  pre:""},
+  {key:"shield",id:"max_shield",        name:"Max Shield +10",            cur:"scrap", cost:150, rep:true,  pre:""},
+  {key:"life",  id:"extra_life",        name:"Extra Life",                cur:"scrap", cost:300, rep:true,  pre:""},
+  {key:"jump",  id:"double_jump",       name:"Double Jump",               cur:"scrap", cost:200, rep:false, pre:""},
+  {key:"slot",  id:"booster_slot",      name:"Extra Booster Slot",        cur:"cores", cost:1,   rep:false, pre:""},
+  {key:"tri",   id:"combo_tri_cut",     name:"Unlock: Tri-Cut (AAA)",     cur:"scrap", cost:0,   rep:false, pre:""},
+  {key:"lau",   id:"combo_launcher",    name:"Unlock: Launcher (AAB)",    cur:"scrap", cost:0,   rep:false, pre:"tri"},
+  {key:"swe",   id:"combo_sweeper",     name:"Unlock: Sweeper (ABB)",     cur:"cells", cost:20,  rep:false, pre:"lau"},
+  {key:"ram",   id:"combo_battery_ram", name:"Unlock: Battery Ram (BB)",  cur:"cells", cost:25,  rep:false, pre:"swe"}
+];
+let shop=structuredClone(SHOP_DEF);
+const shopItem=k=>shop.find(x=>x.key===k);
+const shopName=k=>{ const it=shop.find(x=>x.key===k); return it?it.name:k; };
+
+const DEFAULTS={s_hp:120,s_hpStep:20,s_sh:40,s_shStep:10,s_lives:3,s_dps:20,s_cap:3,s_bpm:128,s_expo:0.13,
+  s_swe:0,s_ram:0,s_growth:1,s_capBuys:0,s_keep:100,s_fatal:40};
+
+let scopeN=10;
+
+function readP(){
+  return {
+    hp:num("s_hp"), hpStep:num("s_hpStep"), shield:num("s_sh"), shStep:num("s_shStep"), lives:num("s_lives"),
+    dps:Math.max(1,num("s_dps")), cap:Math.max(1,Math.round(num("s_cap"))), bpm:Math.max(1,num("s_bpm")),
+    expo:Math.max(0,num("s_expo")), sweGain:num("s_swe")/100, ramGain:num("s_ram")/100,
+    growth:Math.max(0.1,num("s_growth")), capBuys:Math.max(0,Math.round(num("s_capBuys"))),
+    policy:$("#s_policy").value, booster:$("#s_booster").value,
+    keep:Math.max(0,num("s_keep"))/100, fatal:Math.max(0,num("s_fatal"))/100
+  };
+}
+
+// ---- per-zone numbers from archetypes ----
+function computeZones(P){
+  return ZONES.map(z=>{
+    let count=0, effHP=0, scrap=0, cells=z.bC, cores=z.bK, threat=0;
+    z.g.forEach(g=>{
+      let n=0, sr=0, st=0;
+      ARCH_KEYS.forEach(k=>{
+        const c=g[k]||0; if(!c) return;
+        const a=arch[k];
+        n+=c; effHP+=c*(a.hp+a.shield); scrap+=c*a.scrap; cells+=c*a.cells; cores+=c*a.cores;
+        sr+=c*a.dmg/(Math.max(0.5,a.beats)*60/P.bpm);   // damage per second if it swings every cycle
+        st+=c*(a.hp+a.shield)/P.dps;                      // seconds Nick needs to kill it
+      });
+      count+=n;
+      if(n>0) threat+=Math.min(P.cap,n)/n*sr*st;
+    });
+    return {z:z, count:count, effHP:effHP, scrap:scrap, cells:cells, cores:cores, threat:threat*P.expo};
+  });
+}
+
+// ---- the run simulation ----
+function simulate(skill,P,n,trace){
+  const zs=computeZones(P).slice(0,n);
+  const owned={hp:0,shield:0,life:0,jump:0,slot:0,tri:0,lau:0,swe:0,ram:0};
+  const wallet={scrap:0,cells:0,cores:0};
+  const mile={};
+  let rr=0;
+  const MAX=40;
+  const price=it=> (it.rep && it.cur==="scrap") ? Math.round(it.cost*Math.pow(P.growth,owned[it.key])) : it.cost;
+  const capped=it=> it.rep && P.capBuys>0 && owned[it.key]>=P.capBuys;
+
+  for(let runN=1; runN<=MAX; runN++){
+    const pool=P.hp+owned.hp*P.hpStep;
+    let sh=P.shield+owned.shield*P.shStep;
+    if(P.booster==="tempo") sh=Math.round(sh*1.5);
+    const mag=(P.booster==="magnet")?2:1;
+    const dpsMul=1+(owned.swe?P.sweGain:0)+(owned.ram?P.ramGain:0);
+    let pools=P.lives+owned.life+1;
+    const poolsStart=pools;
+    let hp=pool;
+    const earned={scrap:0,cells:0,cores:0};
+    let diedAt=null;
+
+    for(const r of zs){
+      const inc=r.threat/dpsMul*(1-skill);
+      hp-=Math.max(0,inc-sh);                              // shield soaks first, regenerates between zones
+      while(hp<=0 && pools>1){ pools--; hp+=pool; }        // lose a bar, respawn full (overflow carries)
+      if(hp<=0){ diedAt=r.z.name; earned.scrap+=Math.round(r.scrap*mag*P.fatal); break; }
+      earned.scrap+=r.scrap*mag; earned.cells+=r.cells; earned.cores+=r.cores;
+    }
+    const cleared=(diedAt===null);
+    wallet.scrap+= cleared ? earned.scrap : Math.round(earned.scrap*P.keep);
+    wallet.cells+=earned.cells; wallet.cores+=earned.cores;
+
+    const before=Object.assign({},owned);
+    if(cleared){
+      if(trace) trace.push(`Run ${runN}: CLEARED ✓ | HP ${r0(pool)} SH ${r0(sh)} bars ${poolsStart} (${pools} left) | +${r0(earned.scrap)} Scrap +${earned.cells} Cells +${earned.cores} Core | bank ${r0(wallet.scrap)}/${wallet.cells}/${wallet.cores}`);
+      return {runs:runN, cleared:true, mile:mile};
+    }
+
+    // ---- shop between runs ----
+    let again=true, guard=0;
+    while(again && guard++<500){
+      again=false;
+      // unique unlocks (free, Cells, Cores), in prerequisite order
+      for(const it of shop){
+        if(it.rep || it.key==="jump") continue;
+        if(owned[it.key]) continue;
+        if(it.pre && !owned[it.pre]) continue;
+        if(wallet[it.cur]>=it.cost){ wallet[it.cur]-=it.cost; owned[it.key]=1; again=true; }
+      }
+      // repeatable Scrap items
+      let pick=null;
+      if(P.policy==="cheapest"){
+        const reps=shop.filter(it=>it.rep && it.cur==="scrap" && !capped(it)).sort((a,b)=>price(a)-price(b));
+        pick=reps.find(it=>price(it)>0 && wallet.scrap>=price(it)) || null;
+      }else if(P.policy==="life"){
+        for(const key of ["life","hp","shield"]){
+          const it=shopItem(key);
+          if(!capped(it) && price(it)>0 && wallet.scrap>=price(it)){ pick=it; break; }
+        }
+      }else{
+        const order=["hp","shield","life"];
+        for(let t=0;t<3;t++){
+          const it=shopItem(order[(rr+t)%3]);
+          if(capped(it)) continue;
+          if(price(it)>0 && wallet.scrap>=price(it)){ pick=it; rr=(rr+t+1)%3; }
+          break;
+        }
+      }
+      if(pick){ wallet.scrap-=price(pick); owned[pick.key]++; again=true; }
+    }
+    ["tri","lau","swe","ram","slot"].forEach(k=>{ if(owned[k] && mile[k]===undefined) mile[k]=runN; });
+    const diff=["hp","shield","life","swe","ram","slot"].filter(k=>owned[k]>before[k]).map(k=>shopName(k)+(owned[k]-before[k]>1?" x"+(owned[k]-before[k]):"")).join(", ");
+    if(trace) trace.push(`Run ${runN}: died @ ${diedAt} | HP ${r0(pool)} SH ${r0(sh)} bars ${poolsStart} | +${r0(earned.scrap)} Scrap +${earned.cells} Cells +${earned.cores} Core | bought: ${diff||"nothing"} | bank ${r0(wallet.scrap)}/${wallet.cells}/${wallet.cores}`);
+  }
+  return {runs:MAX, cleared:false, mile:mile};
+}
+
+const fmtRuns=res=> res.cleared ? String(res.runs) : "40+";
+
+// ---- rendering ----
+function buildArch(){
+  $("#s_archTbl tbody").innerHTML=ARCH_KEYS.map(k=>{
+    const a=arch[k];
+    const inp=f=>`<td><input type="number" data-a="${k}" data-f="${f}" value="${a[f]}"></td>`;
+    return `<tr><td class="l">${a.name}</td>${inp("hp")}${inp("shield")}${inp("dmg")}${inp("beats")}${inp("scrap")}${inp("cells")}${inp("cores")}<td class="l src">${a.src}</td></tr>`;
+  }).join("");
+}
+function buildShop(){
+  $("#s_shopTbl tbody").innerHTML=shop.map(it=>{
+    const cur=it.cur==="scrap"?"Scrap":it.cur==="cells"?"Cells":"Cores";
+    const meta=(it.rep?"repeatable":"once")+(it.pre?" · needs "+shopName(it.pre):"");
+    return `<tr><td class="l">${it.name}</td><td>${cur}</td><td><input type="number" data-k="${it.key}" value="${it.cost}"></td><td class="l src">${meta}</td></tr>`;
+  }).join("");
+}
+function mixOf(z){
+  return z.g.map(g=>ARCH_KEYS.filter(k=>g[k]).map(k=>g[k]+ARCH_TAG[k]).join("+")).join(" | ");
+}
+function renderZones(rows){
+  let tn=0,te=0,tt=0,ts=0,tc=0,tk=0;
+  const body=rows.map((r,i)=>{
+    const inScope=(i<scopeN);
+    if(inScope){ tn+=r.count; te+=r.effHP; tt+=r.threat; ts+=r.scrap; tc+=r.cells; tk+=r.cores; }
+    return `<tr class="${inScope?"":"dim"}"><td>${r.z.n}</td><td class="l">${r.z.name}</td><td>${r.z.cam}</td><td class="l">${mixOf(r.z)}</td><td>${r.count}</td><td>${r0(r.effHP)}</td><td>${r1(r.threat)}</td><td>${r0(r.scrap)}</td><td>${r.cells}</td><td>${r.cores}</td></tr>`;
+  }).join("");
+  $("#s_zoneTbl tbody").innerHTML=body+`<tr class="tot"><td></td><td class="l">In scope</td><td></td><td></td><td>${tn}</td><td>${r0(te)}</td><td>${r1(tt)}</td><td>${r0(ts)}</td><td>${tc}</td><td>${tk}</td></tr>`;
+}
+function renderEcon(P,rows){
+  const prof=[]; let s=0,c=0,k=0;
+  rows.forEach(r=>{ s+=r.scrap; c+=r.cells; k+=r.cores; prof.push({scrap:s,cells:c,cores:k}); });
+  const mag=(P.booster==="magnet")?2:1;
+  const lab={6:"Dies before Z7 (best case, Z1–Z6 cleared)",7:"Dies in Z8 (Z1–Z7 cleared)",8:"Dies in Z9 (Z1–Z8 cleared)",9:"Dies in Z10 (Z1–Z9 cleared)",10:"Full clear (Z1–Z10)"};
+  $("#s_incTbl tbody").innerHTML=[6,7,8,9,10].map(n=>{
+    const p=prof[n-1];
+    return `<tr><td class="l">${lab[n]}</td><td>${r0(p.scrap*mag)}</td><td>${p.cells}</td><td>${p.cores}</td></tr>`;
+  }).join("");
+
+  const cols=[prof[5],prof[6],prof[7],prof[9]];
+  const need=(price,cur,p)=>{
+    const inc=(cur==="scrap")?p.scrap*mag:p[cur];
+    if(inc<=0) return `<span class="miss">never</span>`;
+    const q=price/inc;
+    return `<span class="${q>1?"warn":"ok"}">${r2(q)}</span>`;
+  };
+  const items=shop.filter(it=>it.cost>0).map(it=>({name:it.name,price:it.cost,cur:it.cur}));
+  const sw=shopItem("swe"), ram=shopItem("ram");
+  items.push({name:"Sweeper + Battery Ram together",price:sw.cost+ram.cost,cur:"cells"});
+  $("#s_priceTbl tbody").innerHTML=items.map(it=>{
+    const cur=it.cur==="scrap"?"Scrap":it.cur==="cells"?"Cells":"Cores";
+    return `<tr><td class="l">${it.name}</td><td>${it.price} ${cur}</td>${cols.map(p=>`<td>${need(it.price,it.cur,p)}</td>`).join("")}</tr>`;
+  }).join("");
+
+  const full=prof[9].scrap*mag;
+  const priceN=(it,j)=>Math.round(it.cost*Math.pow(P.growth,j));
+  const cum=(it,n)=>{
+    if(P.capBuys>0 && n>P.capBuys) return null;
+    let t=0; for(let j=0;j<n;j++) t+=priceN(it,j); return t;
+  };
+  const hpI=shopItem("hp"), shI=shopItem("shield"), lfI=shopItem("life");
+  $("#s_curveTbl tbody").innerHTML=[1,2,3,5,8,12,20].map(n=>{
+    const a=cum(hpI,n), b=cum(shI,n), c2=cum(lfI,n);
+    const f=v=> v===null?"—":r0(v);
+    const all=(a===null||b===null||c2===null)?null:a+b+c2;
+    return `<tr><td>${n}</td><td>${f(a)}</td><td>${f(b)}</td><td>${f(c2)}</td><td>${f(all)}</td><td>${all===null||full<=0?"—":r2(all/full)+" runs"}</td></tr>`;
+  }).join("");
+}
+
+function runAll(){
+  const P=readP();
+  const rows=computeZones(P);
+  renderZones(rows);
+  const sk={w:num("s_skWeak")/100, a:num("s_skAvg")/100, g:num("s_skGood")/100};
+  const w=simulate(sk.w,P,scopeN), g=simulate(sk.g,P,scopeN);
+  const lines=[];
+  const a=simulate(sk.a,P,scopeN,lines);
+  const cls=(res,lo,hi)=>(res.cleared&&res.runs>=lo&&res.runs<=hi)?"ok":"miss";
+  $("#s_rWeak").innerHTML=`<span class="${cls(w,4,5)}">${fmtRuns(w)}</span>`;
+  $("#s_rAvg").innerHTML =`<span class="${cls(a,2,3)}">${fmtRuns(a)}</span>`;
+  $("#s_rGood").innerHTML=`<span class="ok">${fmtRuns(g)}</span>`;
+  const avgOk=a.cleared&&a.runs>=2&&a.runs<=3, weakOk=w.cleared&&w.runs>=4&&w.runs<=5;
+  let v=(avgOk&&weakOk) ? "✅ On target — average 2–3, weak 4–5."
+    : `⚠ Off target: ${avgOk?"":"average should be 2–3. "}${weakOk?"":"weak should be 4–5. "}`;
+  if(w.cleared&&a.cleared&&g.cleared&&w.runs===1&&a.runs===1&&g.runs===1){
+    v+=" All three presets clear on run 1: at this threat scale the shop does not gate the slice (see the sensitivity table).";
+  }
+  const mk=a.mile||{};
+  const names={tri:"Tri-Cut",lau:"Launcher",swe:"Sweeper",ram:"Battery Ram",slot:"Booster Slot"};
+  const ms=["swe","ram","slot"].map(k=>names[k]+": "+(mk[k]!==undefined?"after run "+mk[k]:"not reached")).join(" · ");
+  $("#s_verdict").innerHTML=v+"<br>Average-player unlocks (first run after which they were bought) — "+ms+".";
+  $("#s_trace").textContent=lines.join("\n");
+
+  const exps=[0.13,0.26,0.39,0.52,0.65,0.8,1.0];
+  $("#s_sensTbl tbody").innerHTML=exps.map(e=>{
+    const Pe=Object.assign({},P,{expo:e});
+    const rw=simulate(sk.w,Pe,scopeN), ra=simulate(sk.a,Pe,scopeN), rg=simulate(sk.g,Pe,scopeN);
+    return `<tr><td>${e.toFixed(2)}${e===0.13?" (anchor)":""}</td><td class="${cls(rw,4,5)}">${fmtRuns(rw)}</td><td class="${cls(ra,2,3)}">${fmtRuns(ra)}</td><td>${fmtRuns(rg)}</td></tr>`;
+  }).join("");
+
+  renderEcon(P,rows);
+}
+
+// ---- wiring ----
+function applyDefaults(){
+  Object.keys(DEFAULTS).forEach(id=>{ $("#"+id).value=DEFAULTS[id]; });
+  $("#s_policy").value="rr"; $("#s_booster").value="none";
+  $("#s_skWeak").value=35; $("#s_skAvg").value=58; $("#s_skGood").value=75;
+  ["s_skWeak","s_skAvg","s_skGood"].forEach(id=>{ $("#"+id+"V").textContent=$("#"+id).value+"%"; });
+}
+const view=$("#sliceView");
+view.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.a){ arch[t.dataset.a][t.dataset.f]=+t.value||0; }
+  if(t.dataset && t.dataset.k){ shopItem(t.dataset.k).cost=+t.value||0; }
+  ["s_skWeak","s_skAvg","s_skGood"].forEach(id=>{ $("#"+id+"V").textContent=$("#"+id).value+"%"; });
+  runAll();
+});
+view.addEventListener("change",()=>runAll());
+$$("#s_scope button").forEach(b=>b.onclick=()=>{
+  scopeN=+b.dataset.n;
+  $$("#s_scope button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  runAll();
+});
+$("#s_pD2").onclick=()=>{ $("#s_growth").value=1.5; runAll(); };
+$("#s_pD4").onclick=()=>{ shopItem("swe").cost=15; shopItem("ram").cost=20; buildShop(); runAll(); };
+$("#s_pD13").onclick=()=>{ arch.enforcer.hp=900; arch.headliner.hp=2800; buildArch(); runAll(); };
+$("#s_reset").onclick=()=>{ arch=structuredClone(ARCH_DEF); shop=structuredClone(SHOP_DEF); applyDefaults(); buildArch(); buildShop(); runAll(); };
+
+applyDefaults(); buildArch(); buildShop(); runAll();
+window.SLICE_OK=true;
+})();
+</script>
+
+<script>
+// ---- preset toggle (kept tiny and last so the original view always stays reachable) ----
+(function(){
+  const views={slice:document.getElementById("sliceView"), orig:document.getElementById("origView")};
+  const btns={slice:document.getElementById("pSlice"), orig:document.getElementById("pOrig")};
+  function show(p){
+    if(p==="slice" && !window.SLICE_OK){ p="orig"; document.getElementById("sliceMissing").hidden=false; }
+    views.slice.hidden=(p!=="slice"); views.orig.hidden=(p!=="orig");
+    btns.slice.classList.toggle("on",p==="slice"); btns.orig.classList.toggle("on",p==="orig");
+    try{ history.replaceState(null,"","#"+p); }catch(e){}
+  }
+  btns.slice.onclick=()=>show("slice");
+  btns.orig.onclick=()=>show("orig");
+  show(location.hash==="#orig" ? "orig" : "slice");
+})();
 </script>

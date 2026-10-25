@@ -15,7 +15,8 @@ func _ready() -> void:
 func _on_return_pressed() -> void:
 	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
 
-## "SCRAP BANKED +N · ZONE REACHED <zone>". Either half is omitted when its data is missing.
+## "SCRAP BANKED +N · ZONE REACHED <zone>", then (I6) a "DESTROYED BY <killer>" line.
+## Each part is omitted when its data is missing.
 func _build_summary() -> String:
 	var parts: Array[String] = []
 	var banked: int = _banked_scrap()
@@ -24,7 +25,13 @@ func _build_summary() -> String:
 	var zone: String = GameManager.checkpoint_zone
 	if zone != "":
 		parts.append("ZONE REACHED %s" % zone)
-	return " · ".join(parts)
+	var lines: Array[String] = []
+	if not parts.is_empty():
+		lines.append(" · ".join(parts))
+	var killer: String = GameManager.last_killer
+	if killer != "":
+		lines.append("DESTROYED BY %s" % killer)
+	return "\n".join(lines)
 
 ## The run's scrap as it was banked. GameManager.respawn_or_game_over() banks it into the
 ## profile but leaves the volatile GameManager.scrap untouched on the game-over path (only

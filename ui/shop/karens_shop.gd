@@ -55,7 +55,9 @@ const SHAKE_STEP_TIME := 0.05
 @onready var start_button: Button = $Background/Margin/VBox/StartRunButton
 @onready var back_button: Button = $Background/Margin/VBox/BackButton
 ## U4: the focused row's ShopUpgrade.description (one dim line under the columns).
-@onready var description_label: Label = $Background/Margin/VBox/DescriptionLabel
+@onready var description_label: Label = $Background/Margin/VBox/DescriptionRow/DescriptionLabel
+## I8: the focused row's name in cyan, prefixing the description ("MAX HP +20 — ...").
+@onready var description_name_label: Label = $Background/Margin/VBox/DescriptionRow/DescriptionName
 
 ## Slot 1 is the scene's BoosterButton; slots 2..N are created in code, in order, right
 ## after it (see _sync_booster_slot_buttons).
@@ -76,7 +78,7 @@ func _ready() -> void:
 	back_button.focus_neighbor_top = back_button.get_path_to(start_button)
 	back_button.focus_previous = back_button.get_path_to(start_button)
 	for button in [booster_button, start_button, back_button]:
-		button.focus_entered.connect(_show_description.bind(""))
+		button.focus_entered.connect(_show_description.bind("", ""))
 	_rebuild_ui()
 
 ## U3: ui_cancel (Esc / gamepad B) leaves the shop the same way BACK TO TITLE does.
@@ -91,7 +93,9 @@ func _on_back_to_title() -> void:
 func _change_scene_to(path: String) -> void:
 	get_tree().change_scene_to_file(path)
 
-func _show_description(text: String) -> void:
+## I8: "<NAME> — " in cyan, then the dim description, right under the two lists.
+func _show_description(item_name: String, text: String) -> void:
+	description_name_label.text = "%s \u2014 " % item_name.to_upper() if item_name != "" else ""
 	description_label.text = text
 
 func _rebuild_ui() -> void:
@@ -131,8 +135,8 @@ func _populate_upgrade_list(container: VBoxContainer, paths: Array[String]) -> v
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		_configure_button_for_upgrade(button, upgrade)
 		button.pressed.connect(_on_upgrade_row_pressed.bind(button, upgrade))
-		button.focus_entered.connect(_show_description.bind(upgrade.description))
-		button.mouse_entered.connect(_show_description.bind(upgrade.description))
+		button.focus_entered.connect(_show_description.bind(upgrade.name, upgrade.description))
+		button.mouse_entered.connect(_show_description.bind(upgrade.name, upgrade.description))
 		container.add_child(button)
 
 func _configure_button_for_upgrade(button: Button, upgrade: ShopUpgrade) -> void:

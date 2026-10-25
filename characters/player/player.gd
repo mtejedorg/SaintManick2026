@@ -42,6 +42,9 @@ var _buffered_attack_heavy: bool = false
 ## H3: light (false) / heavy (true) for the NEXT StateAttack.enter(). Set by
 ## take_buffered_attack() right before the transition, read (and reset) by the state.
 var pending_attack_heavy: bool = false
+## I1: the stunning hit the NEXT StateHurt.enter() applies (knockback + stagger length).
+## Set by _enter_hurt() right before the transition, read (and reset) by the state.
+var pending_hurt: DamageInfo = null
 
 ## The rail Nick is plane-locked to (null = free top-down movement). Switching to a new
 ## rail eases him onto it over rail_blend_time instead of hard-snapping in one frame (the
@@ -305,14 +308,13 @@ func _spawn_bass_drop_ring() -> MeshInstance3D:
 
 ## H3: a checkpoint respawn hands Nick back in a clean state -- Idle, idle clip, no stale
 ## buffers, no armed Bass Drop, no dodge cooldown, at rest. GameManager has already
-## teleported him and granted the grace i-frames; a dodge state exit() must not cancel them.
+## teleported him and granted the grace (HealthComponent.grace_invincible -- I2: a dodge
+## state exit() only clears its own i-frames, so it cannot cancel the grace).
 func _on_player_respawned() -> void:
-	# State first: a dodge state exit() starts the cooldown and drops the i-frames.
-	var grace := health_component.is_invincible if health_component else false
+	# State first: a dodge state exit() starts the cooldown.
 	if state_machine and state_machine.has_method("_on_transition_requested"):
 		state_machine._on_transition_requested("StateIdle")
-	if health_component:
-		health_component.is_invincible = grace
+	pending_hurt = null
 	velocity = Vector3.ZERO
 	consume_jump_buffer()
 	clear_coyote_time()
@@ -331,7 +333,10 @@ func _on_died() -> void:
 		animation_controller.play_once("death")
 
 func _on_damaged(info: DamageInfo) -> void:
-	if animation_controller:
+	# I1: a stunning hit staggers Nick (StateHurt plays hit_react fitted to the stagger);
+	# a zero-stun hit keeps the plain flinch clip with no state change.
+	var staggers := is_staggered_by(info)
+	if animation_controller and not staggers:
 		animation_controller.play_once("hit_react")
 	SignalBus.player_damaged.emit(info)
 	# F6: make every hit taken read — HP and shield losses alike.
@@ -339,6 +344,28 @@ func _on_damaged(info: DamageInfo) -> void:
 	SignalBus.camera_shake_requested.emit(DAMAGE_SHAKE_STRENGTH, DAMAGE_SHAKE_DURATION)
 	if character_visual:
 		character_visual.flash_rim(Color.WHITE, DAMAGE_FLASH_STRENGTH, DAMAGE_FLASH_SECONDS)
+	if staggers:
+		_enter_hurt(info)
+
+## I1: a hit that got through (i-frames and the respawn grace never reach here) staggers
+## Nick when it carries stun, he survives it, and it is not his own fall damage.
+func is_staggered_by(info: DamageInfo) -> bool:
+	if info == null or info.stun <= 0.0 or info.source == self:
+		return false
+	return health_component != null and health_component.current_health > 0.0
+
+## I1: hands the hit to StateHurt. A second stagger while already hurt restarts it.
+func _enter_hurt(info: DamageInfo) -> void:
+	if state_machine == null:
+		return
+	var hurt: Node = state_machine.get_node_or_null("StateHurt")
+	if hurt == null:
+		return
+	pending_hurt = info
+	if state_machine.current_state == hurt:
+		hurt.enter()
+	else:
+		state_machine._on_transition_requested("StateHurt")
 
 ## F6: below LOW_HP_FRACTION the rim pulses toward magenta on every primary beat.
 func _on_beat(layer: String, _beat_index: int) -> void:
@@ -538,11 +565,13 @@ func get_path_direction(input_dir: Vector2) -> Vector3:
 	# For Path3D, only the X input moves us along the path
 	return dir * input_dir.x
 
-func face_direction(direction: float) -> void:
+## `snap` turns at once instead of easing (I3: an attack must swing where the stick points,
+## and the hitboxes ride on the mesh).
+func face_direction(direction: float, snap: bool = false) -> void:
 	if direction == 0:
 		return
 	is_facing_right = direction > 0
 	# Smooth rotation for the 3D MeshInstance3D parent to face left/right.
 	# This correctly propagates rotation to both the KatanaHitbox and the CharacterVisual.
 	var target_rotation = PI / 2.0 if is_facing_right else -PI / 2.0
-	mesh.rotation.y = lerp_angle(mesh.rotation.y, target_rotation, 0.2)
+	mesh.rotation.y = target_rotation if snap else lerp_angle(mesh.rotation.y, target_rotation, 0.2)

@@ -51,6 +51,11 @@ var checkpoint_top_down: bool = false
 ## Seconds of post-respawn invincibility grace so Nick isn't hit on the exact frame
 ## he reappears.
 var respawn_grace_duration: float = 1.0
+## I2: bumped by every grant so an older grace timer cannot end a newer grace early.
+var _grace_token: int = 0
+
+## I6: who landed the lethal hit, for the Game Over "DESTROYED BY" line ("" = unknown).
+var last_killer: String = ""
 
 var is_test: bool = false
 
@@ -98,6 +103,7 @@ func start_new_run() -> void:
 
 	enemies_defeated = 0
 	zones_cleared = 0
+	last_killer = ""
 	_zones_seen.clear()
 	run_ended = false
 
@@ -225,12 +231,7 @@ func _respawn_at_checkpoint() -> void:
 		hc.shield_changed.emit(hc.current_shield, hc.max_shield)
 		SignalBus.player_health_changed.emit(hc.current_health, hc.max_health)
 		SignalBus.player_shield_changed.emit(hc.current_shield, hc.max_shield)
-		# Grace window: timer-based, then off.
-		hc.is_invincible = true
-		get_tree().create_timer(respawn_grace_duration, false).timeout.connect(func():
-			if is_instance_valid(hc):
-				hc.is_invincible = false
-		)
+		grant_respawn_grace(hc)
 	if has_checkpoint:
 		player.global_position = checkpoint_position
 		_restore_checkpoint_mode(player)
@@ -238,6 +239,71 @@ func _respawn_at_checkpoint() -> void:
 		player.velocity = Vector3.ZERO
 	if "last_safe_position" in player:
 		player.last_safe_position = player.global_position
+
+## I2: the post-respawn grace window -- its own HealthComponent flag (grace_invincible), so
+## a dash/roll exit clearing its i-frames cannot end it early. Timer-based, pauses with the tree.
+func grant_respawn_grace(hc: HealthComponent) -> void:
+	hc.grace_invincible = true
+	_grace_token += 1
+	var token := _grace_token
+	get_tree().create_timer(respawn_grace_duration, false).timeout.connect(func():
+		if token == _grace_token and is_instance_valid(hc):
+			hc.grace_invincible = false
+	)
+
+## I6: stores the display name of the lethal hit's source (see killer_name).
+func record_lethal_hit(damage_info: DamageInfo) -> void:
+	if damage_info == null or not is_instance_valid(damage_info.source):
+		last_killer = ""
+		return
+	last_killer = killer_name(damage_info.source)
+
+## I6: what the Game Over screen calls whatever killed Nick. A stats resource with a
+## display_name wins; then the known enemy/hazard types; then the node name without its
+## numbers ("Runner2" -> "RUNNER"). A fall (Nick is his own source) is "THE DROP".
+static func killer_name(source: Object) -> String:
+	if source == null or not is_instance_valid(source):
+		return ""
+	if source is PlayerController:
+		return "THE DROP"
+	var stats: Variant = source.get("stats")
+	if stats is Object and "display_name" in stats and str(stats.get("display_name")) != "":
+		return str(stats.get("display_name")).to_upper()
+	if source is RunnerEnemy:
+		return "RUNNER"
+	if source is BruiserEnemy:
+		return "BRUISER"
+	if source is SniperEnemy:
+		return "SNIPER"
+	if source is EnforcerEnemy:
+		return "RHYTHM ENFORCER"
+	if source is HeadlinerBoss:
+		return "THE HEADLINER"
+	if source is ToxicPit:
+		return "TOXIC PIT"
+	if source is CeilingPiston:
+		return "PISTON"
+	if source is BombGrid:
+		return "BOMB GRID"
+	if source is EscapeKillWall:
+		return "KILL WALL"
+	if source is EscapeDoorHazard:
+		return "BLAST DOOR"
+	if source is EscapeFallingHazard:
+		return "FALLING SIGN"
+	if source is Node:
+		return bare_node_name(String((source as Node).name))
+	return ""
+
+## "Runner2" -> "RUNNER", "RhythmEnforcer_3" -> "RHYTHM ENFORCER".
+static func bare_node_name(node_name: String) -> String:
+	var digits := RegEx.new()
+	digits.compile("[0-9]+")
+	var s: String = digits.sub(node_name, "", true)
+	var camel := RegEx.new()
+	camel.compile("([a-z])([A-Z])")
+	s = camel.sub(s, "$1 $2", true)
+	return s.replace("_", " ").strip_edges().to_upper()
 
 ## Puts the camera FSM and Nick's movement constraint back to what they were at the
 ## checkpoint — instantly, no tween (the camera snap also kills any in-flight shift so its

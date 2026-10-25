@@ -90,7 +90,6 @@ layout_mode = 2
 
 [node name="HBox" type="HBoxContainer" parent="Background/Margin/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
 theme_override_constants/separation = 60
 
 [node name="CumulativeColumn" type="VBoxContainer" parent="Background/Margin/VBox/HBox"]
@@ -123,13 +122,27 @@ text = "COMBO SKILL TREE"
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DescriptionLabel" type="Label" parent="Background/Margin/VBox"]
+[node name="DescriptionRow" type="HBoxContainer" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="DescriptionName" type="Label" parent="Background/Margin/VBox/DescriptionRow"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_colors/font_color = Color(0, 0.961, 1, 1)
+text = ""
+
+[node name="DescriptionLabel" type="Label" parent="Background/Margin/VBox/DescriptionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"DimLabel"
 text = ""
-horizontal_alignment = 1
 text_overrun_behavior = 3
+
+[node name="DescriptionSpacer" type="Control" parent="Background/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="HSep2" type="HSeparator" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 10)

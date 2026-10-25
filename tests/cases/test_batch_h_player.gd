@@ -106,7 +106,7 @@ func test_respawn_resets_state_buffers_and_bass_drop() -> void:
 	player.buffer_attack(true)
 	player.start_dodge_cooldown()
 	player.velocity = Vector3(5.0, 3.0, 2.0)
-	player.health_component.is_invincible = true # the GameManager respawn grace
+	player.health_component.grace_invincible = true # the GameManager respawn grace (I2: its own flag)
 	var got := {"armed": true}
 	var on_armed := func(armed: bool): got.armed = armed
 	SignalBus.bass_drop_armed.connect(on_armed)

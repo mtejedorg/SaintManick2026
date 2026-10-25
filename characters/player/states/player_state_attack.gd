@@ -76,6 +76,11 @@ func enter() -> void:
 	var is_heavy: bool = player.pending_attack_heavy
 	player.pending_attack_heavy = false
 	player.clear_attack_buffer() # this press started the chain
+	# I3: swing where the stick points -- snap the facing (the hitboxes ride on the mesh)
+	# before the hitbox arms. Side-scroll reads x only (get_movement_input zeroes y on a
+	# rail); top-down any input, x first (same convention as Airborne/Roll).
+	var input_dir: Vector2 = player.get_movement_input()
+	player.face_direction(input_dir.x if input_dir.x != 0.0 else input_dir.y, true)
 	_start_attack(is_heavy)
 
 func _start_attack(is_heavy: bool) -> void:

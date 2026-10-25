@@ -127,6 +127,21 @@ func test_focused_row_shows_its_description() -> void:
 	shop.start_button.grab_focus()
 	assert_eq(shop.description_label.text, "", "Non-row buttons clear it")
 
+func test_focused_row_name_prefixes_its_description() -> void:
+	_open_shop()
+	await get_tree().process_frame # rows take focus deferred
+	var first_row: Button = shop.cumulative_list.get_child(0)
+	first_row.grab_focus()
+	var hp: ShopUpgrade = load(UPGRADES + "upgrade_max_hp.tres")
+	var expected: String = hp.name.to_upper() + " " + String.chr(0x2014) + " "
+	assert_eq(shop.description_name_label.text, expected, "I8: the focused item name prefixes the description")
+	assert_eq(shop.description_name_label.get_theme_color("font_color"), Color(0, 0.961, 1, 1), "...in cyan")
+	var row: Control = shop.description_label.get_parent()
+	assert_eq(row.get_index(), shop.get_node("Background/Margin/VBox/HBox").get_index() + 1, "Right under the two columns")
+	assert_lt(row.get_index(), shop.booster_button.get_index(), "...above the booster button")
+	shop.start_button.grab_focus()
+	assert_eq(shop.description_name_label.text, "", "Non-row buttons clear the name too")
+
 func test_booster_button_explains_itself() -> void:
 	_open_shop()
 	assert_eq(shop.booster_button.text, "RUN BOOSTER 1/1: NONE  (press to change)")

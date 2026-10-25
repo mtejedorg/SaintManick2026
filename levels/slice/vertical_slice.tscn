@@ -1,4 +1,4 @@
-[gd_scene load_steps=86 format=3]
+[gd_scene load_steps=87 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -37,6 +37,7 @@
 [ext_resource type="Material" path="res://assets/materials/hazard_orange.tres" id="55_hazard_orange"]
 [ext_resource type="Script" path="res://levels/components/zone_atmosphere.gd" id="56_zone_atmosphere"]
 [ext_resource type="Script" path="res://levels/components/holo_gate.gd" id="57_holo_gate"]
+[ext_resource type="Script" path="res://levels/components/onboarding_prompts.gd" id="58_onboarding_prompts"]
 
 
 ; --- Curve 3D Resources ---
@@ -1755,6 +1756,9 @@ bus = &"SFX"
 [node name="VFXManager" type="Node" parent="."]
 script = ExtResource("30_vfx_manager")
 
+[node name="OnboardingPrompts" type="Node" parent="."]
+script = ExtResource("58_onboarding_prompts")
+
 [node name="ComboFlash" parent="." instance=ExtResource("31_combo_flash")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("32_pause_menu")]
@@ -1867,13 +1871,13 @@ cast_shadow = 0
 [node name="Z6_Trim" type="CSGBox3D" parent="Trims"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -3.94, -14.44)
 size = Vector3(30, 0.12, 0.12)
-material = ExtResource("53_trim_magenta")
+material = ExtResource("52_trim_cyan")
 cast_shadow = 0
 
 [node name="Z7_Trim" type="CSGBox3D" parent="Trims"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.94, -2.44)
 size = Vector3(40, 0.12, 0.12)
-material = ExtResource("53_trim_magenta")
+material = ExtResource("52_trim_cyan")
 cast_shadow = 0
 
 [node name="Z8_Trim1" type="CSGBox3D" parent="Trims"]

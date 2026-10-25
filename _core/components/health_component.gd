@@ -17,7 +17,17 @@ var current_shield: float
 var regen_timer: float = 0.0
 
 @export var is_player: bool = false
-var is_invincible: bool = false
+## Whether a hit is blocked right now: the owner's own i-frames (dash/roll, boss phase
+## transitions -- they write this) OR the respawn grace below. I2: writing it only touches
+## the i-frame flag, so a dash/roll exit can no longer cut the respawn grace short.
+var is_invincible: bool:
+	get:
+		return _iframes or grace_invincible
+	set(value):
+		_iframes = value
+var _iframes: bool = false
+## I2: post-respawn grace, owned by GameManager (grant_respawn_grace). Dodges never touch it.
+var grace_invincible: bool = false
 
 func _ready() -> void:
 	current_health = max_health
@@ -87,4 +97,5 @@ func take_damage(damage_info: DamageInfo) -> void:
 			SignalBus.player_died.emit()
 			var gm = get_node_or_null("/root/GameManager")
 			if gm:
+				gm.record_lethal_hit(damage_info) # I6: the Game Over "DESTROYED BY" line
 				gm.respawn_or_game_over()

@@ -13,6 +13,8 @@ var combat_comp: Node = null
 const AIM_BEAM_SCALE := Vector3(0.15, 0.15, 1.0)    # beat 3: aiming, still tracking
 const LOCK_BEAM_SCALE := Vector3(0.3, 0.3, 1.0)     # beat 4: locked + white-hot telegraph
 const FIRE_BEAM_SCALE := Vector3(0.6, 0.6, 1.0)     # beat 1: live
+## I4: the LaserHitbox BoxShape3D_laser in sniper.tscn is FIRE_BEAM_SCALE wide (0.6 m) --
+## what Nick sees on the live beat is exactly what hits him (test_batch_i).
 const BEAM_COLOR := Color(1.0, 0.0, 0.0)
 const BEAM_ENERGY := 3.0
 

@@ -30,7 +30,7 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke_title.log /tmp/smoke.log
 ```
 
-Pass = exit 0 on all commands, zero grep hits (the two exit-time leak lines are known), test count at or above the last known-good baseline (currently **326**). Visual gate: `tools/capture/capture_scene.tscn` (see `.claude/CLAUDE.md`).
+Pass = exit 0 on all commands, zero grep hits (the two exit-time leak lines are known), test count at or above the last known-good baseline (currently **365**). Visual gate: `tools/capture/capture_scene.tscn` (see `.claude/CLAUDE.md`).
 
 ---
 

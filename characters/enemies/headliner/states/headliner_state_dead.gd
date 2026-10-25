@@ -23,7 +23,7 @@ func enter() -> void:
 	# Scrap is awarded once by headliner._on_died() — do not award again here.
 
 	# Let the death visuals play, then queue_free
-	get_tree().create_timer(1.0).timeout.connect(func():
+	get_tree().create_timer(1.0, false).timeout.connect(func():
 		if is_instance_valid(boss):
 			boss.queue_free()
 	)

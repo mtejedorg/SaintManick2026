@@ -33,6 +33,9 @@ func exit() -> void:
 		player.health_component.is_invincible = false
 	if not _skip_cooldown:
 		player.start_dodge_cooldown()
+	# H3: top-down roll -- no residual z slide once it ends.
+	if player.current_path == null:
+		player.velocity.z = 0.0
 
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
@@ -55,5 +58,7 @@ func physics_update(delta: float) -> void:
 	if roll_timer <= 0:
 		if not player.is_on_floor():
 			transition_requested.emit("StateAirborne")
+		elif player.take_buffered_attack():
+			transition_requested.emit("StateAttack") # H3: attack latched during the roll
 		else:
 			transition_requested.emit("StateIdle")

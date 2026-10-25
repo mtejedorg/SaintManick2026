@@ -13,7 +13,7 @@ func enter() -> void:
 	SignalBus.camera_shift_requested.emit(true, null, 2.0)
 
 	# Wait for transition time to complete, then enter Bullet Hell
-	get_tree().create_timer(2.0).timeout.connect(func():
+	get_tree().create_timer(2.0, false).timeout.connect(func():
 		if state_machine.current_state == self:
 			state_machine.transition_to("StateBulletHell")
 	)

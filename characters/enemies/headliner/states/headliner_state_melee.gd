@@ -23,7 +23,7 @@ func enter() -> void:
 		boss.velocity.z = dir.z * lunge_speed
 
 	# Deactivate hitbox after a short delay
-	get_tree().create_timer(0.25).timeout.connect(func():
+	get_tree().create_timer(0.25, false).timeout.connect(func():
 		if state_machine.current_state == self:
 			if boss.hitbox:
 				boss.hitbox.is_active = false

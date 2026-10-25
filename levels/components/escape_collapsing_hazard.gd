@@ -50,7 +50,7 @@ func trigger_collapse() -> void:
 		tween.kill()
 	
 	# After shake_duration, collapse
-	get_tree().create_timer(shake_duration).timeout.connect(_collapse)
+	get_tree().create_timer(shake_duration, false).timeout.connect(_collapse)
 
 func _process(delta: float) -> void:
 	if is_shaking:
@@ -79,7 +79,7 @@ func _collapse() -> void:
 		.set_ease(Tween.EASE_IN)
 		
 	# Reset after delay
-	get_tree().create_timer(reset_delay).timeout.connect(reset_platform)
+	get_tree().create_timer(reset_delay, false).timeout.connect(reset_platform)
 
 func reset_platform() -> void:
 	if tween:

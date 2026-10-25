@@ -156,22 +156,28 @@ func update_rim_strength(strength: float) -> void:
 	_base_rim_strength = strength
 	_set_rim(_base_rim_color, strength)
 
-## Flash the rim to `color`/`strength`, hold it for the first half of `seconds`, then tween
-## back to the resting rim over the second half.
-func flash_rim(color: Color, strength: float, seconds: float) -> void:
+## Flash the rim to `color`/`strength`, hold it for `hold_fraction` of `seconds`, then
+## tween back to the resting rim over the rest.
+func flash_rim(color: Color, strength: float, seconds: float, hold_fraction: float = 0.5) -> void:
 	if _rim_material_instance == null:
 		return
 	_kill_rim_tween()
 	_set_rim(color, strength)
 	if not is_inside_tree():
 		return
+	var hold := seconds * clampf(hold_fraction, 0.0, 1.0)
+	var fade := maxf(seconds - hold, 0.0)
 	_rim_tween = create_tween().set_parallel(true)
-	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_color", _base_rim_color, seconds * 0.5).set_delay(seconds * 0.5)
-	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_strength", _base_rim_strength, seconds * 0.5).set_delay(seconds * 0.5)
+	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_color", _base_rim_color, fade).set_delay(hold)
+	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_strength", _base_rim_strength, fade).set_delay(hold)
+
+## H4: the telegraph holds white-hot for this share of its beat, so the tell is still at
+## full strength when the hitbox arms on the next beat.
+const TELEGRAPH_HOLD_FRACTION := 0.9
 
 ## The shared enemy telegraph: white-hot rim for one beat of the world's current tempo.
 func flash_telegraph() -> void:
-	flash_rim(TELEGRAPH_RIM_COLOR, TELEGRAPH_RIM_STRENGTH, 60.0 / maxf(Conductor.bpm, 1.0))
+	flash_rim(TELEGRAPH_RIM_COLOR, TELEGRAPH_RIM_STRENGTH, 60.0 / maxf(Conductor.bpm, 1.0), TELEGRAPH_HOLD_FRACTION)
 
 ## The authored resting rim: the rim_color export, or the faction colour when unset.
 func get_default_rim_color() -> Color:

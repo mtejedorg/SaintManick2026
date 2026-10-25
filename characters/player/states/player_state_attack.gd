@@ -72,7 +72,10 @@ func enter() -> void:
 	buffered_heavy = false
 	if player.combo_component:
 		player.combo_component.on_attack_started()
-	var is_heavy = Input.is_action_just_pressed("attack_heavy")
+	# H3: the caller (take_buffered_attack) latched light/heavy before transitioning here.
+	var is_heavy: bool = player.pending_attack_heavy
+	player.pending_attack_heavy = false
+	player.clear_attack_buffer() # this press started the chain
 	_start_attack(is_heavy)
 
 func _start_attack(is_heavy: bool) -> void:
@@ -206,6 +209,7 @@ func physics_update(delta: float) -> void:
 		var is_heavy = buffered_heavy
 		buffered_attack = false
 		buffered_heavy = false
+		player.clear_attack_buffer() # the chain used this press
 		_start_attack(is_heavy)
 		return
 
@@ -217,4 +221,13 @@ func physics_update(delta: float) -> void:
 			return
 		# F10: a dash/roll pressed during recovery fires the moment the attack ends.
 		var dodge_state := player.take_buffered_dodge()
-		transition_requested.emit(dodge_state if dodge_state != "" else "StateIdle")
+		if dodge_state != "":
+			transition_requested.emit(dodge_state)
+			return
+		# H3: a press latched in the last hit recovery (the chain was capped, so the combo
+		# window could not take it) starts a fresh chain instead of being dropped.
+		if player.take_buffered_attack():
+			exit()
+			enter()
+			return
+		transition_requested.emit("StateIdle")

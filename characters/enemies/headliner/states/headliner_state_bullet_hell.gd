@@ -8,17 +8,60 @@ extends HeadlinerState
 
 var beat_counter: int = 0
 
+## H4: phase cues for the zone-card banner (SignalBus.banner_requested).
+const STORM_BANNER := "PROJECTION STORM — SURVIVE"
+const STORM_BANNER_HOLD := 2.0
+const OVERHEAT_BANNER := "SHIELD DOWN"
+const OVERHEAT_BANNER_HOLD := 1.0
+## H4: the bubble tints toward this as the overheat timer runs out (beat_counter/max_beats).
+const OVERHEAT_TINT := Color(1.0, 1.0, 1.0)
+
+## Per-fight copy of the bubble material (the scene sub-resource stays untouched) and its
+## authored colours.
+var _bubble_material: StandardMaterial3D = null
+var _bubble_albedo: Color
+var _bubble_emission: Color
+
 func enter() -> void:
 	boss.is_shield_active = true
 	if boss.shield_bubble:
 		boss.shield_bubble.visible = true
+		_prepare_bubble_material()
 	boss.velocity = Vector3.ZERO
 	beat_counter = 0
+	_update_bubble_tint()
+	SignalBus.banner_requested.emit(STORM_BANNER, STORM_BANNER_HOLD)
 
 func exit() -> void:
 	boss.is_shield_active = false
 	if boss.shield_bubble:
 		boss.shield_bubble.visible = false
+	beat_counter = 0
+	_update_bubble_tint() # back to the authored look for the next phase-2 attempt
+
+func _prepare_bubble_material() -> void:
+	if _bubble_material:
+		return
+	var source := boss.shield_bubble.get_active_material(0) as StandardMaterial3D
+	if source == null:
+		return
+	_bubble_material = source.duplicate() as StandardMaterial3D
+	_bubble_albedo = source.albedo_color
+	_bubble_emission = source.emission
+	boss.shield_bubble.set_surface_override_material(0, _bubble_material)
+
+## Fraction of the overheat timer used up (0 on enter, 1 when the shield drops).
+func get_overheat_fraction() -> float:
+	return clampf(float(beat_counter) / float(maxi(max_beats, 1)), 0.0, 1.0)
+
+func _update_bubble_tint() -> void:
+	if _bubble_material == null:
+		return
+	var t := get_overheat_fraction()
+	var albedo := _bubble_albedo.lerp(OVERHEAT_TINT, t)
+	albedo.a = _bubble_albedo.a
+	_bubble_material.albedo_color = albedo
+	_bubble_material.emission = _bubble_emission.lerp(OVERHEAT_TINT, t)
 
 func physics_update(delta: float) -> void:
 	boss.apply_gravity(delta)
@@ -34,6 +77,7 @@ func on_beat(layer: String, beat_index: int) -> void:
 	if beat_counter >= max_beats:
 		_overheat_shield()
 		return
+	_update_bubble_tint()
 	
 	# Fire beat-driven patterns
 	match beat_index:
@@ -60,4 +104,5 @@ func on_shield_broken() -> void:
 # Same exit as a shield break — StateEnraged shifts the camera back to side-scroll.
 func _overheat_shield() -> void:
 	boss.is_shield_active = false
+	SignalBus.banner_requested.emit(OVERHEAT_BANNER, OVERHEAT_BANNER_HOLD)
 	state_machine.transition_to("StateEnraged")

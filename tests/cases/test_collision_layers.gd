@@ -90,7 +90,7 @@ func test_body_root_layers() -> void:
 	assert_eq(encounter.collision_mask, 2, "ZoneEncounter should detect the player body layer")
 	encounter.free()
 	var pit = load("res://levels/components/toxic_pit.tscn").instantiate()
-	assert_eq(pit.collision_mask, 2, "ToxicPit should detect the player body layer")
+	assert_eq(pit.collision_mask, 2 | 4096, "ToxicPit should detect the player body layer + enemy hurtboxes (H2)")
 	pit.free()
 
 func _find_hitbox(node: Node) -> Hitbox3D:

@@ -8,6 +8,10 @@ extends CharacterBody3D
 enum AttackStep { IDLE, TELEGRAPH, ACTIVE, RECOVERY }
 
 @export var stats: EnemyStats
+## H2: scene-placed grunts that must not wake through walls. When set (e.g. "07") the
+## distance aggro is skipped and the grunt wakes on SignalBus.zone_entered for the zone
+## whose number matches. Wave-spawned grunts leave it empty (distance aggro / spawner).
+@export var wake_zone: String = ""
 
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
@@ -29,6 +33,8 @@ var is_active: bool = false
 ## Authored visual scale (bruiser.tscn sizes the shared visual to its 2.2 m capsule). The
 ## beat pulse is relative to this, never to Vector3.ONE.
 var _base_scale: Vector3 = Vector3.ONE
+## H2: origin -> feet distance for the ledge probe.
+var _feet_offset: float = 0.0
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -59,7 +65,10 @@ func _ready() -> void:
 	_base_scale = mesh_instance.scale
 
 	player = get_tree().current_scene.get_node_or_null("Player")
+	_feet_offset = EnemyStats.feet_offset_of(self)
 	SignalBus.beat.connect(_on_beat)
+	if wake_zone != "":
+		SignalBus.zone_entered.connect(_on_zone_entered)
 	SignalBus.downbeat.connect(_on_downbeat)
 
 func _physics_process(delta: float) -> void:
@@ -79,8 +88,13 @@ func _physics_process(delta: float) -> void:
 				if dist > stats.melee_range:
 					var dir = (player.global_position - global_position).normalized()
 					dir.y = 0
-					velocity.x = dir.x * stats.speed
-					velocity.z = dir.z * stats.speed
+					if EnemyStats.has_floor_ahead(self, Vector3(dir.x, 0.0, dir.z).normalized(), _feet_offset):
+						velocity.x = dir.x * stats.speed
+						velocity.z = dir.z * stats.speed
+					else:
+						# H2: ledge ahead -- hold position instead of chasing into the pit.
+						velocity.x = 0.0
+						velocity.z = 0.0
 				else:
 					velocity.x = move_toward(velocity.x, 0, 20 * delta)
 					velocity.z = move_toward(velocity.z, 0, 20 * delta)
@@ -166,9 +180,16 @@ func _on_stun_started() -> void:
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.
 func _update_aggro() -> void:
-	if is_active or not player or not is_instance_valid(player):
+	if is_active or wake_zone != "" or not player or not is_instance_valid(player):
 		return
 	if global_position.distance_to(player.global_position) <= stats.aggro_range:
+		is_active = true
+
+## H2: zone-gated wake-up (wake_zone set): only the zone with the matching number wakes it.
+func _on_zone_entered(zone_name: String) -> void:
+	if is_active or wake_zone == "":
+		return
+	if EnemyStats.zone_number(zone_name) == wake_zone.to_int():
 		is_active = true
 
 ## Out of the world -> despawn silently (no scrap, no enemy_died). Returns true if freed.

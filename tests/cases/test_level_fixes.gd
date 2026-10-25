@@ -176,3 +176,96 @@ func test_zone9_shaft_has_a_back_wall_with_strips() -> void:
 	assert_false(wall.use_collision, "The shaft back wall is visual only")
 	assert_true(wall.global_position.y - wall.size.y * 0.5 <= -4.0 and wall.global_position.y + wall.size.y * 0.5 >= 16.0, "Back wall spans y -4..16")
 	assert_gt(_slice.get_node("Z9_Shaft").get_child_count(), 6, "Shaft needs magenta strips every 3 m")
+
+# ---------------- H1 / H2 (round-2 audit) ----------------
+
+const MARKER_ZONES := ["Z1_Encounter/Z1_Spawner", "Z4_Encounter/Z4_Spawner", "Z5_Encounter/Z5_Spawner", "Z6_Encounter/Z6_Spawner"]
+## Grunt capsules are origin-centred (runner half height 0.9): a ground marker sits at least
+## this high above the floor under it.
+const MARKER_MIN_LIFT := 0.9
+
+func _encounter_box(enc: Area3D) -> AABB:
+	var col := enc.get_node("CollisionShape3D") as CollisionShape3D
+	var size: Vector3 = (col.shape as BoxShape3D).size
+	return AABB(col.global_position - size * 0.5, size)
+
+func test_ground_spawn_markers_stand_on_a_floor_outside_their_trigger() -> void:
+	# CSG collision is built on the next idle frame, registered on the following physics frame.
+	await get_tree().process_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var space := _slice.get_world_3d().direct_space_state
+	var checked := 0
+	for spawner_path in MARKER_ZONES:
+		var spawner: Node3D = _slice.get_node(spawner_path)
+		var trigger_box := _encounter_box(spawner.get_parent() as Area3D)
+		for marker in spawner.get_children():
+			if not (marker is Marker3D) or String(marker.name).begins_with("Sniper"):
+				continue
+			checked += 1
+			var p: Vector3 = (marker as Marker3D).global_position
+			var label := "%s/%s at %s" % [spawner_path, marker.name, str(p)]
+			var query := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.5, p + Vector3.DOWN * 6.0, 1)
+			var hit := space.intersect_ray(query)
+			assert_false(hit.is_empty(), "%s must have a floor under it (x and z)" % label)
+			if not hit.is_empty():
+				var floor_y: float = (hit["position"] as Vector3).y
+				assert_true(p.y - floor_y >= MARKER_MIN_LIFT - 0.001, "%s must sit >= %.1f m above its floor (%.2f)" % [label, MARKER_MIN_LIFT, p.y - floor_y])
+			assert_false(trigger_box.has_point(p), "%s must not lie inside its zone trigger box" % label)
+	assert_gt(checked, 15, "All ground markers of Zones 1/4/5/6 were checked (%d)" % checked)
+
+func test_zone7_floor_meets_the_plaza_and_the_entry_gate_is_wired() -> void:
+	var plaza := _box("Z6_Plaza/Floor")
+	var ground := _box("Z7_Ground")
+	var plaza_right := plaza.global_position.x + plaza.size.x * 0.5
+	assert_true(ground.global_position.x - ground.size.x * 0.5 <= plaza_right + 0.001, "No void between the plaza and the Zone 7 floor")
+	var trim := _box("Trims/Z7_Trim")
+	assert_almost_eq(trim.global_position.x, ground.global_position.x, 0.001, "Z7 trim follows the floor")
+	assert_almost_eq(trim.size.x, ground.size.x, 0.001, "...and its length")
+	var gate: Node3D = _slice.get_node("Z7_EntryGate")
+	var enforcer: Node = _slice.get_node("RhythmEnforcer")
+	assert_eq(enforcer.get("entry_gate"), gate, "The Enforcer owns the Zone 7 entry gate")
+	assert_true(gate.is_in_group("gates"), "The entry gate is a legal (gates) obstacle")
+	assert_true((gate.get_node("CollisionShape3D") as CollisionShape3D).disabled, "Open at rest")
+	assert_false((gate.get_node("Visual") as Node3D).visible, "...and hidden")
+	var trigger_left: float = (_slice.get_node("Z7_Trigger") as Node3D).global_position.x - 3.0
+	assert_true(gate.global_position.x + 0.25 <= trigger_left - 0.5 - 0.001, "Nick (r 0.5) is fully past the gate when the Z7 trigger fires")
+	assert_gt(gate.global_position.x, plaza_right, "...and the gate stands outside the plaza")
+
+func test_zone2_pit_reaches_the_zone3_floor_and_has_end_walls() -> void:
+	var pit_floor := _box("ToxicPitFloor")
+	var room := _box("Z3_Room/Floor")
+	var pit_right := pit_floor.global_position.x + pit_floor.size.x * 0.5
+	assert_almost_eq(pit_right, room.global_position.x - room.size.x * 0.5, 0.001, "The pit floor runs to the Zone 3 floor")
+	assert_almost_eq(pit_floor.global_position.x - pit_floor.size.x * 0.5, 30.0, 0.001, "...from the Zone 1 floor end")
+	var pit: Node3D = _slice.get_node("ToxicPit")
+	assert_almost_eq(pit.global_position.x, pit_floor.global_position.x, 0.001, "Pit volume centred on its floor")
+	assert_almost_eq((pit.get("pit_size") as Vector3).x, pit_floor.size.x, 0.001, "...and as long")
+	assert_almost_eq(_box("ToxicPitEdge").size.x, pit_floor.size.x, 0.001, "The edge strip matches")
+	for n in ["ToxicPitWallL", "ToxicPitWallR"]:
+		var wall := _box(n)
+		assert_true(wall.use_collision, "%s is solid" % n)
+		assert_true(wall.global_position.y + wall.size.y * 0.5 <= -1.0 + 0.001, "%s stays under the platform line" % n)
+		assert_true(wall.global_position.y - wall.size.y * 0.5 <= pit_floor.global_position.y + 0.5, "%s reaches the pit floor" % n)
+
+func test_zone5_top_tier_no_longer_buries_step1_and_crate1() -> void:
+	var top := _box("Z5_Market/TopTier")
+	var step := _box("Z5_Market/Step1")
+	var middle := _box("Z5_Market/MiddleTier")
+	var crate := _box("Z5_Market/Crate1")
+	assert_true(top.global_position.x + top.size.x * 0.5 <= step.global_position.x - step.size.x * 0.5 + 0.001, "TopTier ends where Step1 starts")
+	var trim := _box("Trims/Z5_TrimTop")
+	assert_almost_eq(trim.global_position.x, top.global_position.x, 0.001, "Top trim follows the tier")
+	assert_almost_eq(trim.size.x, top.size.x, 0.001, "...and its length")
+	var middle_top := middle.global_position.y + middle.size.y * 0.5
+	assert_almost_eq(crate.global_position.y - crate.size.y * 0.5, middle_top, 0.001, "Crate1 stands on MiddleTier")
+	assert_true(absf(crate.global_position.x - middle.global_position.x) <= middle.size.x * 0.5 - crate.size.x * 0.5, "...within its length")
+
+func test_zone10_pillar1_no_longer_hides_nick_at_the_fight_start() -> void:
+	var pillar := _box("Zone10_Dock/Pillar1")
+	assert_almost_eq(pillar.position.z, -5.0, 0.001, "Pillar1 moved behind the fight line, next to Pillar2")
+
+func test_scene_placed_grunts_wake_on_their_own_zone() -> void:
+	for n in ["Runner1", "Runner2", "Runner3"]:
+		assert_eq(_slice.get_node("Z2_Enemies/" + n).get("wake_zone"), "02", "Z2 %s wakes on SECTOR 02" % n)
+		assert_eq(_slice.get_node("Z7_Enemies/" + n).get("wake_zone"), "07", "Z7 %s wakes on SECTOR 07" % n)

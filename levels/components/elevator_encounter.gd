@@ -63,6 +63,10 @@ func _on_entry_trigger_entered(body: Node3D) -> void:
 		# Disable entry trigger monitoring to avoid multiple triggers
 		entry_trigger.set_deferred("monitoring", false)
 		
+		# H4: rail-lock Nick to the shaft NOW -- the camera tween only assigns it when it lands
+		# 1.5 s later, and one step back in that window stranded him under the platform.
+		if "current_path" in body and target_path:
+			body.current_path = target_path
 		# Shift camera from Path_Z8 to Path_Z9
 		SignalBus.camera_shift_requested.emit(false, target_path, 1.5)
 		

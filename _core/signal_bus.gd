@@ -53,10 +53,16 @@ signal tempo_changed(new_bpm: float)
 
 # --- Camera Events ---
 signal camera_shift_requested(top_down: bool, target_path: Path3D, transition_time: float)
+## H1: a camera_shift_requested tween landed (StateTransitioning._on_tween_finished), i.e.
+## the rail/jump constraints for `top_down` are now applied to the player.
+signal camera_shift_finished(top_down: bool)
 signal miniboss_defeated()
 
 # --- Zone Events ---
 signal zone_entered(zone_name: String)
+## H4: a short full-screen banner (the UI connects it to the zone card), e.g. a boss phase
+## cue. `hold` is the seconds the text stays fully visible.
+signal banner_requested(text: String, hold: float)
 
 # --- Boss Events ---
 signal boss_spawned(boss_name: String)

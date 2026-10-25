@@ -38,8 +38,12 @@ const TURN_RATE := 10.0
 ## so this is normally ONE). The respawn reset and the death squash are relative to this,
 ## never to a hard-coded scale (the beat pulse lives on the Pivot, see _on_beat).
 var _base_scale: Vector3 = Vector3.ONE
+## H1: where the scene placed the boss. A boss is never freed by the kill plane — it is
+## put back here instead (and on the respawn reset).
+var _spawn_transform: Transform3D
 
 func _ready() -> void:
+	_spawn_transform = global_transform
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
 	if combat_script:
 		combat_comp = combat_script.new()
@@ -91,6 +95,7 @@ func _on_player_respawned() -> void:
 		return # A defeated Headliner stays defeated.
 	health_component.current_health = health_component.max_health
 	health_component.health_changed.emit(health_component.current_health, health_component.max_health)
+	global_transform = _spawn_transform
 	velocity = Vector3.ZERO
 	is_vulnerable = false
 	phase_2_triggered = false
@@ -129,6 +134,11 @@ func _announce_boss() -> void:
 	SignalBus.boss_health_changed.emit(int(health_component.current_health), int(health_component.max_health))
 
 func _physics_process(delta: float) -> void:
+	# H1: out of the world -> back to the spawn point (never free a boss).
+	if global_position.y < EnemyStats.KILL_PLANE_Y:
+		global_transform = _spawn_transform
+		velocity = Vector3.ZERO
+		return
 	if not is_active_boss:
 		return
 	if combat_comp and combat_comp.is_stunned():

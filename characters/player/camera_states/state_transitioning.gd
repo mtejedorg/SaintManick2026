@@ -50,3 +50,5 @@ func _on_tween_finished() -> void:
 			
 	var next_state = "topdown" if target_top_down else "sidescroll"
 	transition_requested.emit(next_state)
+	# H1: tell the world the constraints are in place (encounters hold their gates until now).
+	SignalBus.camera_shift_finished.emit(target_top_down)

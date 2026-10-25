@@ -50,12 +50,12 @@ func test_up_down_ignored_while_plane_locked() -> void:
 	path.curve.add_point(Vector3(10.0, 0.0, 0.0))
 	add_child(path)
 
-	Input.action_press("ui_up")
+	Input.action_press("move_up")
 	player.current_path = path
 	var locked: Vector2 = player.get_movement_input()
 	player.current_path = null
 	var free: Vector2 = player.get_movement_input()
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 
 	assert_eq(locked, Vector2.ZERO, "Up should do nothing while plane-locked to a Path3D")
 	assert_eq(free, Vector2(0.0, -1.0), "Up should still steer in free (top-down) movement")

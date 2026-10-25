@@ -18,6 +18,10 @@ var completed: bool = false
 ## Bumped on every activation and every respawn reset: a deferred wave spawn scheduled
 ## under an older generation is stale (a respawn reset landed in the same frame) and no-ops.
 var _generation: int = 0
+## H1: a completed top-down encounter keeps its gates shut until the camera shift back to
+## side-scroll has landed (the rail/jump come back only then) -- leaving the room in the
+## 1.5 s tween window would walk Nick off the floor axis.
+var _awaiting_shift_unlock: bool = false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -76,16 +80,36 @@ func _on_wave_cleared() -> void:
 
 func _complete_encounter() -> void:
 	completed = true
-	set_gate_locked(false)
 	if is_top_down:
+		_awaiting_shift_unlock = true
+		if not SignalBus.camera_shift_finished.is_connected(_on_camera_shift_finished):
+			SignalBus.camera_shift_finished.connect(_on_camera_shift_finished)
 		SignalBus.camera_shift_requested.emit(false, target_camera_path, 1.5)
+	else:
+		set_gate_locked(false)
 	encounter_completed.emit()
+
+## H1: the shift back to side-scroll landed -> open the room (one-shot).
+func _on_camera_shift_finished(top_down: bool) -> void:
+	if top_down:
+		return # a stale shift INTO top-down; wait for the one back out
+	_release_shift_unlock()
+
+func _release_shift_unlock() -> void:
+	if not _awaiting_shift_unlock:
+		return
+	_awaiting_shift_unlock = false
+	if SignalBus.camera_shift_finished.is_connected(_on_camera_shift_finished):
+		SignalBus.camera_shift_finished.disconnect(_on_camera_shift_finished)
+	set_gate_locked(false)
 
 ## T3: the player lost a life mid-fight — despawn the remaining wave silently (no
 ## enemy_died, no scrap) and re-arm the trigger so he refights it from wave 1.
 ## Completed encounters are untouched.
 func _on_player_respawned() -> void:
 	_generation += 1
+	# H1: a respawn snaps the camera/rail back instantly -- never leave a cleared room shut.
+	_release_shift_unlock()
 	if completed or not active:
 		return
 	if spawner:

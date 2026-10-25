@@ -1,5 +1,8 @@
 extends PlayerState
 
+func _init() -> void:
+	anim_key = "idle"
+
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
@@ -11,6 +14,8 @@ func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
 	
 	player.velocity.x = move_toward(player.velocity.x, 0, player.friction * delta)
+	# H3: top-down has a free z axis -- without this Nick slid on after a release.
+	player.velocity.z = move_toward(player.velocity.z, 0, player.friction * delta)
 	player.move_and_slide()
 	
 	if not player.is_on_floor():
@@ -29,7 +34,7 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit(dodge_state)
 		return
 		
-	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):
+	if player.take_buffered_attack():
 		transition_requested.emit("StateAttack")
 		return
 

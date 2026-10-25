@@ -34,7 +34,7 @@ func _execute_attack() -> void:
 		enforcer.velocity.z = dir.z * enforcer.stats.speed * 2.0
 		
 	# Deactivate hitbox after a short delay
-	get_tree().create_timer(0.25).timeout.connect(func():
+	get_tree().create_timer(0.25, false).timeout.connect(func():
 		if state_machine.current_state == self:
 			enforcer.hitbox.is_active = false
 	)

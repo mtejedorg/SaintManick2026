@@ -2,6 +2,9 @@ class_name PlayerState
 extends State
 
 var player: PlayerController
+## H3: the looping clip this state rests on ("" = none). A play_once() clip (hit react)
+## falls back to this instead of always to idle.
+var anim_key: String = ""
 
 func _ready() -> void:
 	await owner.ready

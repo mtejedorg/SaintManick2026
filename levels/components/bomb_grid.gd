@@ -109,7 +109,7 @@ func _ignite_cells(cells: Array[Node3D]) -> void:
 			hitbox.is_active = true
 			
 	# Schedule deactivation (bound method, not a lambda: the timer can outlive this node)
-	get_tree().create_timer(explosion_duration).timeout.connect(_extinguish.bind(cells))
+	get_tree().create_timer(explosion_duration, false).timeout.connect(_extinguish.bind(cells))
 
 func _extinguish(cells: Array[Node3D]) -> void:
 	if not is_inside_tree():

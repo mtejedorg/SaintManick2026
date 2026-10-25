@@ -1,7 +1,8 @@
 extends Node
 class_name IntensityController
 
-## The resting tempo of the game. 128 is the Slice's resting tempo, not a canonical game-wide BPM.
+## Fallback resting tempo, used only when the Conductor is absent. H4: the live base is
+## Conductor.get_resting_bpm() (no canonical BPM -- a level sets its own resting tempo).
 @export var base_bpm: float = 128.0
 ## The tempo boost applied per active enemy in the arena.
 @export var per_enemy_boost: float = 2.0
@@ -28,6 +29,21 @@ func _on_beat(layer: String, _beat_index: int) -> void:
 
 func _on_boss_spawned(_boss_name: String) -> void:
 	_boss_active = true
+	# H4: a boss fight starts at rest -- the grunt boost must not freeze into the fight
+	# (the Headliner raises its own phase-2 tempo later).
+	var conductor := _conductor()
+	if conductor:
+		conductor.target_bpm = get_base_bpm()
+
+## H4: the tempo the world rests at right now.
+func get_base_bpm() -> float:
+	var conductor := _conductor()
+	if conductor and conductor.has_method("get_resting_bpm"):
+		return conductor.get_resting_bpm()
+	return base_bpm
+
+func _conductor() -> Node:
+	return get_node_or_null("/root/Conductor")
 
 func _on_boss_died() -> void:
 	_boss_active = false
@@ -77,6 +93,8 @@ func update_tempo() -> void:
 	if _boss_active:
 		return
 	
-	var active_enemy_count = get_active_enemy_count()
-	var target_bpm = base_bpm + min(active_enemy_count * per_enemy_boost, max_boost)
-	Conductor.target_bpm = target_bpm
+	var active_enemy_count := get_active_enemy_count()
+	var target_bpm: float = get_base_bpm() + minf(active_enemy_count * per_enemy_boost, max_boost)
+	var conductor := _conductor()
+	if conductor:
+		conductor.target_bpm = target_bpm

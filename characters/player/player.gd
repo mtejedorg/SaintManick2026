@@ -34,6 +34,14 @@ var _jump_buffer_timer: float = 0.0
 var _dodge_buffer_timer: float = 0.0
 ## The dodge state the buffered press asks for ("StateDash"/"StateRoll"; "" = none).
 var _buffered_dodge_state: String = ""
+## H3: attack latching. A light/heavy press is held this long so one pressed during a
+## dash/roll, in the air or in the last combo hit recovery fires as soon as it can.
+@export var attack_buffer_time: float = 0.15
+var _attack_buffer_timer: float = 0.0
+var _buffered_attack_heavy: bool = false
+## H3: light (false) / heavy (true) for the NEXT StateAttack.enter(). Set by
+## take_buffered_attack() right before the transition, read (and reset) by the state.
+var pending_attack_heavy: bool = false
 
 ## The rail Nick is plane-locked to (null = free top-down movement). Switching to a new
 ## rail eases him onto it over rail_blend_time instead of hard-snapping in one frame (the
@@ -153,6 +161,7 @@ func _ready() -> void:
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	SignalBus.downbeat.connect(_on_downbeat)
 	SignalBus.beat.connect(_on_beat)
+	SignalBus.player_respawned.connect(_on_player_respawned)
 	last_safe_position = global_position
 
 	# Apply run booster speed multiplier if GameManager set one
@@ -294,6 +303,29 @@ func _spawn_bass_drop_ring() -> MeshInstance3D:
 	tween.tween_callback(ring.queue_free)
 	return ring
 
+## H3: a checkpoint respawn hands Nick back in a clean state -- Idle, idle clip, no stale
+## buffers, no armed Bass Drop, no dodge cooldown, at rest. GameManager has already
+## teleported him and granted the grace i-frames; a dodge state exit() must not cancel them.
+func _on_player_respawned() -> void:
+	# State first: a dodge state exit() starts the cooldown and drops the i-frames.
+	var grace := health_component.is_invincible if health_component else false
+	if state_machine and state_machine.has_method("_on_transition_requested"):
+		state_machine._on_transition_requested("StateIdle")
+	if health_component:
+		health_component.is_invincible = grace
+	velocity = Vector3.ZERO
+	consume_jump_buffer()
+	clear_coyote_time()
+	clear_dodge_buffer()
+	clear_attack_buffer()
+	pending_attack_heavy = false
+	_dodge_cooldown_timer = 0.0
+	bass_drop_armed = false
+	SignalBus.bass_drop_armed.emit(false)
+	if animation_controller:
+		animation_controller.play("idle")
+	_update_rest_rim()
+
 func _on_died() -> void:
 	if animation_controller:
 		animation_controller.play_once("death")
@@ -353,12 +385,38 @@ func _tick_input_buffers(delta: float) -> void:
 	_dodge_buffer_timer = maxf(0.0, _dodge_buffer_timer - delta)
 	if _dodge_buffer_timer <= 0.0:
 		_buffered_dodge_state = ""
+	_attack_buffer_timer = maxf(0.0, _attack_buffer_timer - delta)
 	if Input.is_action_just_pressed("jump"):
 		buffer_jump()
 	if Input.is_action_just_pressed("dash"):
 		buffer_dodge("StateDash")
 	elif Input.is_action_just_pressed("roll"):
 		buffer_dodge("StateRoll")
+	if Input.is_action_just_pressed("attack_heavy"):
+		buffer_attack(true)
+	elif Input.is_action_just_pressed("attack_light"):
+		buffer_attack(false)
+
+## H3: latch an attack press (heavy wins over light in the same frame).
+func buffer_attack(heavy: bool) -> void:
+	_buffered_attack_heavy = heavy
+	_attack_buffer_timer = attack_buffer_time
+
+func has_buffered_attack() -> bool:
+	return _attack_buffer_timer > 0.0
+
+## Uses up the buffered attack: true if there was one, and pending_attack_heavy now says
+## which (StateAttack.enter() reads it).
+func take_buffered_attack() -> bool:
+	if not has_buffered_attack():
+		return false
+	pending_attack_heavy = _buffered_attack_heavy
+	clear_attack_buffer()
+	return true
+
+func clear_attack_buffer() -> void:
+	_attack_buffer_timer = 0.0
+	_buffered_attack_heavy = false
 
 func buffer_jump() -> void:
 	_jump_buffer_timer = jump_buffer_time
@@ -462,7 +520,7 @@ func get_movement_input() -> Vector2:
 	# must not flip facing or enter StateRun while Nick stands still.
 	if current_path != null:
 		return Vector2(x, 0.0)
-	return Vector2(x, Input.get_axis("ui_up", "ui_down"))
+	return Vector2(x, Input.get_axis("move_up", "move_down"))
 
 func get_path_direction(input_dir: Vector2) -> Vector3:
 	if not current_path or not current_path.curve:

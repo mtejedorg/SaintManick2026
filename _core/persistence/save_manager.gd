@@ -13,8 +13,18 @@ func _ready() -> void:
 	load_profile()
 
 func load_profile() -> void:
-	if ResourceLoader.exists(save_path):
+	var existed := ResourceLoader.exists(save_path) or FileAccess.file_exists(save_path)
+	if existed:
 		profile = ResourceLoader.load(save_path) as PlayerProfile
+
+	if not profile and existed:
+		# H4: a profile that exists but will not load is never overwritten silently -- keep
+		# a copy next to it before the fresh profile replaces it.
+		var bak := backup_path()
+		push_error("SaveManager: %s exists but failed to load -- backing it up to %s and starting a fresh profile." % [save_path, bak])
+		var err := DirAccess.copy_absolute(ProjectSettings.globalize_path(save_path), ProjectSettings.globalize_path(bak))
+		if err != OK:
+			push_error("SaveManager: backup copy failed (error %d)." % err)
 
 	if not profile:
 		profile = PlayerProfile.new()
@@ -82,6 +92,28 @@ func _migrate_legacy_run_booster() -> void:
 
 func save_profile() -> void:
 	if profile:
-		var err = ResourceSaver.save(profile, save_path)
+		# H4: write a temp file, then rename it over the real one, so a crash mid-write can
+		# never leave a half-written profile behind.
+		var tmp := temp_path()
+		var err := ResourceSaver.save(profile, tmp)
 		if err != OK:
 			push_error("SaveManager: Failed to save player profile. Error: " + str(err))
+			return
+		var real_abs := ProjectSettings.globalize_path(save_path)
+		var tmp_abs := ProjectSettings.globalize_path(tmp)
+		err = DirAccess.rename_absolute(tmp_abs, real_abs)
+		if err != OK and FileAccess.file_exists(save_path):
+			# Some platforms refuse to rename over an existing file.
+			DirAccess.remove_absolute(real_abs)
+			err = DirAccess.rename_absolute(tmp_abs, real_abs)
+		if err != OK:
+			push_error("SaveManager: Failed to move the saved profile into place. Error: " + str(err))
+
+## H4: the temp file next to save_path, keeping the .tres extension (ResourceSaver picks
+## the format from it, so a bare .tmp suffix is unrecognised).
+func temp_path() -> String:
+	return "%s.tmp.%s" % [save_path.get_basename(), save_path.get_extension()]
+
+## H4: the backup of an unreadable profile (save_data.bak.tres for save_data.tres).
+func backup_path() -> String:
+	return "%s.bak.%s" % [save_path.get_basename(), save_path.get_extension()]

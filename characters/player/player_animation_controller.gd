@@ -54,9 +54,19 @@ func play_once(anim_name: String) -> void:
 	var token := _play_once_token
 	anim_player.play(clip)
 	await anim_player.animation_finished
-	# Only fall back to idle if nothing else was requested since we started.
+	# Only fall back if nothing else was requested since we started -- to the current
+	# state resting clip (H3: a hit react while running resumes the run), else idle.
 	if token == _play_once_token:
-		play("idle")
+		play(_fallback_key())
+
+## H3: the anim_key of the owner current PlayerState, or "idle".
+func _fallback_key() -> String:
+	var sm: Node = owner.get_node_or_null("StateMachine") if owner else null
+	var state: Variant = sm.get("current_state") if sm else null
+	if state is PlayerState and (state as PlayerState).anim_key != "":
+		return (state as PlayerState).anim_key
+	return "idle"
+
 
 ## Plays a clip time-stretched to last exactly `duration` seconds (custom_speed =
 ## clip_length / duration) so a 1.0-3.5 s Mixamo clip fits a 0.25-0.65 s gameplay state

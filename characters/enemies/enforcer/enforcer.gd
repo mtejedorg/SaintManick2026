@@ -2,6 +2,10 @@ class_name EnforcerEnemy
 extends CharacterBody3D
 
 @export var stats: EnemyStats
+## H1: the Zone 7 entry seal (a StaticBody3D in the "gates" group with a CollisionShape3D
+## and a Visual child, same shape as the Zone 10 LeftGate). Closed while the fight is live,
+## opened on defeat and on the respawn reset. Optional: no gate, no seal.
+@export var entry_gate: Node3D
 
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox: Hitbox3D = $Hitbox3D
@@ -24,8 +28,12 @@ var is_vulnerable: bool = false
 ## Scene-placed miniboss: stays dormant (no chase, no boss bar) until the player
 ## enters its zone. Activated by SignalBus.zone_entered for SECTOR 07.
 var is_active: bool = false
+## H1: where the scene placed the boss. A boss is never freed by the kill plane — it is
+## put back here instead (and on the respawn reset).
+var _spawn_transform: Transform3D
 
 func _ready() -> void:
+	_spawn_transform = global_transform
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
 	if combat_script:
 		combat_comp = combat_script.new()
@@ -67,8 +75,10 @@ func _on_player_respawned() -> void:
 	is_active = false
 	health_component.current_health = health_component.max_health
 	health_component.health_changed.emit(health_component.current_health, health_component.max_health)
+	global_transform = _spawn_transform
 	velocity = Vector3.ZERO
 	is_vulnerable = false
+	_set_entry_gate_closed(false)
 	if combat_comp:
 		combat_comp.stun_timer = 0.0
 	# Back to the fresh-boot state (initial_state = StateShield, which re-raises the
@@ -82,11 +92,14 @@ func _on_zone_entered(zone_name: String) -> void:
 		return
 	if "07" in zone_name or "ENFORCER" in zone_name.to_upper():
 		is_active = true
+		_set_entry_gate_closed(true)
 		# Announce miniboss presence to HUD only once the fight begins
 		SignalBus.boss_spawned.emit("Enforcer")
 		SignalBus.boss_health_changed.emit(int(health_component.current_health), int(health_component.max_health))
 
 func _physics_process(delta: float) -> void:
+	if _check_kill_plane():
+		return
 	if not is_active:
 		# Dormant: settle on the floor but don't chase or attack.
 		apply_gravity(delta)
@@ -97,6 +110,26 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 	else:
 		state_machine.physics_process(delta)
+
+## H1: out of the world -> back to the spawn point (never free a boss). True if it reset.
+func _check_kill_plane() -> bool:
+	if global_position.y < EnemyStats.KILL_PLANE_Y:
+		global_transform = _spawn_transform
+		velocity = Vector3.ZERO
+		return true
+	return false
+
+## H1: seal (true) / open (false) the arena entry. The collision flip is deferred: this can
+## run from a zone trigger's body_entered callback.
+func _set_entry_gate_closed(closed: bool) -> void:
+	if not entry_gate or not is_instance_valid(entry_gate):
+		return
+	var col := entry_gate.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if col:
+		col.set_deferred("disabled", not closed)
+	var visual := entry_gate.get_node_or_null("Visual") as Node3D
+	if visual:
+		visual.visible = closed
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():
@@ -126,6 +159,7 @@ func _on_died() -> void:
 	SignalBus.enemy_died.emit(global_position)
 	SignalBus.miniboss_defeated.emit()
 	SignalBus.boss_died.emit()
+	_set_entry_gate_closed(false)
 	# F3: flash + shrink, then free (rewards and signals above stay immediate).
 	if shield_bubble:
 		shield_bubble.visible = false

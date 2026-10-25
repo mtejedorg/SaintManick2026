@@ -2,6 +2,9 @@ extends PlayerState
 
 var is_jumping: bool = false
 
+func _init() -> void:
+	anim_key = "fall"
+
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
@@ -48,7 +51,7 @@ func physics_update(delta: float) -> void:
 			player.can_double_jump = false
 		
 	# Air combos
-	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):
+	if player.take_buffered_attack():
 		transition_requested.emit("StateAttack")
 		return
 		
@@ -58,6 +61,10 @@ func physics_update(delta: float) -> void:
 		# F10: a jump pressed just before touching down fires on landing.
 		if player.is_jump_enabled and player.consume_jump_buffer():
 			_ground_jump()
+			return
+		# H3: an attack latched just before touchdown fires on landing.
+		if player.take_buffered_attack():
+			transition_requested.emit("StateAttack")
 			return
 		if input_dir != Vector2.ZERO:
 			transition_requested.emit("StateRun")

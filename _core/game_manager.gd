@@ -227,7 +227,7 @@ func _respawn_at_checkpoint() -> void:
 		SignalBus.player_shield_changed.emit(hc.current_shield, hc.max_shield)
 		# Grace window: timer-based, then off.
 		hc.is_invincible = true
-		get_tree().create_timer(respawn_grace_duration).timeout.connect(func():
+		get_tree().create_timer(respawn_grace_duration, false).timeout.connect(func():
 			if is_instance_valid(hc):
 				hc.is_invincible = false
 		)

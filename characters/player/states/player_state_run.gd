@@ -1,5 +1,8 @@
 extends PlayerState
 
+func _init() -> void:
+	anim_key = "run"
+
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
@@ -18,6 +21,9 @@ func physics_update(delta: float) -> void:
 		player.velocity.x = move_toward(player.velocity.x, path_dir.x * player.max_speed, player.acceleration * delta)
 		player.velocity.z = move_toward(player.velocity.z, path_dir.z * player.max_speed, player.acceleration * delta)
 	else:
+		if player.current_path == null:
+			# H3: top-down release -- start braking z here too (Idle finishes the job).
+			player.velocity.z = move_toward(player.velocity.z, 0, player.friction * delta)
 		transition_requested.emit("StateIdle")
 		return
 		
@@ -39,6 +45,6 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit(dodge_state)
 		return
 		
-	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):
+	if player.take_buffered_attack():
 		transition_requested.emit("StateAttack")
 		return

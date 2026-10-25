@@ -242,13 +242,18 @@ func _respawn_at_checkpoint() -> void:
 
 ## I2: the post-respawn grace window -- its own HealthComponent flag (grace_invincible), so
 ## a dash/roll exit clearing its i-frames cannot end it early. Timer-based, pauses with the tree.
-func grant_respawn_grace(hc: HealthComponent) -> void:
+## J4: `duration` < 0 = respawn_grace_duration (a survivable fall passes its shorter grace).
+func grant_respawn_grace(hc: HealthComponent, duration: float = -1.0) -> void:
 	hc.grace_invincible = true
 	_grace_token += 1
 	var token := _grace_token
-	get_tree().create_timer(respawn_grace_duration, false).timeout.connect(func():
-		if token == _grace_token and is_instance_valid(hc):
-			hc.grace_invincible = false
+	var seconds: float = duration if duration >= 0.0 else respawn_grace_duration
+	# A weakref, not the node: a lambda capturing a freed HealthComponent errors when called.
+	var target: WeakRef = weakref(hc)
+	get_tree().create_timer(seconds, false).timeout.connect(func():
+		var held := target.get_ref() as HealthComponent
+		if token == _grace_token and held:
+			held.grace_invincible = false
 	)
 
 ## I6: stores the display name of the lethal hit's source (see killer_name).

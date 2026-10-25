@@ -3,6 +3,10 @@ extends Node
 var hit_stop_timer: float = 0.0
 
 func _ready() -> void:
+	# J12: keep ticking while the tree is paused -- a pause opened inside a stop would
+	# otherwise hold Engine.time_scale at the stop's scale for the whole pause (and stretch
+	# every scaled timer, e.g. the Resume grace). _process already works in real time.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	SignalBus.player_hit_landed.connect(_on_player_hit_landed)
 	SignalBus.hit_stop_requested.connect(start_hit_stop)
 

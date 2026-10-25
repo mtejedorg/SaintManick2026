@@ -248,18 +248,80 @@ func test_zone2_pit_reaches_the_zone3_floor_and_has_end_walls() -> void:
 		assert_true(wall.global_position.y + wall.size.y * 0.5 <= -1.0 + 0.001, "%s stays under the platform line" % n)
 		assert_true(wall.global_position.y - wall.size.y * 0.5 <= pit_floor.global_position.y + 0.5, "%s reaches the pit floor" % n)
 
+## Top-face edge points (left, right) of a CSGBox3D rotated about z, at its local z 0.
+func _top_ends(box: CSGBox3D) -> Array[Vector3]:
+	var a: Vector3 = box.global_transform * Vector3(-box.size.x * 0.5, box.size.y * 0.5, 0.0)
+	var b: Vector3 = box.global_transform * Vector3(box.size.x * 0.5, box.size.y * 0.5, 0.0)
+	var ends: Array[Vector3] = [a, b]
+	if a.x > b.x:
+		ends.reverse()
+	return ends
+
+func _top_y(box: CSGBox3D) -> float:
+	return box.global_position.y + box.size.y * 0.5
+
 func test_zone5_top_tier_no_longer_buries_step1_and_crate1() -> void:
 	var top := _box("Z5_Market/TopTier")
 	var step := _box("Z5_Market/Step1")
 	var middle := _box("Z5_Market/MiddleTier")
+	var lower := _box("Z5_Market/LowerTier")
 	var crate := _box("Z5_Market/Crate1")
-	assert_true(top.global_position.x + top.size.x * 0.5 <= step.global_position.x - step.size.x * 0.5 + 0.001, "TopTier ends where Step1 starts")
+	# J10: Step1 is a ramp now -- its top starts flush with TopTier's edge.
+	var ends := _top_ends(step)
+	assert_almost_eq(ends[0].x, top.global_position.x + top.size.x * 0.5, 0.01, "Step1 ramp starts where TopTier ends")
+	assert_almost_eq(ends[0].y, _top_y(top), 0.01, "...flush with its top")
 	var trim := _box("Trims/Z5_TrimTop")
 	assert_almost_eq(trim.global_position.x, top.global_position.x, 0.001, "Top trim follows the tier")
 	assert_almost_eq(trim.size.x, top.size.x, 0.001, "...and its length")
-	var middle_top := middle.global_position.y + middle.size.y * 0.5
-	assert_almost_eq(crate.global_position.y - crate.size.y * 0.5, middle_top, 0.001, "Crate1 stands on MiddleTier")
-	assert_true(absf(crate.global_position.x - middle.global_position.x) <= middle.size.x * 0.5 - crate.size.x * 0.5, "...within its length")
+	# J10: Crate1 moved off MiddleTier (with Crate2 it left a 1.1 m gap) onto LowerTier.
+	var crate_bottom := crate.global_position.y - crate.size.y * 0.5
+	assert_true(crate_bottom <= _top_y(lower) + 0.001 and crate_bottom >= _top_y(lower) - 0.5, "Crate1 stands on LowerTier (bottom %.2f)" % crate_bottom)
+	assert_true(absf(crate.global_position.x - lower.global_position.x) <= lower.size.x * 0.5 - crate.size.x * 0.5, "...within its length")
+	assert_gt(_top_y(middle), _top_y(lower), "(MiddleTier is the upper of the two)")
+
+## J10: the floor Nick and the grunts walk through Zone 5 (TopTier -> ramps -> tiers -> exit
+## ramp -> plaza) along the rail and the two bruiser-width lanes: no vertical face over 0.4 m
+## (grunts have no step-up) and no stretch steeper than 35 degrees.
+func test_zone5_tiers_are_joined_by_walkable_ramps() -> void:
+	await get_tree().process_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var space := _slice.get_world_3d().direct_space_state
+	var max_rise_per_m := tan(deg_to_rad(35.0))
+	for lane_z in [0.0, -0.8, 0.8]:
+		var heights: Array[float] = []
+		var xs: Array[float] = []
+		for i in 441:
+			var x := 168.0 + i * 0.1
+			var query := PhysicsRayQueryParameters3D.create(Vector3(x, 3.0, lane_z), Vector3(x, -8.0, lane_z), 1)
+			var hit := space.intersect_ray(query)
+			if hit.is_empty():
+				_fail("No floor under x %.1f z %.1f" % [x, lane_z])
+				return
+			heights.append((hit["position"] as Vector3).y)
+			xs.append(x)
+		for i in range(1, heights.size()):
+			if absf(heights[i] - heights[i - 1]) > 0.4:
+				_fail("Vertical face of %.2f m at x %.1f (z %.1f)" % [heights[i] - heights[i - 1], xs[i], lane_z])
+				return
+		for i in range(10, heights.size()):
+			if absf(heights[i] - heights[i - 10]) > max_rise_per_m + 0.01:
+				_fail("Slope over 35 deg between x %.1f and %.1f (z %.1f): %.2f m per m" % [xs[i - 10], xs[i], lane_z, absf(heights[i] - heights[i - 10])])
+				return
+		assert_lt(heights[heights.size() - 1], heights[0] - 3.0, "Lane z %.1f descends from TopTier to the plaza" % lane_z)
+
+## J10: a Bruiser (capsule r 0.8) fits past every Zone 5 crate on the rail line.
+func test_zone5_crates_leave_a_bruiser_lane_at_the_rail() -> void:
+	var checked := 0
+	for child in _slice.get_node("Z5_Market").get_children():
+		if not (child is CSGBox3D) or not String(child.name).begins_with("Crate"):
+			continue
+		checked += 1
+		var crate := child as CSGBox3D
+		var z_min := crate.global_position.z - crate.size.z * 0.5
+		var z_max := crate.global_position.z + crate.size.z * 0.5
+		assert_true(z_min >= 0.8 or z_max <= -0.8, "%s (z %.2f..%.2f) must stay out of the z 0 +- 0.8 lane" % [crate.name, z_min, z_max])
+	assert_eq(checked, 3, "Three crates")
 
 func test_zone10_pillar1_no_longer_hides_nick_at_the_fight_start() -> void:
 	var pillar := _box("Zone10_Dock/Pillar1")

@@ -88,13 +88,11 @@ func _physics_process(delta: float) -> void:
 				if dist > stats.melee_range:
 					var dir = (player.global_position - global_position).normalized()
 					dir.y = 0
-					if EnemyStats.has_floor_ahead(self, Vector3(dir.x, 0.0, dir.z).normalized(), _feet_offset):
-						velocity.x = dir.x * stats.speed
-						velocity.z = dir.z * stats.speed
-					else:
-						# H2: ledge ahead -- hold position instead of chasing into the pit.
-						velocity.x = 0.0
-						velocity.z = 0.0
+					# H2: never chase off a ledge. J11: blocked straight ahead -> slide along the
+					# edge in depth toward the player's z; hold only when both probes fail.
+					var move := EnemyStats.chase_direction(self, dir, _feet_offset, player.global_position.z - global_position.z)
+					velocity.x = move.x * stats.speed
+					velocity.z = move.z * stats.speed
 				else:
 					velocity.x = move_toward(velocity.x, 0, 20 * delta)
 					velocity.z = move_toward(velocity.z, 0, 20 * delta)

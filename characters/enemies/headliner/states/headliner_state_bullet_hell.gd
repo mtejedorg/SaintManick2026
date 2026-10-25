@@ -33,6 +33,9 @@ func enter() -> void:
 	SignalBus.banner_requested.emit(STORM_BANNER, STORM_BANNER_HOLD)
 
 func exit() -> void:
+	# J14: the storm ends with the phase (shield broken or overheated) -- no bullet outlives it.
+	if boss.pool:
+		boss.pool.release_all()
 	boss.is_shield_active = false
 	if boss.shield_bubble:
 		boss.shield_bubble.visible = false

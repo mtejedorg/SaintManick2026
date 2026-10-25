@@ -108,6 +108,9 @@ func test_player_routing_to_signal_bus_and_game_manager() -> void:
 	health_comp.take_damage(fatal_damage)
 	
 	assert_true(flags.died, "SignalBus player_died should be triggered")
+	# J13: the life-loss respawn is deferred out of take_damage -- let it land inside this
+	# test (it would otherwise spend a life in the middle of the next suite).
+	await get_tree().process_frame
 	
 	# Disconnect to clean up global SignalBus
 	SignalBus.player_health_changed.disconnect(h_conn)

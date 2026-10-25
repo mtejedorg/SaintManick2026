@@ -46,7 +46,9 @@ func _process(delta: float) -> void:
 				gm.current_shield = current_shield
 
 func take_damage(damage_info: DamageInfo) -> void:
-	if is_invincible:
+	if grace_invincible:
+		return
+	if _iframes and not damage_info.ignores_iframes:
 		return
 	if current_health <= 0.0:
 		return
@@ -98,4 +100,6 @@ func take_damage(damage_info: DamageInfo) -> void:
 			var gm = get_node_or_null("/root/GameManager")
 			if gm:
 				gm.record_lethal_hit(damage_info) # I6: the Game Over "DESTROYED BY" line
-				gm.respawn_or_game_over()
+				# J13: deferred once -- a lethal Hitbox overlap lands here inside the physics
+				# flush (area_entered), and the respawn listeners flip monitoring/collision.
+				gm.call_deferred("respawn_or_game_over")

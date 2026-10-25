@@ -27,6 +27,23 @@ static func has_floor_ahead(body: CharacterBody3D, move_dir: Vector3, feet_offse
 	query.exclude = [body.get_rid()]
 	return not space.intersect_ray(query).is_empty()
 
+## J11: below this |dz| (m) to the player the depth fallback probe is not tried.
+const DEPTH_PROBE_MIN_DZ: float = 0.1
+
+## J11: the chase direction for a grunt heading along `dir` (flattened, toward the player):
+## `dir` itself when there is floor ahead; else pure depth toward the player's z (slides
+## along a deck edge until it lines up with the plank) when there is floor that way; else
+## ZERO (hold at the ledge).
+static func chase_direction(body: CharacterBody3D, dir: Vector3, feet_offset: float, dz: float) -> Vector3:
+	var flat := Vector3(dir.x, 0.0, dir.z)
+	if flat.length_squared() > 0.0 and has_floor_ahead(body, flat.normalized(), feet_offset):
+		return flat
+	if absf(dz) > DEPTH_PROBE_MIN_DZ:
+		var depth := Vector3(0.0, 0.0, signf(dz))
+		if has_floor_ahead(body, depth, feet_offset):
+			return depth
+	return Vector3.ZERO
+
 ## H2: the zone number in a "SECTOR NN -- DESCRIPTION" name (first integer word, the same
 ## parse as AudioManager.tier_for_zone). 0 when there is none.
 static func zone_number(zone_name: String) -> int:

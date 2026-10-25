@@ -18,6 +18,7 @@ func test_object_pool_lifecycle() -> void:
 	assert_not_null(node1, "Acquired node should not be null")
 	assert_true(node1.visible, "Acquired node should be visible")
 	assert_true(node1.is_physics_processing(), "Acquired node should have physics process enabled")
+	await get_tree().process_frame # J13: monitoring/monitorable are set deferred
 	if node1 is Area3D:
 		assert_true(node1.monitoring, "Acquired Area3D should be monitoring")
 		assert_true(node1.monitorable, "Acquired Area3D should be monitorable")
@@ -29,6 +30,7 @@ func test_object_pool_lifecycle() -> void:
 	pool.release(node1)
 	assert_false(node1.visible, "Released node should be invisible")
 	assert_false(node1.is_physics_processing(), "Released node should have physics process disabled")
+	await get_tree().process_frame
 	if node1 is Area3D:
 		assert_false(node1.monitoring, "Released Area3D should not be monitoring")
 		assert_false(node1.monitorable, "Released Area3D should not be monitorable")
@@ -227,6 +229,10 @@ func test_boss_bullet_hell_shield_break() -> void:
 		flags.top_down = top_down
 	SignalBus.camera_shift_requested.connect(camera_connection)
 	
+	# J14: a storm in flight when the shield breaks.
+	boss.state_machine.current_state.on_beat("primary", 1)
+	assert_lt(boss.pool.inactive_pool.size(), boss.pool.get_child_count(), "Precondition: storm bullets in flight")
+
 	# Break shield with shield breaker
 	var breaker_dmg = DamageInfo.new()
 	breaker_dmg.amount = 10.0
@@ -234,6 +240,7 @@ func test_boss_bullet_hell_shield_break() -> void:
 	boss.hurtbox.receive_hit(breaker_dmg)
 	
 	assert_eq(boss.state_machine.current_state.name, "StateEnraged", "Shield break in bullet hell should transition to StateEnraged")
+	assert_eq(boss.pool.inactive_pool.size(), boss.pool.get_child_count(), "J14: no storm bullet outlives the shield break")
 	assert_true(flags.camera_shifted, "Camera shift back should be requested")
 	assert_false(flags.top_down, "Camera shift should request sidescroll (top_down = false)")
 	assert_eq(boss.speed_multiplier, 1.2, "Speed multiplier should be 1.2 in enraged state")
@@ -263,10 +270,12 @@ func test_boss_bullet_hell_overheats_after_max_beats() -> void:
 	for i in range(bullet_hell.max_beats - 1):
 		bullet_hell.on_beat("primary", (i % 4) + 1)
 	assert_eq(boss.state_machine.current_state.name, "StateBulletHell", "Bullet hell should persist until max_beats")
+	assert_lt(boss.pool.inactive_pool.size(), boss.pool.get_child_count(), "Precondition: storm bullets in flight")
 	bullet_hell.on_beat("primary", ((bullet_hell.max_beats - 1) % 4) + 1)
 
 	assert_eq(boss.state_machine.current_state.name, "StateEnraged", "Bullet hell should overheat into StateEnraged after max_beats")
 	assert_false(boss.is_shield_active, "Overheated shield should be down")
+	assert_eq(boss.pool.inactive_pool.size(), boss.pool.get_child_count(), "J14: no storm bullet outlives the overheat")
 	assert_true(flags.camera_shifted, "Camera shift back should be requested on overheat")
 	assert_false(flags.top_down, "Overheat camera shift should request sidescroll (top_down = false)")
 
@@ -320,10 +329,13 @@ func test_boss_death_complete_run() -> void:
 	var dmg = DamageInfo.new()
 	dmg.amount = 2000.0 # Exceeds max health
 	dmg.is_shield_breaker = true # bypass shield
-	
+	for i in 4: # J14: bullets in flight at the killing blow
+		boss.pool.acquire()
+
 	boss.hurtbox.receive_hit(dmg)
 	
 	assert_eq(boss.state_machine.current_state.name, "StateDead", "Boss should transition to StateDead on death")
+	assert_eq(boss.pool.inactive_pool.size(), boss.pool.get_child_count(), "J14: a dead Headliner leaves no bullet in flight")
 	
 	# Clean up
 	gm.is_test = initial_is_test

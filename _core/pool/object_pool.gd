@@ -35,10 +35,11 @@ func acquire() -> Node:
 		obj.set_process(true)
 		obj.set_physics_process(true)
 		
-		# Enable monitoring/monitorable for Area3Ds
+		# Enable monitoring/monitorable for Area3Ds. J13: deferred, like release() -- the two
+		# must stay in call order (a release + re-acquire in one frame ends up enabled).
 		if obj is Area3D:
-			obj.monitoring = true
-			obj.monitorable = true
+			obj.set_deferred("monitoring", true)
+			obj.set_deferred("monitorable", true)
 			
 	return obj
 
@@ -67,10 +68,11 @@ func release(obj: Node) -> void:
 	obj.set_process(false)
 	obj.set_physics_process(false)
 	
-	# Disable monitoring/monitorable for Area3Ds
+	# Disable monitoring/monitorable for Area3Ds. J13: deferred -- release_all() runs from
+	# player_respawned, which a lethal Hitbox overlap can raise inside the physics flush.
 	if obj is Area3D:
-		obj.monitoring = false
-		obj.monitorable = false
+		obj.set_deferred("monitoring", false)
+		obj.set_deferred("monitorable", false)
 		
 	if not inactive_pool.has(obj):
 		inactive_pool.append(obj)

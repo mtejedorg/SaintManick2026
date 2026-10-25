@@ -17,6 +17,10 @@ const FIRE_BEAM_SCALE := Vector3(0.6, 0.6, 1.0)     # beat 1: live
 ## what Nick sees on the live beat is exactly what hits him (test_batch_i).
 const BEAM_COLOR := Color(1.0, 0.0, 0.0)
 const BEAM_ENERGY := 3.0
+## J1: the beam pivots about this local muzzle point; LaserBeam/LaserHitbox sit
+## BEAM_HALF_LENGTH ahead of it (sniper.tscn: both at (0, 0.5, -15), BoxMesh 30 m long).
+const MUZZLE := Vector3(0.0, 0.5, 0.0)
+const BEAM_HALF_LENGTH := 15.0
 
 var player: Node3D
 var laser_material: StandardMaterial3D
@@ -27,6 +31,10 @@ var is_cycle_armed: bool = false
 ## Dormant until the player enters stats.aggro_range (checked per primary beat) or a
 ## WaveSpawner activates it. IntensityController treats is_active == false as dormant.
 var is_active: bool = false
+## J1: beam pitch in radians (negative = aiming down). The body only ever yaws; the beam and
+## its hitbox pitch toward Nick's hurtbox centre so catwalk snipers (Zone 4, ~4.5 m up) no
+## longer fire a horizontal beam over his head.
+var aim_pitch: float = 0.0
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -73,11 +81,36 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 	if not combat_comp.is_stunned() and is_active:
 		if player and not is_aim_locked:
-			var target_pos = player.global_position
-			target_pos.y = global_position.y
-			if global_position.distance_to(target_pos) > 0.1:
-				look_at(target_pos, Vector3.UP)
+			update_aim()
 	move_and_slide()
+
+## J1: yaw the body toward Nick (flattened, as before) and pitch the beam + hitbox at his
+## hurtbox centre. Floor-level snipers (Zone 6) get ~0 pitch -- unchanged behaviour.
+func update_aim() -> void:
+	if not player or not is_instance_valid(player):
+		return
+	var target := _aim_point()
+	var flat := Vector3(target.x, global_position.y, target.z)
+	if global_position.distance_to(flat) > 0.1:
+		look_at(flat, Vector3.UP)
+	var to_target := target - global_transform * MUZZLE
+	var horizontal := Vector2(to_target.x, to_target.z).length()
+	if horizontal > 0.1:
+		aim_pitch = atan2(to_target.y, horizontal)
+	_apply_beam_pitch()
+
+## Nick's hurtbox centre (his origin is the capsule centre; the Hurtbox3D child wins if present).
+func _aim_point() -> Vector3:
+	var hurtbox := player.get_node_or_null("Hurtbox3D") as Node3D
+	return hurtbox.global_position if hurtbox else player.global_position
+
+## Rotation/position only: the per-beat beam scale (AIM/LOCK/FIRE) is left untouched.
+func _apply_beam_pitch() -> void:
+	var pitch_basis := Basis(Vector3.RIGHT, aim_pitch)
+	var beam_pos := MUZZLE + pitch_basis * Vector3(0.0, 0.0, -BEAM_HALF_LENGTH)
+	for node: Node3D in [laser_beam, laser_hitbox]:
+		node.rotation = Vector3(aim_pitch, 0.0, 0.0)
+		node.position = beam_pos
 
 func _on_beat(layer: String, beat_index: int) -> void:
 	if layer != "primary":

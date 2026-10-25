@@ -67,6 +67,13 @@ const FALL_KILL_Y: float = -15.0
 const UNSAFE_FLOOR_GROUP := &"unsafe_floor"
 ## HP cost paid when falling out of the world (shield absorbs first, per the universal rule).
 @export var fall_damage: float = 20.0
+## J4: the fall cue and the short grace after a survivable fall (the life-loss respawn
+## grants its own, longer one).
+const FALL_GRACE := 0.5
+const FALL_BANNER := "SIGNAL LOST  -%d HP"
+const FALL_BANNER_HOLD := 1.0
+## J3: a zero-stun hit's flinch -- hit_react (0.77 s) fitted to this, resting states only.
+const FLINCH_SECONDS := 0.22
 
 var can_double_jump: bool = true
 var double_jump_unlocked: bool = false
@@ -334,10 +341,10 @@ func _on_died() -> void:
 
 func _on_damaged(info: DamageInfo) -> void:
 	# I1: a stunning hit staggers Nick (StateHurt plays hit_react fitted to the stagger);
-	# a zero-stun hit keeps the plain flinch clip with no state change.
+	# a zero-stun hit only flinches, with no state change (J3: see _play_flinch).
 	var staggers := is_staggered_by(info)
-	if animation_controller and not staggers:
-		animation_controller.play_once("hit_react")
+	if not staggers:
+		_play_flinch()
 	SignalBus.player_damaged.emit(info)
 	# F6: make every hit taken read — HP and shield losses alike.
 	SignalBus.hit_stop_requested.emit(DAMAGE_HIT_STOP_DURATION, DAMAGE_HIT_STOP_SCALE)
@@ -353,6 +360,17 @@ func is_staggered_by(info: DamageInfo) -> bool:
 	if info == null or info.stun <= 0.0 or info.source == self:
 		return false
 	return health_component != null and health_component.current_health > 0.0
+
+## J3: the zero-stun flinch plays only in a resting state (a PlayerState with an anim_key:
+## Idle/Run/Airborne) -- never over a live swing or a dodge clip -- fitted to FLINCH_SECONDS,
+## then back to the state's own clip.
+func _play_flinch() -> void:
+	if animation_controller == null or state_machine == null:
+		return
+	var state: Variant = state_machine.get("current_state")
+	if not (state is PlayerState) or (state as PlayerState).anim_key == "":
+		return
+	animation_controller.play_once_fitted("hit_react", FLINCH_SECONDS)
 
 ## I1: hands the hit to StateHurt. A second stagger while already hurt restarts it.
 func _enter_hurt(info: DamageInfo) -> void:
@@ -507,13 +525,29 @@ func _physics_process(delta: float) -> void:
 	# if the bar empties the HealthComponent's universal rule costs a life). No infinite fall, no
 	# full level reset.
 	if global_position.y < FALL_KILL_Y:
-		global_position = last_safe_position
-		velocity = Vector3.ZERO
-		can_double_jump = double_jump_unlocked
-		var fall_hit := DamageInfo.new()
-		fall_hit.amount = fall_damage
-		fall_hit.source = self
-		health_component.take_damage(fall_hit)
+		fall_back_to_safe_ground()
+
+## J4: the fall contract -- back to the last safe ground for fall_damage. The cost ignores
+## dash/roll i-frames (DamageInfo.ignores_iframes: a dash off the edge still pays) but not
+## the respawn grace, so a respawn-fall loop cannot double-charge. A survivable fall shows
+## the SIGNAL LOST cue and grants a short grace; a fall that costs a life leaves the grace to
+## the life-loss respawn.
+func fall_back_to_safe_ground() -> void:
+	global_position = last_safe_position
+	velocity = Vector3.ZERO
+	can_double_jump = double_jump_unlocked
+	if health_component.grace_invincible:
+		return # still inside a grace: no charge, and the running grace is not shortened
+	var fall_hit := DamageInfo.new()
+	fall_hit.amount = fall_damage
+	fall_hit.source = self
+	fall_hit.ignores_iframes = true
+	health_component.take_damage(fall_hit)
+	SignalBus.banner_requested.emit(FALL_BANNER % int(fall_damage), FALL_BANNER_HOLD)
+	if health_component.current_health > 0.0:
+		var gm = get_node_or_null("/root/GameManager")
+		if gm:
+			gm.grant_respawn_grace(health_component, FALL_GRACE)
 
 ## F14: false when any floor contact of the last move_and_slide is an unsafe floor.
 func _is_standing_on_safe_floor() -> bool:

@@ -21,7 +21,8 @@ static func arm(button: Button, seconds: float) -> void:
 	button.set_meta(TOKEN_META, token)
 	button.disabled = true
 	var target: WeakRef = weakref(button)
-	button.get_tree().create_timer(seconds, true).timeout.connect(func() -> void:
+	# J12: real seconds -- a hit-stop's time_scale must not stretch the grace.
+	button.get_tree().create_timer(seconds, true, false, true).timeout.connect(func() -> void:
 		var held := target.get_ref() as Button
 		if held == null or int(held.get_meta(TOKEN_META, 0)) != token:
 			return

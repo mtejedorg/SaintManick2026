@@ -64,7 +64,13 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 	if has_shield and not damage_info.is_guard_breaking:
 		_flash_hit(enemy)
 		return
-		
+
+	# J8: an environmental tick (toxic pit: no knockback, no stun) only flashes -- it must not
+	# cancel a running stun or zero the knockback slide.
+	if damage_info.knockback == 0.0 and damage_info.stun == 0.0:
+		_flash_hit(enemy)
+		return
+
 	# Calculate knockback direction
 	var knockback_dir = Vector3.ZERO
 	if damage_info.source:
@@ -88,8 +94,9 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 	else:
 		enemy.velocity.y = normal_hit_y_pop
 		
-	stun_timer = damage_info.stun
-	if stun_timer > 0.0:
+	# J8: a weaker stun never shortens the running one.
+	stun_timer = maxf(stun_timer, damage_info.stun)
+	if damage_info.stun > 0.0:
 		stun_started.emit()
 	# After stun_started: a grunt's handler restores its resting rim, the flash goes on top.
 	_flash_hit(enemy)

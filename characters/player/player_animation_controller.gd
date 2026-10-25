@@ -79,3 +79,15 @@ func play_fitted(anim_name: String, duration: float) -> void:
 	var length: float = anim_player.get_animation(clip).length
 	var speed: float = length / duration if duration > 0.0 and length > 0.0 else 1.0
 	anim_player.play(clip, -1.0, speed)
+
+## J3: play_fitted() plus the play_once() fallback -- the zero-stun flinch squeezes
+## hit_react into `duration` seconds, then returns to the current state's resting clip
+## (unless another clip was requested meanwhile).
+func play_once_fitted(anim_name: String, duration: float) -> void:
+	if _resolve_clip(anim_name) == "":
+		return
+	play_fitted(anim_name, duration)
+	var token := _play_once_token
+	await anim_player.animation_finished
+	if token == _play_once_token:
+		play(_fallback_key())

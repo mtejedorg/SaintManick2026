@@ -50,3 +50,34 @@ func test_no_zone_trigger_reaches_into_another_zones_gated_arena() -> void:
 				"%s (x %.1f..%.1f) must not reach into the %s arena (x %.1f..%.1f)" % [other.name, lo, hi, encounter.name, span.x, span.y])
 	assert_eq(arenas, 2, "Expected the two gated arenas (Z3_Encounter, Z6_Encounter)")
 	slice.free()
+
+## J9: arenas sealed by something other than a ZoneEncounter's gates -- [left wall, right
+## wall, the arena's own triggers]. Z8_Trigger used to reach over the Z7_Barrier: standing at
+## the barrier mid-fight fired SECTOR 08 (card, music, checkpoint past the dormant Enforcer).
+const EXTRA_ARENAS := [
+	["Z7_EntryGate", "Z7_Barrier", ["Z7_Trigger"]],
+	["LeftGate", "Zone10_Dock/RightWall", ["Zone10_Trigger"]],
+]
+
+## Half the x extent of a wall/gate: a CSGBox3D's size, else its BoxShape3D collision child.
+func _x_half(node: Node3D) -> float:
+	if node is CSGBox3D:
+		return (node as CSGBox3D).size.x * 0.5
+	return _trigger_half_width(node)
+
+func test_no_zone_trigger_reaches_into_the_enforcer_arena_or_the_dock() -> void:
+	var slice := _spawn_slice()
+	for arena in EXTRA_ARENAS:
+		var left: Node3D = slice.get_node(arena[0])
+		var right: Node3D = slice.get_node(arena[1])
+		var span := Vector2(left.global_position.x - _x_half(left), right.global_position.x + _x_half(right))
+		assert_lt(span.x, span.y, "%s..%s is a real span" % [arena[0], arena[1]])
+		for other in slice.get_children():
+			if not (other is Node3D) or not ("zone_name" in other) or (arena[2] as Array).has(String(other.name)):
+				continue
+			var half := _trigger_half_width(other)
+			var lo: float = other.global_position.x - half
+			var hi: float = other.global_position.x + half
+			assert_false(hi > span.x and lo < span.y,
+				"%s (x %.1f..%.1f) must not reach into the %s..%s arena (x %.2f..%.2f)" % [other.name, lo, hi, arena[0], arena[1], span.x, span.y])
+	slice.free()

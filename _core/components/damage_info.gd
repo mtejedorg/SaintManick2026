@@ -21,4 +21,6 @@ var is_guard_breaking: bool = false
 ## Set on ability-spender hits (e.g. Bass Drop) so they don't refill the very meter they
 ## just spent via the normal player_hit_landed -> add_ability_meter path.
 var is_ability_hit: bool = false
-
+## J4: applied through the owner's dash/roll i-frames (the fall cost). The respawn grace
+## (HealthComponent.grace_invincible) still blocks it.
+var ignores_iframes: bool = false

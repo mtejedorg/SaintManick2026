@@ -1,6 +1,9 @@
 extends HeadlinerState
 
 func enter() -> void:
+	# J14: a dead Headliner leaves no bullets in flight.
+	if boss.pool:
+		boss.pool.release_all()
 	# Disable collisions on the boss
 	var collision_shape = boss.get_node_or_null("CollisionShape3D")
 	if collision_shape:

@@ -56,6 +56,16 @@ func on_acquire() -> void:
 			hitbox.damage_info.amount = damage
 			hitbox.damage_info.source = owner if owner else self
 
+## J7: sets the shot's flight and writes the damage straight into the hitbox's DamageInfo.
+## The emitter calls it AFTER acquire() -- on_acquire() runs inside acquire(), before the
+## emitter knows the pattern's values, so copying `damage` there fired the previous value.
+func configure(dir: Vector3, shot_speed: float, shot_damage: float) -> void:
+	direction = dir
+	speed = shot_speed
+	damage = shot_damage
+	if hitbox and hitbox.damage_info:
+		hitbox.damage_info.amount = shot_damage
+
 func on_release() -> void:
 	if hitbox:
 		hitbox.is_active = false

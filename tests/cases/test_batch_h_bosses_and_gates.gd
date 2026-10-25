@@ -118,16 +118,20 @@ func test_cleared_top_down_room_stays_shut_until_the_camera_shift_lands() -> voi
 	add_child(gate)
 	var enc := _make_top_down_encounter(gate)
 	enc._complete_encounter()
+	await get_tree().process_frame # J13: CSG gate collision is set deferred
 	assert_true(enc.completed, "Encounter completed")
 	assert_true(gate.use_collision and gate.visible, "Gates stay locked while the camera tweens back")
 	SignalBus.camera_shift_finished.emit(true)
+	await get_tree().process_frame
 	assert_true(gate.use_collision, "A shift INTO top-down does not open the room")
 	SignalBus.camera_shift_finished.emit(false)
+	await get_tree().process_frame
 	assert_false(gate.use_collision, "The landed shift back to side-scroll opens the gates")
 	assert_false(gate.visible, "...and hides them")
 	# One-shot: a later shift does not touch the gates any more.
 	enc.set_gate_locked(true)
 	SignalBus.camera_shift_finished.emit(false)
+	await get_tree().process_frame
 	assert_true(gate.use_collision, "The unlock listener is one-shot")
 	enc.queue_free()
 	gate.queue_free()
@@ -137,8 +141,10 @@ func test_cleared_top_down_room_also_opens_on_respawn() -> void:
 	add_child(gate)
 	var enc := _make_top_down_encounter(gate)
 	enc._complete_encounter()
+	await get_tree().process_frame
 	assert_true(gate.use_collision, "Locked while the shift is pending")
 	SignalBus.player_respawned.emit()
+	await get_tree().process_frame
 	assert_false(gate.use_collision, "A respawn never leaves a cleared room shut")
 	enc.queue_free()
 	gate.queue_free()
@@ -149,6 +155,7 @@ func test_side_scroll_encounter_still_unlocks_immediately() -> void:
 	var enc := _make_top_down_encounter(gate)
 	enc.is_top_down = false
 	enc._complete_encounter()
+	await get_tree().process_frame
 	assert_false(gate.use_collision, "No camera shift to wait for -- gates open at once")
 	enc.queue_free()
 	gate.queue_free()

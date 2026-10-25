@@ -33,9 +33,7 @@ func _spawn_projectile(dir: Vector3, speed: float, damage: float) -> void:
 	if proj:
 		proj.global_position = global_position
 		if proj is PooledProjectile:
-			proj.direction = dir
-			proj.speed = speed
-			proj.damage = damage
+			proj.configure(dir, speed, damage) # J7: after acquire, so this shot carries `damage`
 			# Make sure it knows its source is the boss/emitter owner
 			if proj.hitbox and proj.hitbox.damage_info:
 				proj.hitbox.damage_info.source = owner if owner else self

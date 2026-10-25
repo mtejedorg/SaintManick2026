@@ -190,13 +190,13 @@ func test_zone_one_prompts_once_per_run() -> void:
 	SignalBus.zone_entered.emit(zone_1)
 	assert_eq(got.size(), 1, "The first card fires on entry")
 	if got.size() > 0:
-		assert_true(got[0].begins_with("MOVE"), "...the MOVE line")
-		assert_true(got[0].contains("A/D"), "...with the real bindings")
+		assert_true(got[0].begins_with("ATTACK"), "...the ATTACK line (J5: first)")
+		assert_true(got[0].contains("J/X"), "...with the real bindings")
 	await get_tree().create_timer(0.2).timeout
 	assert_eq(got.size(), 3, "All three cards play")
 	if got.size() == 3:
 		assert_true(got[1].begins_with("JUMP") and got[1].contains("DODGE"), "JUMP / DODGE card")
-		assert_true(got[2].begins_with("ATTACK"), "ATTACK card")
+		assert_true(got[2].begins_with("MOVE") and got[2].contains("A/D"), "MOVE card")
 
 	SignalBus.zone_entered.emit(zone_1) # a respawn re-entry
 	await get_tree().create_timer(0.2).timeout
@@ -246,6 +246,7 @@ func test_lethal_hit_records_the_killer() -> void:
 	info.amount = 50.0
 	hc.take_damage(info)
 	assert_eq(GameManager.last_killer, "RUNNER", "Lethal hit from %s -> RUNNER (got %s)" % [info.source.name if is_instance_valid(info.source) else "freed", GameManager.last_killer])
+	await get_tree().process_frame # J13: the deferred respawn_or_game_over lands here
 	GameManager.start_new_run()
 	assert_eq(GameManager.last_killer, "", "A new run clears it")
 

@@ -8,12 +8,16 @@ extends CanvasLayer
 @onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRect
 ## Magenta "LAST LIFE" tag under the lives icon, shown when no spare lives remain.
 @onready var last_life_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LastLifeLabel
+## U6: "xN" tag under the lives icon when there are more lives than the art shows.
+@onready var lives_count_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesCountLabel
 @onready var zone_title_card: Control = $ZoneTitleCard
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
 @onready var boss_bar_container: PanelContainer = $BossBarContainer
 @onready var boss_name_label: Label = $BossBarContainer/BossBarVBox/BossNameLabel
 @onready var boss_health_bar: ProgressBar = $BossBarContainer/BossBarVBox/BossHealthBar
+## U5: thin cyan strip along the boss bar's top edge, same treatment as the player shield.
+@onready var boss_shield_strip: TextureProgressBar = $BossBarContainer/BossBarVBox/BossHealthBar/BossShieldStrip
 
 @onready var scrap_label: Label = $ScrapLabel
 @onready var cells_label: Label = $CellsLabel
@@ -29,10 +33,16 @@ const LOW_HP_MAGENTA := Color(1.0, 0.0, 0.667, 1.0)
 const LOW_HP_PULSE_TIME := 0.15
 ## How long the "LIFE LOST — N LEFT" banner rests on screen.
 const LIFE_LOST_HOLD := 1.2
+## The lives art tops out at this many icons; more lives add an "xN" tag (U6).
+const LIVES_ART_MAX := 4
+## U7: per-beat "LAST LIFE" pulse, alpha LAST_LIFE_PULSE_LOW <-> 1.0.
+const LAST_LIFE_PULSE_LOW := 0.6
+const LAST_LIFE_PULSE_TIME := 0.3
 
 var beat_tween: Tween
 var combo_tween: Tween
 var low_hp_tween: Tween
+var last_life_tween: Tween
 var _low_hp: bool = false
 
 func _ready() -> void:
@@ -48,6 +58,7 @@ func _ready() -> void:
 	SignalBus.combo_capped.connect(_on_combo_capped)
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_health_changed.connect(_on_boss_health_changed)
+	SignalBus.boss_shield_changed.connect(_on_boss_shield_changed)
 	SignalBus.boss_died.connect(_on_boss_died)
 	SignalBus.boss_reset.connect(_on_boss_reset)
 	GameManager.scrap_changed.connect(_on_scrap_changed)
@@ -79,6 +90,10 @@ func _setup_textures() -> void:
 	flat_fill.height = 6
 	shield_bar.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
 	shield_bar.texture_progress = flat_fill
+	# The boss strip reuses the same flat fill, stretched to the (variable) boss bar width.
+	boss_shield_strip.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
+	boss_shield_strip.nine_patch_stretch = true
+	boss_shield_strip.texture_progress = flat_fill
 
 func _on_player_health_changed(new_health: float, max_health: float) -> void:
 	_update_battery_ui(new_health, max_health)
@@ -89,11 +104,19 @@ func _on_player_shield_changed(new_shield: float, max_shield: float) -> void:
 func _on_lives_changed(new_amount: int) -> void:
 	_update_lives_ui(new_amount)
 
-## A life was spent. With lives left, reuse the zone card as a short banner; the terminal
-## (0 lives) emission is the game-over path and is handled by the game-over screen.
+## A life was spent: reuse the zone card as a short PRIORITY banner (the respawn's own
+## zone_entered must not cut it). The death that spends the last spare life emits 0 with the
+## run still live -> "LAST LIFE"; the terminal emission (run_ended already set) is the
+## game-over path and is handled by the game-over screen.
 func _on_player_life_lost(current_lives: int) -> void:
+	var text := ""
 	if current_lives > 0:
-		zone_title_card.call("show_text", "LIFE LOST — %d LEFT" % current_lives, LIFE_LOST_HOLD)
+		text = "LIFE LOST — %d LEFT" % current_lives
+	elif not GameManager.run_ended:
+		text = "LAST LIFE"
+	else:
+		return
+	zone_title_card.call("show_text", text, LIFE_LOST_HOLD, true)
 
 func _update_battery_ui(current: float, max_val: float) -> void:
 	var ratio = current / max_val if max_val > 0.0 else 0.0
@@ -119,10 +142,27 @@ func _update_shield_ui(current: float, max_val: float) -> void:
 ## see); a magenta "LAST LIFE" tag appears under it.
 func _update_lives_ui(lives: int) -> void:
 	lives_rect.visible = true
-	var path: String = _get_lives_path(clampi(lives, 1, 4))
+	var path: String = _get_lives_path(clampi(lives, 1, LIVES_ART_MAX))
 	if ResourceLoader.exists(path):
 		lives_rect.texture = load(path)
+	lives_count_label.visible = lives > LIVES_ART_MAX
+	if lives_count_label.visible:
+		lives_count_label.text = "x%d" % lives
 	last_life_label.visible = lives <= 0
+	if not last_life_label.visible:
+		if last_life_tween:
+			last_life_tween.kill()
+		last_life_label.modulate.a = 1.0
+
+## U7: the LAST LIFE tag breathes on the primary beat while it is shown.
+func _pulse_last_life() -> void:
+	if not last_life_label.visible:
+		return
+	if last_life_tween:
+		last_life_tween.kill()
+	last_life_label.modulate.a = 1.0
+	last_life_tween = create_tween()
+	last_life_tween.tween_property(last_life_label, "modulate:a", LAST_LIFE_PULSE_LOW, LAST_LIFE_PULSE_TIME).set_trans(Tween.TRANS_SINE)
 
 func _set_low_hp(low: bool) -> void:
 	if low == _low_hp:
@@ -148,6 +188,7 @@ func _on_beat(layer: String, _beat_index: int) -> void:
 		return
 
 	_pulse_low_hp()
+	_pulse_last_life()
 
 	if beat_tween:
 		beat_tween.kill()
@@ -207,18 +248,28 @@ func _on_combo_capped() -> void:
 func _on_boss_spawned(boss_name: String) -> void:
 	boss_name_label.text = boss_name.to_upper()
 	boss_bar_container.visible = true
+	# The boss reports its shield right after spawning; never inherit the previous fight's.
+	boss_shield_strip.visible = false
 
 func _on_boss_health_changed(current: int, maximum: int) -> void:
 	boss_health_bar.max_value = maximum
 	boss_health_bar.value = current
 
+## U5: shield absorbs now read on the boss bar; hidden while the shield is down.
+func _on_boss_shield_changed(current: float, max_shield: float) -> void:
+	boss_shield_strip.max_value = max_shield
+	boss_shield_strip.value = current
+	boss_shield_strip.visible = current > 0.0
+
 func _on_boss_died() -> void:
 	boss_bar_container.visible = false
+	boss_shield_strip.visible = false
 
 ## T3: a checkpoint respawn returned the boss to dormant — clear the bar without any
 ## victory side effects.
 func _on_boss_reset() -> void:
 	boss_bar_container.visible = false
+	boss_shield_strip.visible = false
 
 func _on_scrap_changed(new_amount: int) -> void:
 	scrap_label.text = "SCRAP  %d" % new_amount

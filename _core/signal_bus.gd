@@ -67,6 +67,9 @@ signal banner_requested(text: String, hold: float)
 # --- Boss Events ---
 signal boss_spawned(boss_name: String)
 signal boss_health_changed(current: int, maximum: int)
+## U5: the active boss's shield state for the HUD strip on the boss bar. The slice's bosses
+## have an on/off shield, so they emit (max, max) when it goes up and (0, max) when it drops.
+signal boss_shield_changed(current: float, max_shield: float)
 signal boss_died()
 ## T3: a boss returned to dormant because the player lost a life (checkpoint respawn).
 ## HUD hides the boss bar; AudioManager stops boss music. Distinct from boss_died so

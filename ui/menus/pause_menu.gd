@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const FocusGrace = preload("res://ui/menus/focus_grace.gd")
+
 @onready var resume_button: Button = $Root/MenuPanel/PanelVBox/ButtonContainer/ResumeButton
 @onready var quit_button:   Button = $Root/MenuPanel/PanelVBox/ButtonContainer/QuitButton
 
@@ -27,8 +29,10 @@ func toggle() -> void:
 	else:
 		show()
 		get_tree().paused = true
-		# Gamepad navigation: focus the first button once the menu is visible.
-		resume_button.grab_focus()
+		# Nothing keeps focus from the last time the menu was open (a stale Quit focus plus a
+		# held confirm would abandon the run); Resume takes focus after a short grace (U2).
+		get_viewport().gui_release_focus()
+		FocusGrace.arm(resume_button, FocusGrace.PAUSE_GRACE)
 
 func _resume() -> void:
 	hide()

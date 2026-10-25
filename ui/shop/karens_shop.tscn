@@ -123,6 +123,14 @@ text = "COMBO SKILL TREE"
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="DescriptionLabel" type="Label" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = ""
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
 [node name="HSep2" type="HSeparator" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
@@ -130,12 +138,17 @@ layout_mode = 2
 [node name="BoosterButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "Equipped Booster: None  (Slots: 1)"
+text = "RUN BOOSTER 1/1: NONE  (press to change)"
 
 [node name="StartRunButton" type="Button" parent="Background/Margin/VBox"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "START RUN"
+
+[node name="BackButton" type="Button" parent="Background/Margin/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "BACK TO TITLE"
 
 [node name="VcrOverlay" parent="." instance=ExtResource("3_vcr")]

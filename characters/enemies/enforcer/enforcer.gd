@@ -23,7 +23,16 @@ const TELEGRAPH_LEAN_DEGREES := 8.0  # tips toward the model's front for the tel
 const TURN_RATE := 10.0
 
 var player: Node3D
-var is_shield_active: bool = false
+## U5: the shield is on/off; the HUD strip reads it as full (SHIELD_STRIP_MAX) or empty.
+const SHIELD_STRIP_MAX := 1.0
+## Set by the states. Only a live fight reports it (the dormant boss boots in StateShield).
+var is_shield_active: bool = false:
+	set(value):
+		if value == is_shield_active:
+			return
+		is_shield_active = value
+		if is_active:
+			_emit_shield_state()
 var is_vulnerable: bool = false
 ## Scene-placed miniboss: stays dormant (no chase, no boss bar) until the player
 ## enters its zone. Activated by SignalBus.zone_entered for SECTOR 07.
@@ -96,6 +105,10 @@ func _on_zone_entered(zone_name: String) -> void:
 		# Announce miniboss presence to HUD only once the fight begins
 		SignalBus.boss_spawned.emit("Enforcer")
 		SignalBus.boss_health_changed.emit(int(health_component.current_health), int(health_component.max_health))
+		_emit_shield_state()
+
+func _emit_shield_state() -> void:
+	SignalBus.boss_shield_changed.emit(SHIELD_STRIP_MAX if is_shield_active else 0.0, SHIELD_STRIP_MAX)
 
 func _physics_process(delta: float) -> void:
 	if _check_kill_plane():

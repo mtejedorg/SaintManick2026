@@ -20,7 +20,16 @@ var combat_comp: Node = null
 var player: Node3D
 
 var is_active_boss: bool = false
-var is_shield_active: bool = false
+## U5: the shield is on/off; the HUD strip reads it as full (SHIELD_STRIP_MAX) or empty.
+const SHIELD_STRIP_MAX := 1.0
+## Set by the states. Only a live fight reports it to the HUD.
+var is_shield_active: bool = false:
+	set(value):
+		if value == is_shield_active:
+			return
+		is_shield_active = value
+		if is_active_boss:
+			_emit_shield_state()
 var is_vulnerable: bool = false
 var speed_multiplier: float = 1.0
 var phase_2_triggered: bool = false
@@ -132,6 +141,10 @@ func get_resting_rim_color() -> Color:
 func _announce_boss() -> void:
 	SignalBus.boss_spawned.emit("Headliner")
 	SignalBus.boss_health_changed.emit(int(health_component.current_health), int(health_component.max_health))
+	_emit_shield_state()
+
+func _emit_shield_state() -> void:
+	SignalBus.boss_shield_changed.emit(SHIELD_STRIP_MAX if is_shield_active else 0.0, SHIELD_STRIP_MAX)
 
 func _physics_process(delta: float) -> void:
 	# H1: out of the world -> back to the spawn point (never free a boss).

@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=13 format=3]
+[gd_resource type="Theme" load_steps=15 format=3]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
 content_margin_left = 16.0
@@ -165,14 +165,28 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_back"]
+bg_color = Color(0.1, 0.02, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0, 0.667, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_fill"]
+bg_color = Color(1, 0, 0.667, 1)
+
 [resource]
 HSeparator/styles/separator = SubResource("StyleBoxLine_sep")
 Label/colors/font_color = Color(0.91, 0.965, 1, 1)
 ProgressBar/styles/background = SubResource("StyleBoxFlat_pb_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_pb_fill")
+BossBar/base_type = &"ProgressBar"
+BossBar/styles/background = SubResource("StyleBoxFlat_boss_back")
+BossBar/styles/fill = SubResource("StyleBoxFlat_boss_fill")
 DimLabel/base_type = &"Label"
 DimLabel/colors/font_color = Color(0.62, 0.66, 0.72, 1)
-DimLabel/font_sizes/font_size = 18
+DimLabel/font_sizes/font_size = 20
 UpgradeRow/base_type = &"Button"
 UpgradeRow/colors/font_color = Color(0, 0.949, 1, 1)
 UpgradeRow/colors/font_disabled_color = Color(0.62, 0.66, 0.72, 1)

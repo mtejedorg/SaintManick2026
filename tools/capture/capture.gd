@@ -86,6 +86,7 @@ func _run() -> void:
 	SignalBus.combo_increased.emit(12)
 	SignalBus.boss_spawned.emit("Headliner")
 	SignalBus.boss_health_changed.emit(900, 1500)
+	SignalBus.boss_shield_changed.emit(1.0, 1.0)
 	await _frames(3)
 	_save("hud_full_state")
 	SignalBus.boss_reset.emit()

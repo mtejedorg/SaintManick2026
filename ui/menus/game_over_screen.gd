@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const FocusGrace = preload("res://ui/menus/focus_grace.gd")
+
 @onready var return_button: Button = $Root/CenterBox/ReturnButton
 @onready var summary_label: Label = $Root/CenterBox/RunSummaryLabel
 
@@ -7,8 +9,8 @@ func _ready() -> void:
 	return_button.pressed.connect(_on_return_pressed)
 	summary_label.text = _build_summary()
 	summary_label.visible = summary_label.text != ""
-	# Gamepad navigation: focus the only button.
-	return_button.grab_focus()
+	# Gamepad navigation: the only button takes focus once the input grace is over (U2).
+	FocusGrace.arm(return_button, FocusGrace.END_SCREEN_GRACE)
 
 func _on_return_pressed() -> void:
 	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")

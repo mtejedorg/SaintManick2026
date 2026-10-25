@@ -24,12 +24,25 @@ const COMBO_UPGRADE_PATHS: Array[String] = [
 
 const BOOSTERS = ["None", "Tempo Shield", "Adrenaline", "Scrap Magnet"]
 
+const TITLE_SCENE := "res://ui/menus/title_screen.tscn"
+
+## U4: the run-start totals shown on the repeatable rows. Same formula as
+## GameManager.start_new_run() (base + step x upgrades, boosters excluded);
+## tests/cases/test_shop_feedback.gd pins these to GameManager so the two cannot drift.
+const BASE_MAX_HP := 120.0
+const MAX_HP_PER_UPGRADE := 20.0
+const BASE_MAX_SHIELD := 40.0
+const MAX_SHIELD_PER_UPGRADE := 10.0
+const BASE_MAX_LIVES := 3
+
 const CURRENCY_LABELS = ["Scrap", "Cells", "Cores"]
 
 ## Row state tags. Plain text on purpose: the default font has no checkmark/padlock glyphs,
 ## so those would risk tofu boxes wherever the system-font fallback lacks them.
 const OWNED_PREFIX := "[OWNED] "
 const LOCKED_PREFIX := "[LOCKED] "
+## U4: a locked row names what it is waiting for, e.g. "[LOCKED — needs Sweeper] ".
+const LOCKED_NEEDS_FORMAT := "[LOCKED — needs %s] "
 ## Cost colour for a row the player cannot afford yet (amber = "not yet" in the neon palette).
 const UNAFFORDABLE_COLOR := Color(1.0, 0.72, 0.0, 1.0)
 const SHAKE_DISTANCE := 6.0
@@ -40,15 +53,46 @@ const SHAKE_STEP_TIME := 0.05
 @onready var combo_list: VBoxContainer = $Background/Margin/VBox/HBox/ComboColumn/ComboList
 @onready var booster_button: Button = $Background/Margin/VBox/BoosterButton
 @onready var start_button: Button = $Background/Margin/VBox/StartRunButton
+@onready var back_button: Button = $Background/Margin/VBox/BackButton
+## U4: the focused row's ShopUpgrade.description (one dim line under the columns).
+@onready var description_label: Label = $Background/Margin/VBox/DescriptionLabel
 
 ## Slot 1 is the scene's BoosterButton; slots 2..N are created in code, in order, right
 ## after it (see _sync_booster_slot_buttons).
 var _extra_booster_buttons: Array[Button] = []
 
+## Scene-change hook (path) -> void. A seam so tests can observe navigation without leaving
+## the test scene; defaults to SceneTree.change_scene_to_file.
+var change_scene: Callable
+
 func _ready() -> void:
+	change_scene = _change_scene_to
 	booster_button.pressed.connect(_cycle_booster_slot.bind(0))
 	start_button.pressed.connect(_on_start_run)
+	back_button.pressed.connect(_on_back_to_title)
+	# U3: BACK TO TITLE sits right after START RUN in the focus chain.
+	start_button.focus_neighbor_bottom = start_button.get_path_to(back_button)
+	start_button.focus_next = start_button.get_path_to(back_button)
+	back_button.focus_neighbor_top = back_button.get_path_to(start_button)
+	back_button.focus_previous = back_button.get_path_to(start_button)
+	for button in [booster_button, start_button, back_button]:
+		button.focus_entered.connect(_show_description.bind(""))
 	_rebuild_ui()
+
+## U3: ui_cancel (Esc / gamepad B) leaves the shop the same way BACK TO TITLE does.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_on_back_to_title()
+
+func _on_back_to_title() -> void:
+	change_scene.call(TITLE_SCENE)
+
+func _change_scene_to(path: String) -> void:
+	get_tree().change_scene_to_file(path)
+
+func _show_description(text: String) -> void:
+	description_label.text = text
 
 func _rebuild_ui() -> void:
 	var remembered_focus: Vector2i = _focused_row_position()
@@ -87,31 +131,67 @@ func _populate_upgrade_list(container: VBoxContainer, paths: Array[String]) -> v
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		_configure_button_for_upgrade(button, upgrade)
 		button.pressed.connect(_on_upgrade_row_pressed.bind(button, upgrade))
+		button.focus_entered.connect(_show_description.bind(upgrade.description))
+		button.mouse_entered.connect(_show_description.bind(upgrade.description))
 		container.add_child(button)
 
 func _configure_button_for_upgrade(button: Button, upgrade: ShopUpgrade) -> void:
 	var p = SaveManager.profile if SaveManager else null
-	var is_owned = _is_upgrade_owned(upgrade, p)
-	var prereq_met = upgrade.prerequisite_id == "" or (p and _is_prereq_met(upgrade.prerequisite_id, p))
+	button.text = _row_text(upgrade, p)
+	button.disabled = _is_upgrade_owned(upgrade, p) or not _is_row_prereq_met(upgrade, p)
+	if not button.disabled and not _can_afford(upgrade):
+		# Stays enabled (so it is focusable and explains itself) but the cost reads amber.
+		for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+			button.add_theme_color_override(color_name, UNAFFORDABLE_COLOR)
+
+func _is_row_prereq_met(upgrade: ShopUpgrade, p: PlayerProfile) -> bool:
+	return upgrade.prerequisite_id == "" or (p != null and _is_prereq_met(upgrade.prerequisite_id, p))
+
+## The row label: "[OWNED] name", "[LOCKED — needs X] name", or "name — cost" plus, on the
+## repeatable stat rows, the current run-start total ("   [HP 140]").
+func _row_text(upgrade: ShopUpgrade, p: PlayerProfile) -> String:
+	if _is_upgrade_owned(upgrade, p):
+		return "%s%s" % [OWNED_PREFIX, upgrade.name]
+	if not _is_row_prereq_met(upgrade, p):
+		var needs: String = _prereq_display_name(upgrade.prerequisite_id)
+		var prefix: String = LOCKED_NEEDS_FORMAT % needs if needs != "" else LOCKED_PREFIX
+		return "%s%s" % [prefix, upgrade.name]
 	var currency_label: String = CURRENCY_LABELS[upgrade.currency]
 	if upgrade.cost == 1:
 		# "1 Core", not "1 Cores".
 		currency_label = currency_label.trim_suffix("s")
-	var cost_text = "FREE" if upgrade.cost <= 0 else "%d %s" % [upgrade.cost, currency_label]
+	var cost_text: String = "FREE" if upgrade.cost <= 0 else "%d %s" % [upgrade.cost, currency_label]
+	var text: String = "%s — %s" % [upgrade.name, cost_text]
+	var total: String = _total_tag(upgrade, p)
+	if total != "":
+		text += "   " + total
+	return text
 
-	if is_owned:
-		button.text = "%s%s" % [OWNED_PREFIX, upgrade.name]
-		button.disabled = true
-	elif not prereq_met:
-		button.text = "%s%s" % [LOCKED_PREFIX, upgrade.name]
-		button.disabled = true
-	else:
-		button.text = "%s — %s" % [upgrade.name, cost_text]
-		button.disabled = false
-		if not _can_afford(upgrade):
-			# Stays enabled (so it is focusable and explains itself) but the cost reads amber.
-			for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
-				button.add_theme_color_override(color_name, UNAFFORDABLE_COLOR)
+## "[HP 140]" / "[SHIELD 50]" / "[LIVES 4]" on the repeatable stat rows, "" otherwise.
+func _total_tag(upgrade: ShopUpgrade, p: PlayerProfile) -> String:
+	if p == null or not upgrade.is_repeatable:
+		return ""
+	match upgrade.effect:
+		ShopUpgrade.Effect.MAX_HP:
+			return "[HP %d]" % int(BASE_MAX_HP + MAX_HP_PER_UPGRADE * p.max_hp_upgrades)
+		ShopUpgrade.Effect.MAX_SHIELD:
+			return "[SHIELD %d]" % int(BASE_MAX_SHIELD + MAX_SHIELD_PER_UPGRADE * p.shield_upgrades)
+		ShopUpgrade.Effect.MAX_LIVES:
+			return "[LIVES %d]" % (BASE_MAX_LIVES + p.max_lives_upgrades)
+	return ""
+
+## Short name of a prerequisite upgrade: "Unlock: Sweeper (A-B-B)" -> "Sweeper".
+func _prereq_display_name(prereq_id: String) -> String:
+	var all_paths: Array[String] = []
+	all_paths.append_array(COMBO_UPGRADE_PATHS)
+	all_paths.append_array(CUMULATIVE_UPGRADE_PATHS)
+	for path in all_paths:
+		var upgrade: ShopUpgrade = load(path)
+		if upgrade and upgrade.id == prereq_id:
+			var short_name: String = upgrade.name.trim_prefix("Unlock: ")
+			var paren: int = short_name.find(" (")
+			return short_name.substr(0, paren) if paren > 0 else short_name
+	return ""
 
 func _can_afford(upgrade: ShopUpgrade) -> bool:
 	if upgrade.cost <= 0:
@@ -310,7 +390,7 @@ func _update_booster_buttons() -> void:
 	var buttons := _booster_slot_buttons()
 	for slot in buttons.size():
 		var booster: String = equipped[slot] if slot < equipped.size() else "None"
-		buttons[slot].text = "Booster Slot %d/%d: %s" % [slot + 1, p.booster_slots, booster]
+		buttons[slot].text = "RUN BOOSTER %d/%d: %s  (press to change)" % [slot + 1, p.booster_slots, booster.to_upper()]
 
 ## Cycles one slot through None/Tempo Shield/Adrenaline/Scrap Magnet, skipping boosters
 ## already equipped in another slot. "None" stores nothing (the array stays compact), and

@@ -1,10 +1,12 @@
 extends CanvasLayer
 
+const FocusGrace = preload("res://ui/menus/focus_grace.gd")
+
 func _ready() -> void:
 	$CenterBox/ContinueButton.pressed.connect(_on_continue)
 	_populate_stats()
-	# Gamepad navigation: focus the only button.
-	$CenterBox/ContinueButton.grab_focus()
+	# Gamepad navigation: the only button takes focus once the input grace is over (U2).
+	FocusGrace.arm($CenterBox/ContinueButton, FocusGrace.END_SCREEN_GRACE)
 
 func _populate_stats() -> void:
 	var gm = get_node_or_null("/root/GameManager")

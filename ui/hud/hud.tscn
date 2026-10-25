@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://ui/hud/zone_title_card.tscn" id="3_ztc"]
@@ -35,17 +35,6 @@ corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 shadow_color = Color(1, 0, 0.667, 0.4)
 shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_fill"]
-bg_color = Color(1, 0, 0.667, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_back"]
-bg_color = Color(0.1, 0.02, 0.08, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 0, 0.667, 0.35)
 
 [sub_resource type="FontVariation" id="FontVariation_combo"]
 spacing_glyph = 3
@@ -111,6 +100,18 @@ layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
+[node name="LivesCountLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0.961, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 20
+text = "x5"
+horizontal_alignment = 1
+
 [node name="LastLifeLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
 visible = false
 layout_mode = 2
@@ -118,7 +119,7 @@ theme_override_colors/font_color = Color(1, 0, 0.667, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 22
 text = "LAST LIFE"
 horizontal_alignment = 1
 
@@ -156,10 +157,20 @@ horizontal_alignment = 1
 [node name="BossHealthBar" type="ProgressBar" parent="BossBarContainer/BossBarVBox"]
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_boss_back")
-theme_override_styles/fill = SubResource("StyleBoxFlat_boss_fill")
+theme_type_variation = &"BossBar"
 value = 100.0
 show_percentage = false
+
+[node name="BossShieldStrip" type="TextureProgressBar" parent="BossBarContainer/BossBarVBox/BossHealthBar"]
+visible = false
+modulate = Color(0, 0.961, 1, 0.85)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 4.0
+grow_horizontal = 2
+mouse_filter = 2
+value = 100.0
 
 [node name="ComboLabel" type="Label" parent="."]
 visible = false

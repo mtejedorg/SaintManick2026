@@ -1,7 +1,7 @@
 # SAINT MANICK - Handoff rev. 7.4 (owner decisions applied: batches K/L/M; HUD rebuilt; docs rev. 3)
 
 **Date:** 2026-10-26 (rev. 7.3: 2026-10-25, (rev. 7: 2026-10-24, rev. 6: 2026-07-11)
-**State (verified by the orchestrator, not carried from agent reports):** import clean · title-screen and slice smoke clean (only the two known exit-time leak lines) · **424/424 tests** (floor was 123) · 86 commits on `master` from `a15d63a` to HEAD · working tree clean after this handoff commit.
+**State (verified by the orchestrator, not carried from agent reports):** import clean · title-screen and slice smoke clean (only the two known exit-time leak lines) · **424/424 tests** (floor was 123) · 83 commits on `master` from `a15d63a` to HEAD · working tree clean after this handoff commit.
 
 **What happened this session:** a full game-audit (7 read-only lenses on real drone-camera captures, every claim verified in code or in-engine) found that the "complete" slice could not actually be played: the player body was on the wrong physics layer so no trigger ever fired, Zones 9–10 were unreachable, the attack hitboxes pointed into depth, enemies were 0.8 m T-posed Nick clones, and the HUD art was invisible. Five fix batches later the golden path Zone 1 → Headliner → results → shop → run is reachable and test-guarded, every archetype has its own silhouette and rim, the world has a neon-noir render stack, and the UI is a drone feed with a title screen. The audit site (grades, decisions, every finding with evidence) is linked from the session summary; its data lives in `Documents/audit/2026-10-24/` if copied there.
 

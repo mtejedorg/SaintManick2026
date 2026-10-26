@@ -88,6 +88,16 @@ func unregister_layer(layer_name: String) -> void:
 		return
 	layers.erase(layer_name)
 
+## K3: the index of the beat edge nearest to now in `layer_name` (the last beat, or the next
+## one past the half-beat) -- lets reward-only checks rate-limit per beat. -1 if no layer.
+func nearest_beat_index(layer_name: String = "primary") -> int:
+	if not layers.has(layer_name):
+		return -1
+	var layer = layers[layer_name]
+	var beat_duration = 60.0 / bpm
+	var past_half: bool = layer.time_accumulator > beat_duration * 0.5
+	return int(layer.beat_index) + (1 if past_half else 0)
+
 ## Distance in seconds from the current position in `layer_name`'s beat cycle to the
 ## nearest beat edge (0 or the next beat). Used for reward-only beat-alignment checks
 ## (e.g. T1 dodge timing) — never for gating, per the "player is never beat-validated" rule.

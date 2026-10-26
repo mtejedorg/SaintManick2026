@@ -2,6 +2,9 @@ class_name EscapeFallingHazard
 extends Node3D
 
 @export var beat_interval: int = 8
+## L4: beats this sign's cycle starts ahead of the authored one, so two signs on the same
+## course do not drop in phase (0 = the first sign's timing).
+@export var cycle_offset: int = 0
 @export var telegraph_beats: int = 2
 @export var reset_delay_beats: int = 3
 @export var fall_distance: float = 6.0
@@ -35,6 +38,7 @@ func _ready() -> void:
 
 	initial_y = hazard_body.position.y
 	hitbox.is_active = false
+	local_beat_counter = posmod(cycle_offset, maxi(beat_interval, 1))
 	
 	hitbox.collision_layer = 8192
 	hitbox.collision_mask = 1024

@@ -28,9 +28,10 @@ func _on_player_hit_landed(_damage_info: DamageInfo) -> void:
 	start_hit_stop(0.08, 0.05)
 
 ## Overlapping requests (Nick hit while landing a hit) never shorten or weaken a stop that
-## is already running: the longer remaining time and the deeper slow-down win.
-func start_hit_stop(duration: float, time_scale: float) -> void:
-	if hit_stop_timer > 0.0:
+## is already running: the longer remaining time and the deeper slow-down win. `replace`
+## (K11 death beat) overrides a running stop with exactly this one instead.
+func start_hit_stop(duration: float, time_scale: float, replace: bool = false) -> void:
+	if hit_stop_timer > 0.0 and not replace:
 		Engine.time_scale = minf(Engine.time_scale, time_scale)
 		hit_stop_timer = maxf(hit_stop_timer, duration)
 		return

@@ -51,7 +51,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_shield")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_enforcer")
-max_health = 600
+max_health = 900
 
 [node name="Hurtbox3D" type="Area3D" parent="." node_paths=PackedStringArray("health_component")]
 collision_layer = 4096

@@ -18,8 +18,8 @@ func enter() -> void:
 		
 	current_tween = camera.create_tween()
 	
-	var target_offset = Vector3(0, 15, 5) if target_top_down else Vector3(0, 3, 10)
-	var target_rotation = Vector3(-PI/3.0, 0, 0) if target_top_down else Vector3(0, 0, 0)
+	var target_offset = DroneCamera.TOP_DOWN_OFFSET if target_top_down else DroneCamera.SIDESCROLL_OFFSET
+	var target_rotation = DroneCamera.TOP_DOWN_ROTATION if target_top_down else Vector3(0, 0, 0)
 	
 	# Tween offset and rotation of the camera
 	current_tween.tween_property(camera, "offset", target_offset, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)

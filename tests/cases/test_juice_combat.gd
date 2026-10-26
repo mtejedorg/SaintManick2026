@@ -300,7 +300,7 @@ func test_player_combo_routes() -> void:
 	attack_state.attack_timer = 0.0
 	attack_state.physics_update(0.0)
 	assert_eq("".join(attack_state.current_sequence), "AAA")
-	assert_eq(player.katana_hitbox.damage_info.amount, 20.0, "Tri-cut should set amount to 20")
+	assert_eq(player.katana_hitbox.damage_info.amount, 32.0, "K1 (D3): Tri-cut should set amount to 32")
 	
 	# Test Sweeper (A-B-B)
 	attack_state.enter()
@@ -326,7 +326,7 @@ func test_player_combo_routes() -> void:
 	attack_state.physics_update(0.0)
 	assert_eq("".join(attack_state.current_sequence), "BB")
 	assert_true(player.bionic_arm_hitbox.damage_info.is_guard_breaking, "Battery Ram should be guard breaking")
-	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 40.0)
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 55.0, "K1 (D3): Battery Ram deals 55")
 
 	SaveManager.profile.unlocked_combos.erase("ABB")
 	SaveManager.profile.unlocked_combos.erase("BB")
@@ -366,10 +366,10 @@ func test_combo_routes_are_resource_driven() -> void:
 
 func test_bruiser_shield_driven_by_enemy_stats() -> void:
 	# C4: Bruiser's shield must come from EnemyStats.shield (bruiser_stats.tres), not a
-	# hardcoded 50.0 in bruiser.gd.
+	# hardcoded value in bruiser.gd. K5 (D7): 80.
 	var stats: EnemyStats = load("res://characters/enemies/bruiser/bruiser_stats.tres")
 	assert_not_null(stats, "Bruiser stats resource should exist")
-	assert_eq(stats.shield, 50.0, "bruiser_stats.tres should define shield = 50")
+	assert_eq(stats.shield, 80.0, "K5 (D7): bruiser_stats.tres should define shield = 80")
 
 	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
 	add_child(bruiser)
@@ -437,7 +437,7 @@ func test_combo_b_finisher_writes_damage_and_flags_into_arm_hitbox() -> void:
 	attack_state.attack_timer = 0.0
 	attack_state.physics_update(0.0) # Second heavy (BB)
 	
-	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 40.0, "Battery Ram damage should be written to arm hitbox")
+	assert_eq(player.bionic_arm_hitbox.damage_info.amount, 55.0, "K1 (D3): Battery Ram damage (55) should be written to arm hitbox")
 	assert_true(player.bionic_arm_hitbox.damage_info.is_guard_breaking, "Battery Ram guard breaking should be written to arm hitbox")
 	
 	if not was_unlocked:

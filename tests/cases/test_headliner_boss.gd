@@ -192,9 +192,9 @@ func test_boss_phase_transition() -> void:
 		flags.path = path
 	SignalBus.camera_shift_requested.connect(camera_connection)
 	
-	# Deal damage to drop health to 50% or below (750 HP or below)
+	# Deal damage to drop health to 50% or below (K7: read from the stats, 1200 of 2400)
 	var dmg = DamageInfo.new()
-	dmg.amount = 800.0
+	dmg.amount = boss.stats.max_health * 0.5 + 50.0
 	dmg.is_shield_breaker = true # break shield and deal damage
 	
 	boss.hurtbox.receive_hit(dmg)
@@ -327,7 +327,7 @@ func test_boss_death_complete_run() -> void:
 	gm.is_test = true
 	
 	var dmg = DamageInfo.new()
-	dmg.amount = 2000.0 # Exceeds max health
+	dmg.amount = boss.stats.max_health + 500.0 # Exceeds max health
 	dmg.is_shield_breaker = true # bypass shield
 	for i in 4: # J14: bullets in flight at the killing blow
 		boss.pool.acquire()

@@ -10,11 +10,19 @@ const PULSE_TIME := 0.15
 @onready var logo: TextureRect = $Root/Logo
 @onready var start_button: Button = $Root/ButtonContainer/StartButton
 @onready var quit_button: Button = $Root/ButtonContainer/QuitButton
+@onready var options_button: Button = $Root/ButtonContainer/OptionsButton
+@onready var button_container: Control = $Root/ButtonContainer
+@onready var options_menu: Control = $Root/OptionsMenu
 
 var _pulse_tween: Tween
 
 func _ready() -> void:
+	# L8: boot applies the saved options (volumes, fullscreen) once the profile has loaded.
+	if SaveManager:
+		SaveManager.apply_settings()
 	start_button.pressed.connect(_on_start_pressed)
+	options_button.pressed.connect(_on_options_pressed)
+	options_menu.closed.connect(_on_options_closed)
 	quit_button.pressed.connect(_on_quit_pressed)
 	SignalBus.beat.connect(_on_beat)
 	logo.resized.connect(_update_logo_pivot)
@@ -36,6 +44,15 @@ func _on_beat(layer: String, _beat_index: int) -> void:
 
 func _on_start_pressed() -> void:
 	get_tree().change_scene_to_file(SHOP_SCENE)
+
+## L8: the options panel stands in for the button column until it closes.
+func _on_options_pressed() -> void:
+	button_container.hide()
+	options_menu.open()
+
+func _on_options_closed() -> void:
+	button_container.show()
+	options_button.grab_focus()
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

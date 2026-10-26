@@ -7,20 +7,33 @@ extends CharacterBody3D
 @export var jump_force: float = 18.0
 @export var gravity_multiplier: float = 3.0
 @export var dash_speed: float = 18.0
-@export var roll_speed: float = 18.0
+## K4 (D14): ~7.2 m over the 0.65 s roll (dash stays the long, fast mover).
+@export var roll_speed: float = 11.0
 
 ## T1: shared dash/roll cooldown, started when a dodge state EXITS. Prevents chaining
 ## dash->roll->dash into permanent i-frames (the defense economy the GDD's "read the
 ## heartbeat" pillar depends on). The EMP Dash-Cancel bypasses the can_dodge() check
 ## (it transitions straight from StateAttack, never through Idle/Run) but still starts
 ## this cooldown on its own StateDash exit.
-@export var dodge_cooldown: float = 0.5
+## K3 (D6): 0.3 s so the Enforcer one-beat chain stays dodgeable with the narrow window.
+@export var dodge_cooldown: float = 0.3
 ## Reward-only beat alignment window (GDD §3.3): a dash/roll started within this many
-## seconds of a primary-layer beat edge refunds its cooldown and grants ability meter.
+## seconds of a primary-layer beat edge refunds part of its cooldown and grants meter.
 ## Never a gate — the player is never beat-validated, only ever rewarded.
-@export var beat_align_window: float = 0.12
+@export var beat_align_window: float = 0.06
 @export var beat_aligned_dodge_meter: float = 4.0
+## K3 (D6): share of dodge_cooldown an aligned dodge refunds (0.5 = half, not all).
+@export var beat_aligned_cooldown_refund: float = 0.5
+## K3 (D6): the aligned-dodge meter reward fires at most once per this many primary beats.
+const BEAT_DODGE_METER_EVERY_BEATS := 2
+## K3 (D6): the aligned-dodge cue -- a short cyan rim flash (plus SignalBus.beat_dodge_landed
+## for the audio tick).
+const BEAT_DODGE_RIM_COLOR := Color(0.0, 0.85, 1.0)
+const BEAT_DODGE_RIM_STRENGTH := 5.0
+const BEAT_DODGE_RIM_SECONDS := 0.15
 var _dodge_cooldown_timer: float = 0.0
+## Primary beat index of the last aligned dodge that paid meter (K3 rate limit).
+var _last_meter_beat: int = -1000
 
 ## F10 input forgiveness. Coyote time: a ground jump is still allowed this long after
 ## walking off a ledge. Jump buffer: a jump pressed this long before landing fires on
@@ -45,6 +58,16 @@ var pending_attack_heavy: bool = false
 ## I1: the stunning hit the NEXT StateHurt.enter() applies (knockback + stagger length).
 ## Set by _enter_hurt() right before the transition, read (and reset) by the state.
 var pending_hurt: DamageInfo = null
+## K2 (D22): the current attack hit registered at least one target (a landed or a
+## shield-absorbed hit). StateAttack resets it on every new hit; the free dodge cancel
+## waits for it.
+var hit_connected: bool = false
+## K11 (D20): true during the death beat -- no press is recorded and movement input reads
+## zero until the respawn (StateDead holds the death clip meanwhile).
+var input_locked: bool = false
+## K8 (D17): Nick passes through enemy bodies (this collision layer) only while the
+## dash/roll i-frames run.
+const ENEMY_BODY_LAYER := 3
 
 ## The rail Nick is plane-locked to (null = free top-down movement). Switching to a new
 ## rail eases him onto it over rail_blend_time instead of hard-snapping in one frame (the
@@ -54,6 +77,7 @@ var pending_hurt: DamageInfo = null
 		if value != null and value != current_path:
 			_rail_blend = 0.0
 		current_path = value
+		_update_ground_ring()
 ## Seconds to ease onto a newly assigned rail.
 @export var rail_blend_time: float = 0.3
 ## 0 -> 1 progress of the ease onto the current rail; 1 = locked (snap every frame).
@@ -99,8 +123,9 @@ var last_safe_position: Vector3 = Vector3.ZERO
 ## Bass Drop (M5b, GDD §3.3 full-bar ultimate): a screen-clearing AoE that detonates on
 ## the next downbeat once armed. Meter must be completely full to arm; input action is
 ## a temporary binding (see signal_bus.gd _register_input) until M9 lands a real input map.
-@export var bass_drop_radius: float = 6.0
-@export var bass_drop_damage: float = 60.0
+## K6 (D8): 10 m / 90 damage (the ring grows to the radius; the Zone 10 dock is 25 x 14 m).
+@export var bass_drop_radius: float = 10.0
+@export var bass_drop_damage: float = 90.0
 @export var bass_drop_knockback: float = 16.0
 @export var bass_drop_stun: float = 1.0
 var bass_drop_armed: bool = false
@@ -131,6 +156,8 @@ const BASS_DROP_RING_START_SCALE := 0.5
 const BASS_DROP_RING_SECONDS := 0.3
 ## Capsule half-height: Nick's origin is the capsule centre, his feet are this far below.
 const FEET_OFFSET := 1.0
+## K10 (D21): the subtle cyan ring under Nick, shown only off-rail (top-down).
+const GROUND_RING_NODE := "TopDownRing"
 
 @onready var state_machine: Node = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -172,7 +199,10 @@ func _ready() -> void:
 	SignalBus.downbeat.connect(_on_downbeat)
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.player_respawned.connect(_on_player_respawned)
+	SignalBus.player_life_lost.connect(_on_player_life_lost)
+	SignalBus.hit_blocked.connect(_on_hit_blocked)
 	last_safe_position = global_position
+	_update_ground_ring()
 
 	# Apply run booster speed multiplier if GameManager set one
 	if gm and gm.run_speed_multiplier != 1.0:
@@ -186,9 +216,24 @@ func _emit_initial_ability_meter() -> void:
 
 func _on_player_hit_landed(dmg_info: DamageInfo) -> void:
 	if dmg_info.source == self and not dmg_info.is_ability_hit:
+		hit_connected = true
 		var is_heavy_hit = dmg_info.amount >= DamageInfo.HEAVY_THRESHOLD
 		add_ability_meter(meter_per_heavy_hit if is_heavy_hit else meter_per_light_hit)
 		_meter_decay_timer = meter_decay_delay
+
+## K2: a hit absorbed by a boss shield still connected (only Nick's hits emit hit_blocked).
+func _on_hit_blocked(_position: Vector3) -> void:
+	hit_connected = true
+
+## K9 (D28): a lost life empties the ability meter (the Bass Drop disarm happens on the
+## respawn). Not on the game-over emission -- that run is over anyway.
+func _on_player_life_lost(_current_lives: int) -> void:
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.run_ended:
+		return
+	ability_meter = 0.0
+	_meter_decay_timer = 0.0
+	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 
 func add_ability_meter(amount: float) -> void:
 	ability_meter = clamp(ability_meter + amount, 0.0, MAX_ABILITY_METER)
@@ -197,21 +242,44 @@ func add_ability_meter(amount: float) -> void:
 func can_dodge() -> bool:
 	return _dodge_cooldown_timer <= 0.0
 
-func start_dodge_cooldown() -> void:
-	_dodge_cooldown_timer = dodge_cooldown
+## K3: `beat_aligned` = the dodge landed on the beat, so beat_aligned_cooldown_refund of
+## the cooldown is refunded.
+func start_dodge_cooldown(beat_aligned: bool = false) -> void:
+	var share: float = (1.0 - beat_aligned_cooldown_refund) if beat_aligned else 1.0
+	_dodge_cooldown_timer = dodge_cooldown * share
 
-## Reward-only: if a dash/roll begins within beat_align_window of a primary-layer beat
-## edge, grant ability meter and tell the caller so it can skip starting the cooldown.
-## Returns false (no reward, no side effects) if the Conductor isn't available (tests
-## that build a bare player without the autoload tree still work).
+## K8 (D17): the dash/roll i-frames -- invincible AND passing through enemy bodies; both
+## end together (normal exit, the roll i-frame end, any early exit). The respawn grace
+## is separate (HealthComponent.grace_invincible) and never touches the mask.
+func set_dodge_iframes(active: bool) -> void:
+	if health_component:
+		health_component.is_invincible = active
+	set_collision_mask_value(ENEMY_BODY_LAYER, not active)
+
+## Reward-only: true if a dash/roll begins within beat_align_window of a primary-layer beat
+## edge -- the caller then refunds part of its cooldown (start_dodge_cooldown(true)). K3: the
+## meter reward pays at most once per BEAT_DODGE_METER_EVERY_BEATS beats; every aligned
+## dodge flashes the cyan rim and emits SignalBus.beat_dodge_landed. Returns false (no
+## reward, no side effects) without a Conductor (bare-player tests).
 func try_beat_aligned_dodge_reward() -> bool:
 	var conductor = get_node_or_null("/root/Conductor")
 	if not conductor:
 		return false
-	if conductor.seconds_to_nearest_beat("primary") <= beat_align_window:
+	if conductor.seconds_to_nearest_beat("primary") > beat_align_window:
+		return false
+	var beat: int = conductor.nearest_beat_index("primary")
+	var gap: int = beat - _last_meter_beat
+	# gap < 0: the beat counter restarted (a new run) -- pay again.
+	if gap >= BEAT_DODGE_METER_EVERY_BEATS or gap < 0:
+		_last_meter_beat = beat
 		add_ability_meter(beat_aligned_dodge_meter)
-		return true
-	return false
+	# Settle the i-frame resting rim first so the flash plays on top of it (a rest-rim
+	# change kills a running flash).
+	_update_rest_rim()
+	if character_visual:
+		character_visual.flash_rim(BEAT_DODGE_RIM_COLOR, BEAT_DODGE_RIM_STRENGTH, BEAT_DODGE_RIM_SECONDS)
+	SignalBus.beat_dodge_landed.emit()
+	return true
 
 func _process(delta: float) -> void:
 	_update_rest_rim()
@@ -241,6 +309,8 @@ func try_consume_ability_meter(amount: float) -> bool:
 	return false
 
 func _unhandled_input(event: InputEvent) -> void:
+	if input_locked:
+		return
 	if event.is_action_pressed("ability_ultimate"):
 		try_arm_bass_drop()
 
@@ -322,6 +392,8 @@ func _on_player_respawned() -> void:
 	if state_machine and state_machine.has_method("_on_transition_requested"):
 		state_machine._on_transition_requested("StateIdle")
 	pending_hurt = null
+	input_locked = false # K11: the death beat is over
+	set_dodge_iframes(false) # K8: never respawn with the enemy-pass mask
 	velocity = Vector3.ZERO
 	consume_jump_buffer()
 	clear_coyote_time()
@@ -335,8 +407,21 @@ func _on_player_respawned() -> void:
 		animation_controller.play("idle")
 	_update_rest_rim()
 
+## K11 (D20): the death beat. Input locks at once (no press is recorded, movement reads
+## zero) and Nick enters StateDead, which holds the death clip until the respawn
+## (_on_player_respawned) -- GameManager.begin_death_beat times the 0.9 s. The transition
+## is deferred: a lethal Hitbox overlap lands here inside the physics flush, and leaving a
+## dodge state restores the body mask.
 func _on_died() -> void:
-	if animation_controller:
+	input_locked = true
+	clear_dodge_buffer()
+	clear_attack_buffer()
+	consume_jump_buffer()
+	pending_attack_heavy = false
+	pending_hurt = null
+	if state_machine and state_machine.get_node_or_null("StateDead"):
+		state_machine.call_deferred("_on_transition_requested", "StateDead")
+	elif animation_controller:
 		animation_controller.play_once("death")
 
 func _on_damaged(info: DamageInfo) -> void:
@@ -431,6 +516,8 @@ func _tick_input_buffers(delta: float) -> void:
 	if _dodge_buffer_timer <= 0.0:
 		_buffered_dodge_state = ""
 	_attack_buffer_timer = maxf(0.0, _attack_buffer_timer - delta)
+	if input_locked:
+		return # K11: the death beat records no press
 	if Input.is_action_just_pressed("jump"):
 		buffer_jump()
 	if Input.is_action_just_pressed("dash"):
@@ -536,6 +623,8 @@ func fall_back_to_safe_ground() -> void:
 	global_position = last_safe_position
 	velocity = Vector3.ZERO
 	can_double_jump = double_jump_unlocked
+	if health_component.current_health <= 0.0:
+		return # K11: already dead (the death beat) -- just stop the fall
 	if health_component.grace_invincible:
 		return # still inside a grace: no charge, and the running grace is not shortened
 	var fall_hit := DamageInfo.new()
@@ -548,6 +637,13 @@ func fall_back_to_safe_ground() -> void:
 		var gm = get_node_or_null("/root/GameManager")
 		if gm:
 			gm.grant_respawn_grace(health_component, FALL_GRACE)
+
+## K10 (D21): the ground ring shows only while Nick is off-rail (top-down). Called by the
+## current_path setter too, so it may run before the ring child exists.
+func _update_ground_ring() -> void:
+	var ring := get_node_or_null(GROUND_RING_NODE) as Node3D
+	if ring:
+		ring.visible = current_path == null
 
 ## F14: false when any floor contact of the last move_and_slide is an unsafe floor.
 func _is_standing_on_safe_floor() -> bool:
@@ -575,6 +671,8 @@ func apply_gravity(delta: float) -> void:
 		can_double_jump = double_jump_unlocked
 
 func get_movement_input() -> Vector2:
+	if input_locked:
+		return Vector2.ZERO # K11: the death beat
 	# The real gameplay actions (A/D, arrows, D-pad, left stick) — not the ui_* menu ones.
 	var x := Input.get_axis("move_left", "move_right")
 	# GDD §3.1: while plane-locked to a Path3D (side-scroll), up/down do nothing — they

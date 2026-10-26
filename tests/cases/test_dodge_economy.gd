@@ -34,7 +34,7 @@ func test_roll_is_vulnerable_during_recovery_tail() -> void:
 	roll_state.physics_update(roll_state.roll_iframe_duration + 0.01)
 	assert_false(player.health_component.is_invincible, "Roll should lose invincibility once i-frames end, before the state exits")
 
-func test_beat_aligned_dodge_grants_meter_and_skips_cooldown() -> void:
+func test_beat_aligned_dodge_grants_meter_and_halves_cooldown() -> void:
 	Conductor.layers["primary"].time_accumulator = 0.0
 	player.ability_meter = 0.0
 	var fsm = player.state_machine
@@ -42,7 +42,9 @@ func test_beat_aligned_dodge_grants_meter_and_skips_cooldown() -> void:
 	dash_state.enter()
 	assert_eq(player.ability_meter, player.beat_aligned_dodge_meter, "Beat-aligned dash should grant the dodge meter reward")
 	dash_state.exit()
-	assert_true(player.can_dodge(), "Beat-aligned dash should skip starting the dodge cooldown")
+	# K3 (D6): the aligned dodge refunds HALF the cooldown, not all of it.
+	assert_false(player.can_dodge(), "K3: a beat-aligned dash still starts a (shortened) cooldown")
+	assert_almost_eq(player._dodge_cooldown_timer, player.dodge_cooldown * 0.5, 0.0001, "K3: half the cooldown is refunded")
 
 func test_emp_dash_cancel_still_works_with_cooldown_active() -> void:
 	player.start_dodge_cooldown()

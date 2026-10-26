@@ -8,9 +8,9 @@ extends PlayerState
 var roll_timer: float = 0.0
 var roll_direction: Vector2 = Vector2.RIGHT
 var _iframes_ended: bool = false
-## Set on enter() when the roll landed within the Conductor's beat-align window; if true,
-## exit() skips starting the shared dodge cooldown (the reward-only beat-alignment bonus).
-var _skip_cooldown: bool = false
+## Set on enter() when the roll landed within the Conductor beat-align window; if true,
+## exit() starts the shared dodge cooldown with the K3 refund (the reward-only bonus).
+var _beat_aligned: bool = false
 
 func enter() -> void:
 	if not player and owner:
@@ -24,15 +24,12 @@ func enter() -> void:
 	var anim := _anim()
 	if anim:
 		anim.play_fitted("roll", roll_iframe_duration + roll_recovery_duration)
-	if player.health_component:
-		player.health_component.is_invincible = true
-	_skip_cooldown = player.try_beat_aligned_dodge_reward()
+	player.set_dodge_iframes(true) # K8: invincible and through enemy bodies
+	_beat_aligned = player.try_beat_aligned_dodge_reward()
 
 func exit() -> void:
-	if player.health_component:
-		player.health_component.is_invincible = false
-	if not _skip_cooldown:
-		player.start_dodge_cooldown()
+	player.set_dodge_iframes(false)
+	player.start_dodge_cooldown(_beat_aligned)
 	# H3: top-down roll -- no residual z slide once it ends.
 	if player.current_path == null:
 		player.velocity.z = 0.0
@@ -46,8 +43,7 @@ func physics_update(delta: float) -> void:
 	var elapsed = total_duration - roll_timer
 	if not _iframes_ended and elapsed >= roll_iframe_duration:
 		_iframes_ended = true
-		if player.health_component:
-			player.health_component.is_invincible = false
+		player.set_dodge_iframes(false) # K8: the vulnerable tail collides with enemies again
 
 	var path_dir = player.get_path_direction(roll_direction)
 	player.velocity.x = path_dir.x * player.roll_speed

@@ -1,7 +1,8 @@
 class_name EscapeKillWall
 extends Area3D
 
-@export var speed: float = 3.0
+## L4 (D10): 5.5 m/s over the ~120 m Zone 8 course -- Nick at full run still beats it by ~9 s.
+@export var speed: float = 5.5
 @export var damage: float = 15.0
 @export var damage_beat_interval: int = 1
 

@@ -27,7 +27,7 @@ func before_each() -> void:
 	add_child(_wall)
 	add_child(_end)
 	_wall.global_position = Vector3(275.0, -4.0, 0.0)
-	_end.global_position = Vector3(338.0, -4.0, 0.0)
+	_end.global_position = Vector3(398.0, -4.0, 0.0) # L4: the ~120 m course
 
 func after_each() -> void:
 	super.after_each()
@@ -66,7 +66,7 @@ func test_respawn_before_the_escape_leaves_the_wall_alone() -> void:
 
 func test_wall_stops_once_it_passes_the_end_trigger() -> void:
 	SignalBus.miniboss_defeated.emit()
-	_wall.global_position.x = 339.0
+	_wall.global_position.x = 399.0
 	_seq._physics_process(0.016)
 	assert_false(_wall.is_moving, "Wall stops after sweeping past the exit")
 

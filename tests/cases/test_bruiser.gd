@@ -8,7 +8,7 @@ func test_bruiser_shield_and_guard_break() -> void:
 	var combat = bruiser.get_node("EnemyCombatComponent")
 	var hurtbox = bruiser.get_node("Hurtbox3D")
 	
-	assert_eq(health.current_shield, 50.0, "Bruiser starts with 50 shield")
+	assert_eq(health.current_shield, 80.0, "K5 (D7): Bruiser starts with 80 shield")
 	
 	# Normal hit (10 damage, not guard breaking)
 	var dmg_normal = DamageInfo.new()
@@ -16,7 +16,7 @@ func test_bruiser_shield_and_guard_break() -> void:
 	dmg_normal.stun = 0.5
 	hurtbox.receive_hit(dmg_normal)
 	
-	assert_eq(health.current_shield, 40.0, "Shield absorbs damage")
+	assert_eq(health.current_shield, 70.0, "Shield absorbs damage")
 	assert_false(combat.is_stunned(), "Bruiser not stunned while shield is up")
 	
 	# Guard break hit (10 damage, guard breaking)
@@ -26,7 +26,7 @@ func test_bruiser_shield_and_guard_break() -> void:
 	dmg_guard_break.is_guard_breaking = true
 	hurtbox.receive_hit(dmg_guard_break)
 	
-	assert_eq(health.current_shield, 30.0, "Shield absorbs guard break damage")
+	assert_eq(health.current_shield, 60.0, "Shield absorbs guard break damage")
 	assert_true(combat.is_stunned(), "Guard breaking attack stuns despite shield")
 	
 	# Clear stun
@@ -34,7 +34,7 @@ func test_bruiser_shield_and_guard_break() -> void:
 	
 	# Break shield completely
 	var dmg_heavy = DamageInfo.new()
-	dmg_heavy.amount = 40.0
+	dmg_heavy.amount = 60.0
 	dmg_heavy.stun = 0.5
 	hurtbox.receive_hit(dmg_heavy)
 	

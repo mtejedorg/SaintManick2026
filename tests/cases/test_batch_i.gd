@@ -184,9 +184,13 @@ func test_zone_one_prompts_once_per_run() -> void:
 	var got: Array[String] = []
 	var on_banner := func(text: String, _hold: float): got.append(text)
 	SignalBus.banner_requested.connect(on_banner)
+	var seen_before: bool = SaveManager.profile.seen_controls
+	SaveManager.profile.seen_controls = false
 
 	SignalBus.zone_entered.emit(zone_2)
 	assert_eq(got.size(), 0, "Other zones show no prompts")
+	# L6: a Zone 2 entry marks the controls as seen for good; this test wants a fresh profile.
+	SaveManager.profile.seen_controls = false
 	SignalBus.zone_entered.emit(zone_1)
 	assert_eq(got.size(), 1, "The first card fires on entry")
 	if got.size() > 0:
@@ -206,6 +210,7 @@ func test_zone_one_prompts_once_per_run() -> void:
 	SignalBus.zone_entered.emit(zone_1)
 	assert_eq(got.size(), 4, "run_started resets it")
 	SignalBus.banner_requested.disconnect(on_banner)
+	SaveManager.profile.seen_controls = seen_before
 
 func test_zone_one_prompts_drop_pending_cards_on_life_lost() -> void:
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()

@@ -12,13 +12,16 @@ const COMBO_RESOURCE_PATHS: Array[String] = [
 
 static var _combo_defs_by_chain: Dictionary = {}
 
-## EMP Dash-Cancel (M5b): a partial spender. During the recovery portion of an attack
-## (the tail end of attack_timer, after the hitbox's active window), a dash input consumes
-## 25 meter and cancels straight into StateDash, skipping the remaining recovery frames.
+## EMP Dash-Cancel (M5b): a partial spender. K2 (D22): during the ACTIVE window of a hit
+## (hitbox live, before recovery) a dash input consumes 25 meter and cancels straight into
+## StateDash -- paying buys the cancel before the recovery even starts.
 const EMP_DASH_CANCEL_COST: float = 25.0
 ## Fraction of the current hit's total duration considered "active" (hitbox live). The
-## remainder is recovery, during which the EMP Dash-Cancel window is open.
+## remainder is recovery.
 const ACTIVE_WINDOW_FRACTION: float = 0.6
+## K2 (D22): the free dodge cancel -- the last this-much of the RECOVERY window, once the
+## current hit connected (player.hit_connected), a dash/roll press cancels for no meter.
+const FREE_CANCEL_RECOVERY_FRACTION: float = 0.4
 
 ## T2: generic (unmatched/mashed) heavy hits pressure a shield at this multiple of their
 ## base amount instead of shattering it outright — only Battery Ram (ComboDef.is_shield_breaker)
@@ -29,7 +32,11 @@ var attack_timer: float = 0.0
 var current_hit_duration: float = 0.0
 var combo_step: int = 0
 var max_combo_step: int = 2
+## Generic (unmatched) hit windows, first / second / third hit. Light hits use
+## attack_durations; K1 (D3): generic heavies are slower (heavy_attack_durations) so the
+## named routes out-damage heavy mashing. Matched routes use their ComboDef.duration.
 var attack_durations: Array[float] = [0.3, 0.3, 0.6]
+@export var heavy_attack_durations: Array[float] = [0.45, 0.45, 0.75]
 const COMBO_WINDOW: float = 0.15
 
 # Presses landed before the combo window opens are buffered and consumed when
@@ -101,8 +108,11 @@ func _start_attack(is_heavy: bool) -> void:
 	if combo_def and current_sequence.size() == combo_def.input_chain.size():
 		max_combo_step = combo_step
 
-	attack_timer = combo_def.duration if combo_def else attack_durations[combo_step]
+	var generic_durations: Array[float] = heavy_attack_durations if is_heavy else attack_durations
+	attack_timer = combo_def.duration if combo_def else generic_durations[combo_step]
 	current_hit_duration = attack_timer
+	# K2: a new hit has not connected yet (the free dodge cancel waits for it).
+	player.hit_connected = false
 
 	var active_hitbox: Area3D = player.bionic_arm_hitbox if is_heavy else player.katana_hitbox
 	var inactive_hitbox: Area3D = player.katana_hitbox if is_heavy else player.bionic_arm_hitbox
@@ -186,6 +196,32 @@ func _try_emp_dash_cancel() -> bool:
 	return true
 
 
+## True while the current hit is in its active window (the first ACTIVE_WINDOW_FRACTION of
+## its duration); false once recovery starts.
+func is_in_active_window() -> bool:
+	return attack_timer > current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
+
+## K2: true in the last FREE_CANCEL_RECOVERY_FRACTION of the recovery window.
+func is_in_free_cancel_window() -> bool:
+	var recovery := current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
+	return attack_timer <= recovery * FREE_CANCEL_RECOVERY_FRACTION
+
+## K2 (D22): the attack's dodge cancels. `dash_pressed` = a dash press this frame.
+## - EMP Dash-Cancel: a dash press in the ACTIVE window spends EMP_DASH_CANCEL_COST.
+## - Free cancel: in the last FREE_CANCEL_RECOVERY_FRACTION of recovery, once this hit
+##   connected, the buffered dash/roll (this frame's press included, dodge cooldown
+##   respected) fires for no meter.
+## Returns true when it left the attack state.
+func _try_dodge_cancel(dash_pressed: bool) -> bool:
+	if dash_pressed and is_in_active_window():
+		return _try_emp_dash_cancel()
+	if player.hit_connected and is_in_free_cancel_window():
+		var dodge_state := player.take_buffered_dodge()
+		if dodge_state != "":
+			transition_requested.emit(dodge_state)
+			return true
+	return false
+
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
 	player.move_and_slide()
@@ -193,16 +229,15 @@ func physics_update(delta: float) -> void:
 	attack_timer -= delta
 
 	# Recovery: the tail end of the hit, after its active window closes. The hitbox
-	# switches off and the EMP Dash-Cancel window opens.
-	var active_window_end = current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
-	var in_recovery = attack_timer <= active_window_end
+	# switches off.
+	var in_recovery := not is_in_active_window()
 	if in_recovery and (player.katana_hitbox.is_active or player.bionic_arm_hitbox.is_active):
 		player.katana_hitbox.is_active = false
 		player.bionic_arm_hitbox.is_active = false
 
-	if in_recovery and Input.is_action_just_pressed("dash"):
-		if _try_emp_dash_cancel():
-			return
+	# K2: dodge cancels -- paid (EMP, active window) or free (recovery tail, hit connected).
+	if not player.input_locked and _try_dodge_cancel(Input.is_action_just_pressed("dash")):
+		return
 
 	# Buffer any press during the attack; consume it once the window opens.
 	if Input.is_action_just_pressed("attack_light") or Input.is_action_just_pressed("attack_heavy"):

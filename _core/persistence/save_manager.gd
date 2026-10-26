@@ -9,7 +9,21 @@ var profile: PlayerProfile
 ## (GDD §5.2 "basic chains" vs. purchased "advanced juggles or heavy sweeps").
 const STARTER_COMBOS: Array[String] = ["AAA", "AAB"]
 
+## L8: the audio buses the options menu drives (names from default_bus_layout.tres).
+const BUS_MASTER := &"Master"
+const BUS_MUSIC := &"Music"
+const BUS_SFX := &"SFX"
+## A volume at or below this is treated as mute (linear_to_db(0) is -inf).
+const MUTE_LINEAR := 0.001
+const MUTE_DB := -80.0
+
+## L8: each bus's authored level (Music -6 dB, ...), read once before any setting is applied.
+## A slider at 100 % restores that level; lower values attenuate from it, so the options
+## never flatten the mix contract in default_bus_layout.tres.
+var _bus_base_db: Dictionary = {}
+
 func _ready() -> void:
+	_capture_bus_baselines()
 	load_profile()
 
 func load_profile() -> void:
@@ -108,6 +122,51 @@ func save_profile() -> void:
 			err = DirAccess.rename_absolute(tmp_abs, real_abs)
 		if err != OK:
 			push_error("SaveManager: Failed to move the saved profile into place. Error: " + str(err))
+
+## L8: applies the profile's options (bus volumes + window mode). Called by the title screen
+## at boot, after the profile has loaded.
+func apply_settings() -> void:
+	if not profile:
+		return
+	set_bus_volume_linear(BUS_MASTER, profile.master_volume)
+	set_bus_volume_linear(BUS_MUSIC, profile.music_volume)
+	set_bus_volume_linear(BUS_SFX, profile.sfx_volume)
+	apply_fullscreen(profile.fullscreen)
+
+## L8: linear 0..1 volume for a bus, relative to its authored level. Unknown bus = no-op.
+func set_bus_volume_linear(bus: StringName, value: float) -> void:
+	var idx := AudioServer.get_bus_index(bus)
+	if idx < 0:
+		return
+	if not _bus_base_db.has(bus):
+		_bus_base_db[bus] = AudioServer.get_bus_volume_db(idx)
+	var db: float = MUTE_DB if value <= MUTE_LINEAR else float(_bus_base_db[bus]) + linear_to_db(clampf(value, 0.0, 1.0))
+	AudioServer.set_bus_volume_db(idx, db)
+
+## L8: the authored level of a bus (what 100 % maps to).
+func bus_base_db(bus: StringName) -> float:
+	if not _bus_base_db.has(bus):
+		var idx := AudioServer.get_bus_index(bus)
+		return AudioServer.get_bus_volume_db(idx) if idx >= 0 else 0.0
+	return float(_bus_base_db[bus])
+
+## L8: fullscreen on/off. Only switches when the mode actually differs (a maximised window
+## stays maximised when fullscreen is off); a no-op on the headless display server.
+func apply_fullscreen(on: bool) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var mode := DisplayServer.window_get_mode()
+	var is_full := mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+	if on and not is_full:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	elif not on and is_full:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+
+func _capture_bus_baselines() -> void:
+	for bus in [BUS_MASTER, BUS_MUSIC, BUS_SFX]:
+		var idx := AudioServer.get_bus_index(bus)
+		if idx >= 0 and not _bus_base_db.has(bus):
+			_bus_base_db[bus] = AudioServer.get_bus_volume_db(idx)
 
 ## H4: the temp file next to save_path, keeping the .tres extension (ResourceSaver picks
 ## the format from it, so a bare .tmp suffix is unrecognised).

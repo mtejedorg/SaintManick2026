@@ -21,11 +21,11 @@ func test_sniper_stats() -> void:
 func test_enforcer_stats() -> void:
 	var stats = load("res://characters/enemies/enforcer/enforcer_stats.tres") as EnemyStats
 	assert_not_null(stats, "Enforcer stats should be loadable")
-	assert_eq(stats.max_health, 600.0, "Enforcer HP should be 600.0")
+	assert_eq(stats.max_health, 900.0, "K7 (D13): Enforcer HP should be 900.0")
 	assert_eq(stats.damage, 22.0, "Enforcer damage should be 22.0")
 
 func test_headliner_stats() -> void:
 	var stats = load("res://characters/enemies/headliner/headliner_stats.tres") as EnemyStats
 	assert_not_null(stats, "Headliner stats should be loadable")
-	assert_eq(stats.max_health, 1500.0, "Headliner HP should be 1500.0")
+	assert_eq(stats.max_health, 2400.0, "K7 (D13): Headliner HP should be 2400.0")
 	assert_eq(stats.damage, 25.0, "Headliner damage should be 25.0")

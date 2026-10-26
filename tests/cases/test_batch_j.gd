@@ -135,10 +135,10 @@ func test_lethal_hitbox_overlap_respawns_outside_the_physics_flush() -> void:
 	_keep(hitbox)
 	hitbox.global_position = player.global_position
 
-	var frames := 0
-	while GameManager.current_lives == lives_before and frames < 40:
+	# K11: the respawn lands after the 0.9 s death beat (real time) -- wait up to 2.5 s.
+	var deadline := Time.get_ticks_msec() + 2500
+	while GameManager.current_lives == lives_before and Time.get_ticks_msec() < deadline:
 		await get_tree().physics_frame
-		frames += 1
 	await get_tree().process_frame
 	await get_tree().physics_frame
 	OS.remove_logger(catcher)
@@ -332,6 +332,8 @@ func test_lethal_fall_leaves_the_grace_to_the_life_loss_respawn() -> void:
 # --- J5 ------------------------------------------------------------------------------
 
 func _prompts(first: float, replay: float, gap: float) -> Node:
+	# L6: these cards only play on a profile that has not reached Zone 2 yet.
+	SaveManager.profile.seen_controls = false
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()
 	prompts.first_delay = first
 	prompts.replay_delay = replay

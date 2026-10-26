@@ -20,7 +20,7 @@ func _ready() -> void:
 
 func _physics_process(_d: float) -> void:
 	_frame += 1
-	# Walk the player through the Zone 1 encounter trigger (x 0..10), then Zone 2 trigger (x 26..36).
+	# Walk the player through the Zone 1 encounter trigger (x 0..10), then Zone 2 trigger (x 29..39).
 	if _frame == 5:
 		if OS.get_cmdline_user_args().has("--fix"):
 			_player.collision_layer = 2

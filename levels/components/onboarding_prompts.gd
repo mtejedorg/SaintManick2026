@@ -11,9 +11,14 @@ extends Node
 ## respawn's zone re-entry after `replay_delay` (clear of the 2.0 s LIFE LOST card). Two more
 ## one-shot cards per run: the top-down controls `top_down_delay` s after the first camera
 ## shift into top-down has landed, and BASS DROP READY the first time the meter is full.
+## L6 (D34): the Zone 1 cards only play until the player first reaches Zone 2 -- ever. That
+## entry sets PlayerProfile.seen_controls (saved); with it set the Zone 1 cards are skipped.
+## The TOP-DOWN and BASS DROP cards keep their once-per-run logic, unaffected by the flag.
 
 ## The zone whose entry plays the prompts (zone names are "SECTOR NN -- DESCRIPTION").
 @export var zone_prefix: String = "SECTOR 01"
+## L6: the zone whose first entry marks the controls as seen for good.
+@export var seen_zone_prefix: String = "SECTOR 02"
 ## Seconds after zone entry before the first (ATTACK) card.
 @export var first_delay: float = 1.5
 ## Seconds after a respawn re-entry before the replayed cards (LIFE LOST runs 0.4+1.2+0.4 s).
@@ -71,11 +76,13 @@ func _on_player_life_lost(_lives: int) -> void:
 		_top_down_card = 0 # dropped before it showed: the next landed shift plays it
 
 func _on_zone_entered(zone_name: String) -> void:
+	if seen_zone_prefix != "" and zone_name.begins_with(seen_zone_prefix):
+		_mark_controls_seen()
 	if not zone_name.begins_with(zone_prefix):
 		if _zone != "" and zone_name != _zone:
 			_token += 1 # moved on: drop the cards still pending
 		return
-	if _shown:
+	if _shown or _controls_seen():
 		return
 	_shown = true
 	_zone = zone_name
@@ -85,6 +92,16 @@ func _on_zone_entered(zone_name: String) -> void:
 	var first := _next_index # _show() advances _next_index (a 0 s delay shows at once)
 	for i in range(first, PROMPTS.size()):
 		_schedule(i, start + spacing * (i - first), _token)
+
+## L6: true once the profile says the player has already reached Zone 2 in some run.
+func _controls_seen() -> bool:
+	return SaveManager != null and SaveManager.profile != null and SaveManager.profile.seen_controls
+
+func _mark_controls_seen() -> void:
+	if SaveManager == null or SaveManager.profile == null or SaveManager.profile.seen_controls:
+		return
+	SaveManager.profile.seen_controls = true
+	SaveManager.save_profile()
 
 func _schedule(index: int, delay: float, token: int) -> void:
 	if delay <= 0.0:

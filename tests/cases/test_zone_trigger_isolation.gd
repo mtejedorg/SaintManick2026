@@ -48,7 +48,8 @@ func test_no_zone_trigger_reaches_into_another_zones_gated_arena() -> void:
 			var overlaps: bool = hi > span.x and lo < span.y
 			assert_false(overlaps,
 				"%s (x %.1f..%.1f) must not reach into the %s arena (x %.1f..%.1f)" % [other.name, lo, hi, encounter.name, span.x, span.y])
-	assert_eq(arenas, 2, "Expected the two gated arenas (Z3_Encounter, Z6_Encounter)")
+	# L5 (D23): Zones 1, 4 and 5 gained holo-gate pairs (soft screen-lock).
+	assert_eq(arenas, 5, "Expected the five gated arenas (Z1, Z3, Z4, Z5, Z6 encounters)")
 	slice.free()
 
 ## J9: arenas sealed by something other than a ZoneEncounter's gates -- [left wall, right

@@ -2,7 +2,7 @@ class_name StateSidescroll
 extends CameraState
 
 func enter() -> void:
-	camera.offset = Vector3(0, 3, 10)
+	camera.offset = DroneCamera.SIDESCROLL_OFFSET
 	camera.rotation = Vector3.ZERO
 	if camera.target and "is_jump_enabled" in camera.target:
 		camera.target.is_jump_enabled = true

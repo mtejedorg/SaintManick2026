@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://ui/menus/pause_menu.gd" id="1_pause"]
 [ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://ui/menus/options_menu.tscn" id="3_options"]
 
 [node name="PauseMenu" type="CanvasLayer"]
 process_mode = 3
@@ -59,6 +60,11 @@ theme_override_constants/separation = 16
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 text = "RESUME"
+
+[node name="OptionsButton" type="Button" parent="Root/MenuPanel/PanelVBox/ButtonContainer"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "OPTIONS"
 
 [node name="QuitButton" type="Button" parent="Root/MenuPanel/PanelVBox/ButtonContainer"]
 custom_minimum_size = Vector2(0, 56)
@@ -131,3 +137,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"DimLabel"
 text = "PAUSE   Esc · Start"
+
+[node name="OptionsMenu" parent="Root" instance=ExtResource("3_options")]
+layout_mode = 1

@@ -18,6 +18,9 @@ signal ability_meter_changed(current: float, max_meter: float)
 ## F9: Bass Drop armed (true, waiting for the next downbeat) / detonated (false). The HUD
 ## ability bar shows the armed state; Nick's rim holds white-hot while armed.
 signal bass_drop_armed(armed: bool)
+## K3 (D6): a dash/roll landed on the beat (the cyan rim flash plays on Nick). Audio hooks
+## its short tick here; nothing is required to listen.
+signal beat_dodge_landed()
 
 # --- Run Events ---
 ## Emitted at the end of GameManager.start_new_run(). Global systems that carry state

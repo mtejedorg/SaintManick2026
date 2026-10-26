@@ -55,7 +55,21 @@ var respawn_grace_duration: float = 1.0
 var _grace_token: int = 0
 
 ## I6: who landed the lethal hit, for the Game Over "DESTROYED BY" line ("" = unknown).
+## Set (record_lethal_hit) on the lethal hit itself, before the death beat and before
+## player_life_lost fires, so every life-loss listener can read it.
 var last_killer: String = ""
+
+## K11 (D20): the death beat between a lethal hit and the respawn / game over -- real time
+## (ignores the hit-stop time scale; pauses with the tree). Nick locks his input and holds
+## the death clip meanwhile (PlayerController._on_died / StateDead).
+const DEATH_BEAT_SECONDS := 0.9
+const DEATH_HIT_STOP_DURATION := 0.5
+const DEATH_HIT_STOP_SCALE := 0.2
+## Bumped per death beat and per new run: a pending beat from an older death or run
+## never resolves into this one.
+var _death_beat_token: int = 0
+## True from the lethal hit until the death beat resolves (or is cancelled).
+var death_beat_pending: bool = false
 
 var is_test: bool = false
 
@@ -106,6 +120,7 @@ func start_new_run() -> void:
 	last_killer = ""
 	_zones_seen.clear()
 	run_ended = false
+	cancel_death_beat() # K11: a death beat pending from the last run never lands here
 
 	# A new run starts from the slice's own first zone — never a previous run's checkpoint.
 	has_checkpoint = false
@@ -139,6 +154,41 @@ func spend_scrap(amount: int) -> bool:
 			SaveManager.save_profile()
 			return true
 	return false
+
+## K11 (D20): called (deferred) by the player HealthComponent on the lethal hit. A 0.5 s
+## slow-motion hit-stop (replacing the hit's own short stop), then DEATH_BEAT_SECONDS of
+## real time later the existing respawn_or_game_over -- the respawn and the final death
+## alike (the run_ended guard stays inside respawn_or_game_over). The lethal hit has
+## already burst the VCR overlay (player_damaged).
+func begin_death_beat() -> void:
+	_death_beat_token += 1
+	var token := _death_beat_token
+	death_beat_pending = true
+	var hit_stop := get_node_or_null("/root/HitStop")
+	if hit_stop:
+		hit_stop.start_hit_stop(DEATH_HIT_STOP_DURATION, DEATH_HIT_STOP_SCALE, true)
+	get_tree().create_timer(DEATH_BEAT_SECONDS, false, false, true).timeout.connect(func():
+		if token == _death_beat_token:
+			death_beat_pending = false
+			respawn_or_game_over()
+	)
+
+## Ends a pending death beat now: the respawn or game over lands at once.
+func finish_death_beat_now() -> void:
+	if not death_beat_pending:
+		return
+	cancel_death_beat()
+	respawn_or_game_over()
+
+## Drops a pending death beat (a new run; tests that kill Nick and move on), ending its
+## slow-motion if it is still running.
+func cancel_death_beat() -> void:
+	_death_beat_token += 1
+	if death_beat_pending:
+		var hit_stop := get_node_or_null("/root/HitStop")
+		if hit_stop:
+			hit_stop.start_hit_stop(0.0, 1.0, true) # back to normal speed now
+	death_beat_pending = false
 
 ## GDD §5: "HP reaching 0 costs a life; permadeath only when HP hits 0 with 0 lives
 ## remaining." N lives = N respawns — the death that finds current_lives == 0 is game over.
@@ -192,6 +242,7 @@ func abandon_run() -> void:
 	if run_ended:
 		return
 	run_ended = true
+	cancel_death_beat() # K11: abandoned mid death beat -- no respawn lands on the title
 	_bank_run_currencies()
 	scrap = 0
 	cells = 0

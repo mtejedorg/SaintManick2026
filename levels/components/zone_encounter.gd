@@ -9,6 +9,10 @@ signal encounter_completed
 @export var is_top_down: bool = false
 @export var target_camera_path: Path3D
 @export var gates: Array[Node3D] = []
+## L5 (D23): the cue a cleared SIDE-SCROLL encounter shows as its holo-gates open (top-down
+## rooms have the camera shift back as their cue). Empty = no banner.
+@export var go_banner_text: String = "GO ->"
+@export var go_banner_hold: float = 1.0
 
 var current_wave_index: int = 0
 var active: bool = false
@@ -118,6 +122,8 @@ func _complete_encounter() -> void:
 		SignalBus.camera_shift_requested.emit(false, target_camera_path, 1.5)
 	else:
 		set_gate_locked(false)
+		if go_banner_text != "":
+			SignalBus.banner_requested.emit(go_banner_text, go_banner_hold)
 	encounter_completed.emit()
 
 ## H1: the shift back to side-scroll landed -> open the room (one-shot).

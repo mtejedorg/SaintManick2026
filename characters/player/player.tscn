@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://characters/player/player.gd" id="1_xxx"]
 [ext_resource type="Script" path="res://_core/state_machine/state_machine.gd" id="2_xxx"]
@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://characters/player/nick_visual.tscn" id="12_visual"]
 [ext_resource type="Script" path="res://characters/player/player_animation_controller.gd" id="13_pac"]
 [ext_resource type="Script" path="res://characters/player/states/player_state_hurt.gd" id="14_hurt"]
+[ext_resource type="Script" path="res://characters/player/states/player_state_dead.gd" id="15_dead"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xxx"]
 radius = 0.5
@@ -28,6 +29,17 @@ size = Vector3(1.5, 1.5, 2.5)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bionic_arm"]
 size = Vector3(3.0, 3.0, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ring"]
+transparency = 1
+depth_draw_mode = 2
+shading_mode = 0
+albedo_color = Color(0, 0.85, 1, 0.35)
+
+[sub_resource type="TorusMesh" id="TorusMesh_ring"]
+material = SubResource("StandardMaterial3D_ring")
+inner_radius = 0.5
+outer_radius = 0.6
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -88,6 +100,12 @@ health_component = NodePath("../HealthComponent")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox3D"]
 shape = SubResource("CapsuleShape3D_xxx")
 
+[node name="TopDownRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.95, 0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("TorusMesh_ring")
+
 [node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
 script = ExtResource("2_xxx")
 initial_state = NodePath("StateIdle")
@@ -112,3 +130,6 @@ script = ExtResource("8_xxx")
 
 [node name="StateHurt" type="Node" parent="StateMachine"]
 script = ExtResource("14_hurt")
+
+[node name="StateDead" type="Node" parent="StateMachine"]
+script = ExtResource("15_dead")

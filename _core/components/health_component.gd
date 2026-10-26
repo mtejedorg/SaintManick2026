@@ -102,4 +102,5 @@ func take_damage(damage_info: DamageInfo) -> void:
 				gm.record_lethal_hit(damage_info) # I6: the Game Over "DESTROYED BY" line
 				# J13: deferred once -- a lethal Hitbox overlap lands here inside the physics
 				# flush (area_entered), and the respawn listeners flip monitoring/collision.
-				gm.call_deferred("respawn_or_game_over")
+				# K11: the 0.9 s death beat runs first, then respawn_or_game_over.
+				gm.call_deferred("begin_death_beat")

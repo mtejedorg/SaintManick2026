@@ -92,6 +92,15 @@ func run_all_tests() -> bool:
 			
 			# Run after_each
 			await test_instance.after_each()
+			# K11: a death beat a test started (a lethal hit on Nick) resolves before the next
+			# test -- the respawn refills GameManager HP as the old one-frame deferral did. A
+			# pending final death outside is_test is only cancelled (no scene change here).
+			var gm = get_node_or_null("/root/GameManager")
+			if gm and gm.get("death_beat_pending"):
+				if gm.current_lives > 0 or gm.is_test:
+					gm.finish_death_beat_now()
+				else:
+					gm.cancel_death_beat()
 			
 			if test_instance.failures.is_empty():
 				passed_tests += 1

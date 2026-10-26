@@ -6,14 +6,17 @@
 extends Node
 
 const SLICE_PATH := "res://levels/slice/vertical_slice.tscn"
-const SIDE_OFFSET := Vector3(0, 3, 10)
-const TOP_OFFSET := Vector3(0, 15, 5)
-const TOP_ROT := Vector3(-PI / 3.0, 0, 0)
+const SIDE_OFFSET := DroneCamera.SIDESCROLL_OFFSET
+const TOP_OFFSET := DroneCamera.TOP_DOWN_OFFSET
+const TOP_ROT := DroneCamera.TOP_DOWN_ROTATION
 
 var out_dir := "res://Captures/audit_latest/"
 var slice: Node3D
 var player: Node3D
 var camera: Camera3D
+## The rail Nick starts on: side shots keep it, top shots go off-rail (null) like the
+## real top-down shift, so the K10 ground ring shows exactly where the game shows it.
+var _side_path: Path3D = null
 var _done := false
 
 ## Gameplay-camera shot list: real follow-camera framings at each zone's playable spot.
@@ -26,19 +29,19 @@ var zone_shots := [
 	{"name": "mc_z05_market",        "pos": Vector3(180, 1.0, 0),   "mode": "side"},
 	{"name": "mc_z06_plaza",         "pos": Vector3(225, -3.0, 0),  "mode": "top"},
 	{"name": "mc_z07_enforcer",      "pos": Vector3(254, -3.0, 0),  "mode": "side"},
-	{"name": "mc_z08_escape",        "pos": Vector3(300, -3.5, 0),  "mode": "side"},
-	{"name": "mc_z09_elevator",      "pos": Vector3(349, -3.5, 0),  "mode": "side"},
-	{"name": "mc_z10_headliner",     "pos": Vector3(360, 15.5, 0),  "mode": "side"},
-	{"name": "mc_z10_headliner_top", "pos": Vector3(360, 15.5, 0),  "mode": "top"},
-	{"name": "mc_z10_headliner_inside", "pos": Vector3(360, 15.5, 0), "mode": "inside"},
-	{"name": "mc_z10_headliner_high", "pos": Vector3(362, 15.5, 0), "mode": "high"},
+	{"name": "mc_z08_escape",        "pos": Vector3(360, -3.5, 0),  "mode": "side"},
+	{"name": "mc_z09_elevator",      "pos": Vector3(409, -3.5, 0),  "mode": "side"},
+	{"name": "mc_z10_headliner",     "pos": Vector3(420, 15.5, 0),  "mode": "side"},
+	{"name": "mc_z10_headliner_top", "pos": Vector3(420, 15.5, 0),  "mode": "top"},
+	{"name": "mc_z10_headliner_inside", "pos": Vector3(420, 15.5, 0), "mode": "inside"},
+	{"name": "mc_z10_headliner_high", "pos": Vector3(422, 15.5, 0), "mode": "high"},
 ]
 
 ## Context-only overviews (free camera).
 var overview_shots := [
 	{"name": "ov_z01_z03", "from": Vector3(60, 30, 60),  "at": Vector3(60, 0, 0)},
 	{"name": "ov_z04_z07", "from": Vector3(190, 35, 70), "at": Vector3(190, 0, 0)},
-	{"name": "ov_z08_z10", "from": Vector3(330, 40, 70), "at": Vector3(330, 5, 0)},
+	{"name": "ov_z08_z10", "from": Vector3(360, 45, 90), "at": Vector3(360, 5, 0)},
 	{"name": "ov_topdown_all", "from": Vector3(185, 160, 1), "at": Vector3(185, 0, 0)},
 ]
 
@@ -66,8 +69,11 @@ func _run() -> void:
 
 	player = slice.get_node("Player")
 	camera = slice.get_node("DroneCamera")
+	_side_path = player.get("current_path")
 	var hud: CanvasLayer = slice.get_node("HUD")
 	var vcr: CanvasLayer = slice.get_node("VcrOverlay")
+	# L7: the slice auto-pauses on focus loss; a paused tree renders black frames here.
+	slice.get_node("PauseMenu").set("auto_pause_on_focus_loss", false)
 
 	_freeze_gameplay()
 	var input_overlay: CanvasLayer = hud.get_node_or_null("InputOverlay")
@@ -145,6 +151,8 @@ func _place(pos: Vector3, mode: String, zone: int = 0) -> void:
 			atmo.apply_zone(zone, true)
 	player.global_position = pos
 	player.velocity = Vector3.ZERO
+	if "current_path" in player:
+		player.current_path = null if mode == "top" else _side_path
 	var offset := SIDE_OFFSET
 	var rot := Vector3.ZERO
 	match mode:

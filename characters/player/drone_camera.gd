@@ -4,8 +4,14 @@ extends Camera3D
 @export var target: Node3D
 @export var smooth_speed: float = 5.0
 
+## The two framings (one source for the camera states and tools/capture). K10 (D21): the
+## top-down drone sits closer, (0, 15, 5) -> (0, 12, 4.5), at the same -60 deg pitch.
+const SIDESCROLL_OFFSET := Vector3(0, 3, 10)
+const TOP_DOWN_OFFSET := Vector3(0, 12, 4.5)
+const TOP_DOWN_ROTATION := Vector3(-PI / 3.0, 0, 0)
+
 # Current active offset and rotation (managed by states and tweened in transition)
-var offset: Vector3 = Vector3(0, 3, 10)
+var offset: Vector3 = SIDESCROLL_OFFSET
 
 var base_position: Vector3 = Vector3.ZERO
 var shake_strength: float = 0.0

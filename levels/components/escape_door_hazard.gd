@@ -2,6 +2,9 @@ class_name EscapeDoorHazard
 extends Node3D
 
 @export var close_beat_interval: int = 4
+## L4: beats this door's cycle starts ahead of the authored one, so two doors on the same
+## course do not slam in phase (0 = the first door's timing).
+@export var cycle_offset: int = 0
 @export var closed_duration_beats: int = 2
 @export var slide_distance: float = 3.0
 @export var close_duration: float = 0.1
@@ -39,6 +42,7 @@ func _ready() -> void:
 
 	initial_y = door_body.position.y
 	hitbox.is_active = false
+	local_beat_counter = posmod(cycle_offset, maxi(close_beat_interval, 1))
 
 	# The door's glow material is a shared resource: flash a private copy.
 	if door_body is CSGPrimitive3D and door_body.material is StandardMaterial3D:

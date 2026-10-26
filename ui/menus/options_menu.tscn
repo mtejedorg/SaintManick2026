@@ -1,0 +1,122 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/menus/options_menu.gd" id="1_options"]
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+
+[node name="OptionsMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_options")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039, 0.039, 0.071, 0.78)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(620, 0)
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "OPTIONS"
+horizontal_alignment = 1
+
+[node name="Grid" type="GridContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 14
+columns = 3
+
+[node name="MasterLabel" type="Label" parent="Panel/VBox/Grid"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "MASTER"
+
+[node name="MasterSlider" type="HSlider" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(340, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+step = 5.0
+value = 100.0
+
+[node name="MasterValue" type="Label" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "100%"
+horizontal_alignment = 2
+
+[node name="MusicLabel" type="Label" parent="Panel/VBox/Grid"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "MUSIC"
+
+[node name="MusicSlider" type="HSlider" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(340, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+step = 5.0
+value = 100.0
+
+[node name="MusicValue" type="Label" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SfxLabel" type="Label" parent="Panel/VBox/Grid"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "SFX"
+
+[node name="SfxSlider" type="HSlider" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(340, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+step = 5.0
+value = 100.0
+
+[node name="SfxValue" type="Label" parent="Panel/VBox/Grid"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "100%"
+horizontal_alignment = 2
+
+[node name="FullscreenToggle" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+toggle_mode = true
+text = "FULLSCREEN: OFF"
+
+[node name="BackButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "BACK"

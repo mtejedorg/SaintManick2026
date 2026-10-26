@@ -71,7 +71,7 @@ func test_elevator_hands_nick_to_the_dock_rail_and_boss_gate_closes_behind_him()
 	# Platform top must be flush with the dock top (platform box 1 m tall, dock centre 14.5 + 0.5).
 	var dock: Node3D = slice.get_node("Zone10_Dock")
 	assert_eq(elevator.target_y, dock.position.y, "Elevator arrives with its top flush with the dock top")
-	# The boss gate (x 352-353) must close behind Nick: trigger sits past it.
+	# The boss gate (x 412-413 since L4) must close behind Nick: trigger sits past it.
 	var gate: Node3D = slice.get_node("LeftGate")
 	var trigger: Node3D = slice.get_node("Zone10_Trigger")
 	assert_gt(trigger.global_position.x - 1.0, gate.global_position.x + 0.5, "Zone10_Trigger must be east of LeftGate")
@@ -91,7 +91,7 @@ func test_elevator_hands_nick_to_the_dock_rail_and_boss_gate_closes_behind_him()
 func test_player_walking_the_zone8_rail_boards_the_elevator() -> void:
 	var slice := _spawn_slice()
 	# Strip everything that could hurt/interrupt Nick on the way; this is a pure rail test.
-	for n in ["Z7_Enemies", "Z8_Enemies", "RhythmEnforcer", "EscapeDoorHazard", "EscapeFallingHazard", "EscapeCollapsingHazard"]:
+	for n in ["Z7_Enemies", "Z8_Enemies", "RhythmEnforcer", "EscapeDoorHazard", "EscapeFallingHazard", "EscapeCollapsingHazard", "EscapeDoorHazard2", "EscapeFallingHazard2"]:
 		var node := slice.get_node_or_null(n)
 		if node:
 			slice.remove_child(node)
@@ -104,19 +104,19 @@ func test_player_walking_the_zone8_rail_boards_the_elevator() -> void:
 	assert_false(elevator.is_active, "Elevator must be idle before Nick boards")
 
 	var x := 240.0
-	while x <= 348.0:
+	while x <= 408.0:
 		player.global_position = Vector3(x, -3.0, 0.0)
 		player.velocity = Vector3.ZERO
 		await get_tree().physics_frame
 		x += 4.0
-	# Hold at the end of the rail (x=348) -- inside the entry trigger (x 346..348).
+	# Hold at the end of the rail (x=408, L4: +60 m) -- inside the entry trigger (x 406..408).
 	for i in 4:
-		player.global_position = Vector3(348.0, -3.0, 0.0)
+		player.global_position = Vector3(408.0, -3.0, 0.0)
 		player.velocity = Vector3.ZERO
 		await get_tree().physics_frame
 	await get_tree().process_frame # start_encounter is deferred out of the body_entered callback
 
-	assert_true(player.global_position.x > 345.0, "The Zone 8 rail must carry Nick to the elevator (x=%.1f)" % player.global_position.x)
+	assert_true(player.global_position.x > 405.0, "The Zone 8 rail must carry Nick to the elevator (x=%.1f)" % player.global_position.x)
 	assert_true(elevator.is_active, "Reaching the end of the Zone 8 rail must start the elevator encounter")
 	slice.free()
 

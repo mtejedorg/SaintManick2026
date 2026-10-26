@@ -39,7 +39,7 @@ func test_battery_ram_zeroes_the_shield() -> void:
 	var bruiser = load("res://characters/enemies/bruiser/bruiser.tscn").instantiate()
 	add_child(bruiser)
 	var health = bruiser.get_node("HealthComponent")
-	assert_eq(health.current_shield, 50.0, "Bruiser should start with its full 50 shield")
+	assert_eq(health.current_shield, 80.0, "K5 (D7): Bruiser should start with its full 80 shield")
 
 	var player = load("res://characters/player/player.tscn").instantiate()
 	add_child(player)

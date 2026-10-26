@@ -31,7 +31,8 @@ func test_fallback_to_default_profile_when_missing() -> void:
 	assert_eq(SaveManager.profile.max_hp_upgrades, 0, "Default hp upgrades should be 0")
 	assert_eq(SaveManager.profile.max_lives_upgrades, 0, "Default lives upgrades should be 0")
 	assert_eq(SaveManager.profile.shield_upgrades, 0, "Default shield upgrades should be 0")
-	assert_false(SaveManager.profile.double_jump_unlocked, "Default double_jump_unlocked should be false")
+	# L1 (D1): the demo starts with the double jump unlocked.
+	assert_true(SaveManager.profile.double_jump_unlocked, "Default double_jump_unlocked should be true")
 	# M8: a brand new profile still ships with the basic combo chains unlocked
 	# (Tri-Cut/Launcher) so Nick can fight before ever visiting the shop.
 	assert_true(SaveManager.profile.unlocked_combos.has("AAA"), "Fresh profile should have Tri-Cut unlocked")

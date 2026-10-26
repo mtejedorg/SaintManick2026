@@ -3,15 +3,15 @@ extends PlayerState
 @export var dash_duration: float = 0.25
 var dash_timer: float = 0.0
 var dash_direction: Vector2 = Vector2.RIGHT
-## Set on enter() when the dash landed within the Conductor's beat-align window; if true,
-## exit() skips starting the shared dodge cooldown (the reward-only beat-alignment bonus).
-var _skip_cooldown: bool = false
+## Set on enter() when the dash landed within the Conductor beat-align window; if true,
+## exit() starts the shared dodge cooldown with the K3 refund (the reward-only bonus).
+var _beat_aligned: bool = false
 
 func enter() -> void:
 	if not player and owner:
 		player = owner as PlayerController
-	if player and player.health_component:
-		player.health_component.is_invincible = true
+	if player:
+		player.set_dodge_iframes(true) # K8: invincible and through enemy bodies
 	dash_timer = dash_duration
 	if player:
 		player.clear_dodge_buffer() # this dodge used the press (EMP cancel included)
@@ -22,15 +22,15 @@ func enter() -> void:
 	var anim := _anim()
 	if anim:
 		anim.play_fitted("dash", dash_duration)
-	_skip_cooldown = player.try_beat_aligned_dodge_reward() if player else false
+	_beat_aligned = player.try_beat_aligned_dodge_reward() if player else false
 
 func exit() -> void:
-	if player and player.health_component:
-		player.health_component.is_invincible = false
+	if player:
+		player.set_dodge_iframes(false)
 	# EMP Dash-Cancel enters this state straight from StateAttack (bypassing can_dodge()),
 	# but it's fine — and intended — for the cooldown to still start here on exit.
-	if player and not _skip_cooldown:
-		player.start_dodge_cooldown()
+	if player:
+		player.start_dodge_cooldown(_beat_aligned)
 	# H3: top-down dash -- no residual z slide once it ends.
 	if player and player.current_path == null:
 		player.velocity.z = 0.0

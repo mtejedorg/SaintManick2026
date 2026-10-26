@@ -1,15 +1,23 @@
 extends CanvasLayer
 
-@onready var battery_rect: TextureRect = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryRect
-## GAP-8 fix (M12): the shield is now an overlaid TextureProgressBar directly on top of
-## the battery (GDD §6.1: "regenerating shield shown as an overlaid layer on top"), not a
-## separate slot using the stamina textures — the Ability Bar owns that slot now.
-@onready var shield_bar: TextureProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
-@onready var lives_rect: TextureRect = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRect
-## Magenta "LAST LIFE" tag under the lives icon, shown when no spare lives remain.
+## D11 (batch M): the HUD cluster is drawn from Controls styled by the theme's Hud* type
+## variations (ui/theme/neon_theme.tres) — no raster art. The battery is a framed 12-segment
+## bar; the low-HP pulse tweens this whole bar's modulate.
+@onready var battery_bar: PanelContainer = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar
+@onready var battery_segments: HBoxContainer = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments
+## Numeric "HP 120/120" readout right of the battery.
+@onready var hp_label: Label = $MarginContainer/VBoxContainer/StatusContainer/HpLabel
+## GAP-8 fix (M12) / D11: the shield is a thin pale-cyan strip directly under the battery
+## (GDD §6.1), filling left-to-right, hidden while the shield is down.
+@onready var shield_bar: ProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
+## One cyan diamond per spare life, up to LIVES_GLYPH_MAX.
+# ART: optional 24x24 Nick head glyph (cyan line art on transparent, PNG) to sit as the first
+# child of LivesRow so the diamonds read as "Nick's lives" at a glance; the row works without it.
+@onready var lives_row: HBoxContainer = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow
+## Magenta "LAST LIFE" tag under the lives glyphs, shown when no spare lives remain.
 @onready var last_life_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LastLifeLabel
-## U6: "xN" tag under the lives icon when there are more lives than the art shows.
-@onready var lives_count_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesCountLabel
+## U6: "xN" tag after the glyphs when there are more lives than glyphs.
+@onready var lives_count_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/LivesCountLabel
 @onready var zone_title_card: Control = $ZoneTitleCard
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
@@ -23,9 +31,6 @@ extends CanvasLayer
 @onready var cells_label: Label = $CellsLabel
 @onready var cores_label: Label = $CoresLabel
 
-## Cropped HUD art (res://ui/hud/art/). Loaded through ResourceLoader — FileAccess.file_exists
-## on a res:// png is false in exported builds (only the imported .ctex ships).
-const ART_DIR := "res://ui/hud/art/"
 const COMBO_CYAN := Color(0.0, 0.961, 1.0, 1.0)
 ## Below this fraction of max HP the battery pulses magenta on every beat.
 const LOW_HP_RATIO := 0.25
@@ -33,8 +38,17 @@ const LOW_HP_MAGENTA := Color(1.0, 0.0, 0.667, 1.0)
 const LOW_HP_PULSE_TIME := 0.15
 ## How long the "LIFE LOST — N LEFT" banner rests on screen.
 const LIFE_LOST_HOLD := 1.2
-## The lives art tops out at this many icons; more lives add an "xN" tag (U6).
-const LIVES_ART_MAX := 4
+## Battery segment count, and how many of the last cells to drain turn magenta at low HP.
+const BATTERY_SEGMENTS := 12
+const BATTERY_DANGER_SEGMENTS := 3
+## Theme type variations (ui/theme/neon_theme.tres) the battery cells and HP readout switch between.
+const SEGMENT_LIT := &"HudSegment"
+const SEGMENT_EMPTY := &"HudSegmentEmpty"
+const SEGMENT_DANGER := &"HudSegmentDanger"
+const NUMERAL := &"HudNumeral"
+const NUMERAL_DANGER := &"HudNumeralDanger"
+## The lives row tops out at this many glyphs; more lives add an "xN" tag (U6).
+const LIVES_GLYPH_MAX := 4
 ## U7: per-beat "LAST LIFE" pulse, alpha LAST_LIFE_PULSE_LOW <-> 1.0.
 const LAST_LIFE_PULSE_LOW := 0.6
 const LAST_LIFE_PULSE_TIME := 0.3
@@ -66,7 +80,7 @@ func _ready() -> void:
 	GameManager.cores_changed.connect(_on_cores_changed)
 
 	# Initial UI Setup
-	_setup_textures()
+	_setup_boss_shield_strip()
 	_update_battery_ui(GameManager.current_hp, GameManager.max_hp)
 	_update_shield_ui(GameManager.current_shield, GameManager.max_shield)
 	_update_lives_ui(GameManager.current_lives)
@@ -78,9 +92,9 @@ func _ready() -> void:
 	beat_pulse_node.pivot_offset = beat_pulse_node.size / 2.0
 	beat_pulse_node.modulate = Color(1.0, 1.0, 1.0, 0.5)
 
-func _setup_textures() -> void:
-	# The shield is a thin 6 px strip along the TOP edge of the battery (same 265 px width),
-	# so it never hides the battery art. Flat white fill, tinted cyan by the node's modulate.
+## U5: the boss bar's shield strip is a flat white fill tinted cyan by the node's modulate,
+## stretched to the (variable) boss bar width.
+func _setup_boss_shield_strip() -> void:
 	var flat_fill = GradientTexture2D.new()
 	var gradient = Gradient.new()
 	gradient.set_color(0, Color(1, 1, 1, 1))
@@ -88,9 +102,6 @@ func _setup_textures() -> void:
 	flat_fill.gradient = gradient
 	flat_fill.width = 265
 	flat_fill.height = 6
-	shield_bar.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
-	shield_bar.texture_progress = flat_fill
-	# The boss strip reuses the same flat fill, stretched to the (variable) boss bar width.
 	boss_shield_strip.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
 	boss_shield_strip.nine_patch_stretch = true
 	boss_shield_strip.texture_progress = flat_fill
@@ -108,6 +119,8 @@ func _on_lives_changed(new_amount: int) -> void:
 ## zone_entered must not cut it). The death that spends the last spare life emits 0 with the
 ## run still live -> "LAST LIFE"; the terminal emission (run_ended already set) is the
 ## game-over path and is handled by the game-over screen.
+## GameManager.last_killer is recorded before player_life_lost fires, so the banner names the
+## cause (" · DESTROYED BY RUNNER") like the Game Over screen does.
 func _on_player_life_lost(current_lives: int) -> void:
 	var text := ""
 	if current_lives > 0:
@@ -116,36 +129,54 @@ func _on_player_life_lost(current_lives: int) -> void:
 		text = "LAST LIFE"
 	else:
 		return
+	if GameManager.last_killer != "":
+		text += " · DESTROYED BY %s" % GameManager.last_killer
 	zone_title_card.call("show_text", text, LIFE_LOST_HOLD, true)
 
+## Lights round(ratio * 12) cells (never 0 while Nick is alive). At <= 25 % HP the lit cells,
+## the last three to drain, switch to the magenta danger style and the readout turns magenta.
 func _update_battery_ui(current: float, max_val: float) -> void:
-	var ratio = current / max_val if max_val > 0.0 else 0.0
+	var ratio: float = current / max_val if max_val > 0.0 else 0.0
 	_set_low_hp(ratio > 0.0 and ratio < LOW_HP_RATIO)
-	var segments = clamp(round(ratio * 12.0), 0, 12)
-	
-	var path := ""
-	if segments == 0:
-		path = _get_battery_empty_path()
-	elif segments == 12:
-		path = _get_battery_full_path()
-	else:
-		path = _get_battery_texture_path(int(segments))
+	var lit: int = clampi(roundi(ratio * BATTERY_SEGMENTS), 0, BATTERY_SEGMENTS)
+	if current > 0.0:
+		lit = maxi(lit, 1)
+	var danger: bool = ratio > 0.0 and ratio <= LOW_HP_RATIO
+	var cells := battery_segments.get_children()
+	for i in cells.size():
+		var cell := cells[i] as Control
+		if i >= lit:
+			cell.theme_type_variation = SEGMENT_EMPTY
+		elif danger and i < BATTERY_DANGER_SEGMENTS:
+			cell.theme_type_variation = SEGMENT_DANGER
+		else:
+			cell.theme_type_variation = SEGMENT_LIT
+	hp_label.text = "HP %d/%d" % [ceili(maxf(current, 0.0)), ceili(max_val)]
+	hp_label.theme_type_variation = NUMERAL_DANGER if danger else NUMERAL
 
-	if ResourceLoader.exists(path):
-		battery_rect.texture = load(path)
+## Number of lit battery cells (any lit style), for tests and probes.
+func lit_battery_segments() -> int:
+	var count := 0
+	for cell in battery_segments.get_children():
+		if (cell as Control).theme_type_variation != SEGMENT_EMPTY:
+			count += 1
+	return count
 
 func _update_shield_ui(current: float, max_val: float) -> void:
 	shield_bar.max_value = max_val
 	shield_bar.value = current
+	shield_bar.visible = current > 0.0 and max_val > 0.0
 
-## The icon stays visible at 0 spare lives (the last-life state is the most important one to
-## see); a magenta "LAST LIFE" tag appears under it.
+## One glyph per spare life up to LIVES_GLYPH_MAX, then an "xN" tag. At 0 spare lives the
+## glyphs are gone and the magenta "LAST LIFE" tag (the most important state) takes over.
 func _update_lives_ui(lives: int) -> void:
-	lives_rect.visible = true
-	var path: String = _get_lives_path(clampi(lives, 1, LIVES_ART_MAX))
-	if ResourceLoader.exists(path):
-		lives_rect.texture = load(path)
-	lives_count_label.visible = lives > LIVES_ART_MAX
+	var glyph_index := 0
+	for child in lives_row.get_children():
+		if child == lives_count_label:
+			continue
+		(child as CanvasItem).visible = glyph_index < mini(lives, LIVES_GLYPH_MAX)
+		glyph_index += 1
+	lives_count_label.visible = lives > LIVES_GLYPH_MAX
 	if lives_count_label.visible:
 		lives_count_label.text = "x%d" % lives
 	last_life_label.visible = lives <= 0
@@ -171,7 +202,7 @@ func _set_low_hp(low: bool) -> void:
 	if not low:
 		if low_hp_tween:
 			low_hp_tween.kill()
-		battery_rect.modulate = Color.WHITE
+		battery_bar.modulate = Color.WHITE
 
 ## Subtle per-beat battery pulse white -> magenta -> white while HP is under 25 %.
 func _pulse_low_hp() -> void:
@@ -180,8 +211,8 @@ func _pulse_low_hp() -> void:
 	if low_hp_tween:
 		low_hp_tween.kill()
 	low_hp_tween = create_tween()
-	low_hp_tween.tween_property(battery_rect, "modulate", LOW_HP_MAGENTA, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
-	low_hp_tween.tween_property(battery_rect, "modulate", Color.WHITE, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
+	low_hp_tween.tween_property(battery_bar, "modulate", LOW_HP_MAGENTA, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
+	low_hp_tween.tween_property(battery_bar, "modulate", Color.WHITE, LOW_HP_PULSE_TIME).set_trans(Tween.TRANS_SINE)
 
 func _on_beat(layer: String, _beat_index: int) -> void:
 	if layer != "primary":
@@ -289,16 +320,3 @@ func _on_combo_reset() -> void:
 		combo_label.visible = false
 		combo_label.modulate.a = 1.0
 	)
-
-# Art path helpers (ASCII-named, cropped copies in res://ui/hud/art/)
-func _get_battery_texture_path(index: int) -> String:
-	return ART_DIR + "battery_%02d.png" % index
-
-func _get_battery_full_path() -> String:
-	return ART_DIR + "battery_full.png"
-
-func _get_battery_empty_path() -> String:
-	return ART_DIR + "battery_empty.png"
-
-func _get_lives_path(count: int) -> String:
-	return ART_DIR + "lives_%d.png" % count

@@ -9,15 +9,20 @@ const ZONE_07 := "SECTOR 07 — ENFORCER"
 
 var hud: CanvasLayer
 var _run_ended_before: bool
+var _killer_before: String
 
 func before_each() -> void:
 	_run_ended_before = GameManager.run_ended
 	GameManager.run_ended = false
+	# Batch M: the banner appends the killer; these cases read the bare banner text.
+	_killer_before = GameManager.last_killer
+	GameManager.last_killer = ""
 	hud = HUD_SCENE.instantiate()
 	add_child(hud)
 
 func after_each() -> void:
 	GameManager.run_ended = _run_ended_before
+	GameManager.last_killer = _killer_before
 	if is_instance_valid(hud):
 		hud.queue_free()
 	super.after_each()
@@ -91,7 +96,12 @@ func test_last_life_tag_size_and_beat_pulse() -> void:
 	assert_true(hud.last_life_label.visible)
 	SignalBus.beat.emit("primary", 0)
 	assert_almost_eq(hud.last_life_label.modulate.a, 1.0, 0.01, "Bright on the beat")
-	await get_tree().create_timer(0.4).timeout
+	# Poll frames until the pulse settles (a fixed real-time wait is flaky under load; awaiting
+	# the tween's finished signal can hang in the headless framework).
+	var guard := 0
+	while guard < 180 and absf(hud.last_life_label.modulate.a - hud.LAST_LIFE_PULSE_LOW) > 0.05:
+		await get_tree().process_frame
+		guard += 1
 	assert_almost_eq(hud.last_life_label.modulate.a, hud.LAST_LIFE_PULSE_LOW, 0.05, "Settles to the low alpha between beats")
 	hud._update_lives_ui(2)
 	assert_almost_eq(hud.last_life_label.modulate.a, 1.0, 0.01, "Hidden tag resets its alpha")

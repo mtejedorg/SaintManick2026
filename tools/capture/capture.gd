@@ -1,5 +1,7 @@
 ## Audit capture driver (game-audit skill, Phase 1). Run with a REAL window (not --headless):
 ##   Godot_console.exe --path "<proj>" res://tools/capture/capture_scene.tscn -- --out=res://Captures/<name>/
+## Optional --size=WxH (default 1920x1080) renders at another window size, e.g. --size=1280x720
+## to check HUD legibility at 720p (the project stretches canvas_items from a 1920x1080 base).
 ## Loads the vertical slice with every autoload live, pauses the tree, then walks the REAL drone
 ## camera through every zone (side-scroll and top-down framings), a character lineup, the HUD, and
 ## every menu scene. Writes PNGs + inventory_desktop.json into --out. Always quits at the end.
@@ -11,6 +13,7 @@ const TOP_OFFSET := DroneCamera.TOP_DOWN_OFFSET
 const TOP_ROT := DroneCamera.TOP_DOWN_ROTATION
 
 var out_dir := "res://Captures/audit_latest/"
+var window_size := Vector2i(1920, 1080)
 var slice: Node3D
 var player: Node3D
 var camera: Camera3D
@@ -49,6 +52,10 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.trim_prefix("--out=")
+		elif arg.begins_with("--size="):
+			var dims := arg.trim_prefix("--size=").split("x")
+			if dims.size() == 2 and dims[0].is_valid_int() and dims[1].is_valid_int():
+				window_size = Vector2i(dims[0].to_int(), dims[1].to_int())
 	if not out_dir.ends_with("/"):
 		out_dir += "/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
@@ -59,7 +66,7 @@ func _ready() -> void:
 func _run() -> void:
 	var win := get_window()
 	win.mode = Window.MODE_WINDOWED
-	win.size = Vector2i(1920, 1080)
+	win.size = window_size
 	win.position = Vector2i(0, 0)
 	await _frames(2)
 

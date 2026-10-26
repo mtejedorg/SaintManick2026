@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=15 format=3]
+[gd_resource type="Theme" load_steps=24 format=3]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
 content_margin_left = 16.0
@@ -176,6 +176,43 @@ border_color = Color(1, 0, 0.667, 0.35)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_boss_fill"]
 bg_color = Color(1, 0, 0.667, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_panel"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.039, 0.039, 0.071, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.961, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_segment"]
+bg_color = Color(0, 0.961, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_segment_empty"]
+bg_color = Color(0, 0.961, 1, 0.13)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_segment_danger"]
+bg_color = Color(1, 0, 0.667, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_segment_gap"]
+bg_color = Color(0.039, 0.039, 0.071, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_tick"]
+bg_color = Color(0, 0.961, 1, 0.7)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_strip_bg"]
+bg_color = Color(0.039, 0.039, 0.071, 0.6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_strip_fill"]
+bg_color = Color(0.549, 0.961, 1, 1)
+
+[sub_resource type="SystemFont" id="SystemFont_hud_mono"]
+font_names = PackedStringArray("Consolas", "DejaVu Sans Mono", "Menlo", "Monospace")
+font_weight = 700
+
 [resource]
 HSeparator/styles/separator = SubResource("StyleBoxLine_sep")
 Label/colors/font_color = Color(0.91, 0.965, 1, 1)
@@ -184,6 +221,35 @@ ProgressBar/styles/fill = SubResource("StyleBoxFlat_pb_fill")
 BossBar/base_type = &"ProgressBar"
 BossBar/styles/background = SubResource("StyleBoxFlat_boss_back")
 BossBar/styles/fill = SubResource("StyleBoxFlat_boss_fill")
+HudPanel/base_type = &"PanelContainer"
+HudPanel/styles/panel = SubResource("StyleBoxFlat_hud_panel")
+HudSegment/base_type = &"Panel"
+HudSegment/styles/panel = SubResource("StyleBoxFlat_hud_segment")
+HudSegmentEmpty/base_type = &"Panel"
+HudSegmentEmpty/styles/panel = SubResource("StyleBoxFlat_hud_segment_empty")
+HudSegmentDanger/base_type = &"Panel"
+HudSegmentDanger/styles/panel = SubResource("StyleBoxFlat_hud_segment_danger")
+HudSegmentGap/base_type = &"Panel"
+HudSegmentGap/styles/panel = SubResource("StyleBoxFlat_hud_segment_gap")
+HudTick/base_type = &"Panel"
+HudTick/styles/panel = SubResource("StyleBoxFlat_hud_tick")
+HudStrip/base_type = &"ProgressBar"
+HudStrip/styles/background = SubResource("StyleBoxFlat_hud_strip_bg")
+HudStrip/styles/fill = SubResource("StyleBoxFlat_hud_strip_fill")
+HudNumeral/base_type = &"Label"
+HudNumeral/colors/font_color = Color(0, 0.961, 1, 1)
+HudNumeral/colors/font_outline_color = Color(0.039, 0.039, 0.071, 1)
+HudNumeral/constants/outline_size = 5
+HudNumeral/font_sizes/font_size = 20
+HudNumeral/fonts/font = SubResource("SystemFont_hud_mono")
+HudNumeralDanger/base_type = &"HudNumeral"
+HudNumeralDanger/colors/font_color = Color(1, 0, 0.667, 1)
+HudScale/base_type = &"Label"
+HudScale/colors/font_color = Color(0.55, 0.78, 0.82, 0.85)
+HudScale/colors/font_outline_color = Color(0.039, 0.039, 0.071, 1)
+HudScale/constants/outline_size = 4
+HudScale/font_sizes/font_size = 14
+HudScale/fonts/font = SubResource("SystemFont_hud_mono")
 DimLabel/base_type = &"Label"
 DimLabel/colors/font_color = Color(0.62, 0.66, 0.72, 1)
 DimLabel/font_sizes/font_size = 20

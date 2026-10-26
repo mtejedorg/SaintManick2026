@@ -46,85 +46,214 @@ script = ExtResource("1_hud")
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -300.0
+offset_left = -440.0
 offset_top = 20.0
 offset_right = -20.0
-offset_bottom = 281.0
+offset_bottom = 140.0
 grow_horizontal = 0
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 8
+mouse_filter = 2
+theme_override_constants/separation = 10
 
 [node name="StatusContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 15
-alignment = 2
-
-[node name="BatteryContainer" type="Control" parent="MarginContainer/VBoxContainer/StatusContainer"]
-custom_minimum_size = Vector2(265, 63)
-layout_mode = 2
-
-[node name="BatteryRect" type="TextureRect" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ShieldBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
-modulate = Color(0, 0.961, 1, 0.85)
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 6.0
-grow_horizontal = 2
-value = 100.0
-
-[node name="LowerRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 2
 
-[node name="LivesBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/LowerRow"]
+[node name="BatteryContainer" type="Control" parent="MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(265, 30)
 layout_mode = 2
-size_flags_vertical = 0
+mouse_filter = 2
+
+[node name="BatteryBar" type="PanelContainer" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 22.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HudPanel"
+
+[node name="Segments" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="LivesRect" type="TextureRect" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
-custom_minimum_size = Vector2(93, 124)
+[node name="Cell01" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
 
-[node name="LivesCountLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
+[node name="Cell02" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell03" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell04" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell05" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell06" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell07" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell08" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell09" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell10" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell11" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="Cell12" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_type_variation = &"HudSegment"
+
+[node name="ShieldBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+offset_top = 24.0
+offset_bottom = 30.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"HudStrip"
+value = 100.0
+show_percentage = false
+
+[node name="HpLabel" type="Label" parent="MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(140, 22)
+layout_mode = 2
+size_flags_vertical = 0
+theme_type_variation = &"HudNumeral"
+text = "HP 120/120"
+vertical_alignment = 1
+
+[node name="LowerRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="AbilityBar" parent="MarginContainer/VBoxContainer/LowerRow" instance=ExtResource("4_ability_bar")]
+layout_mode = 2
+
+[node name="LivesBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/LowerRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="LivesRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Life1" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+custom_minimum_size = Vector2(18, 24)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life1"]
+color = Color(0, 0.961, 1, 1)
+antialiased = true
+polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
+
+[node name="Life2" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+custom_minimum_size = Vector2(18, 24)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life2"]
+color = Color(0, 0.961, 1, 1)
+antialiased = true
+polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
+
+[node name="Life3" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+custom_minimum_size = Vector2(18, 24)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life3"]
+color = Color(0, 0.961, 1, 1)
+antialiased = true
+polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
+
+[node name="Life4" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+custom_minimum_size = Vector2(18, 24)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life4"]
+color = Color(0, 0.961, 1, 1)
+antialiased = true
+polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
+
+[node name="LivesCountLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 visible = false
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0, 0.961, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 20
+theme_type_variation = &"HudNumeral"
 text = "x5"
-horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="LastLifeLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
 visible = false
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0, 0.667, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
+theme_override_colors/font_outline_color = Color(0.039, 0.039, 0.071, 1)
+theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 22
 text = "LAST LIFE"
-horizontal_alignment = 1
-
-[node name="AbilityBar" parent="MarginContainer/VBoxContainer/LowerRow" instance=ExtResource("4_ability_bar")]
-layout_mode = 2
 
 [node name="BossBarContainer" type="PanelContainer" parent="."]
 visible = false

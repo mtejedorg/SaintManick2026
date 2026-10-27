@@ -1,7 +1,7 @@
 > [!IMPORTANT]
-> **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 3, 2026-10-26)**
+> **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 3.1, 2026-10-27: Level One addendum, §8)**
 > This Game Design Document is the officially approved vision for Saint Manick. It supersedes every earlier draft, PDF and presentation in the archives. It is written for the **current stage**: the mechanics are defined, the ten-zone level layout is decided, and the Vertical Slice is the demo. Every mechanic in §3–§6 marked **[SLICE]** is implemented and verified in the build; everything marked **[POST-SLICE]** is designed but deliberately not built yet. Numbers live in the data files named next to them (`.tres`), never only here. **Numbers mirror the `.tres`/scene at commit 8937f29** (rev. 3 applies the owner decisions of 2026-10-26; where this document and a data file ever disagree, the file wins).
-> **Flow (owner direction 2026-10-27):** the public DEMO is the vertical slice with no shop: title -> START DEMO -> loadout pick -> slice -> results -> title, nothing banked. START RUN launches LEVEL ONE (the full-game flow with Karen's Shop; design TBD after the demo); until Level One exists it opens the shop -> slice loop as a stand-in.
+> **Flow (owner direction 2026-10-27):** the public DEMO is the vertical slice with no shop: title -> START DEMO -> loadout pick -> slice -> results -> title, nothing banked. START RUN launches LEVEL ONE (the full-game flow with Karen's Shop; **designed in `LevelOne.md` rev. 1 and summarised in §8 — not built**); until Level One exists it opens the shop -> slice loop as a stand-in.
 
 # Game Design Document: Saint Manick
 
@@ -40,7 +40,7 @@ A dystopian future where robotics and rampant technological growth have devastat
 ### 2.2. Radial City Design & Districts
 The city is a **radial composition**: buildings in a district never exceed the height of the next district closer to the centre, so the player always sees the inner city and the final tower. Nick traverses:
 
-1. **The Suburbs** — the outermost ring; ruined and poor; no environmental hazards; the game's tutorial. **[POST-SLICE]**
+1. **The Suburbs** — the outermost ring; ruined and poor; no environmental hazards; the game's tutorial. **[POST-SLICE — designed as LEVEL ONE, §8 / `LevelOne.md`]**
 2. **The Industrial Factory** — toxic heavy machinery: toxic pits that deal damage over time, rhythmic piston crushers, a security lock with a beat-driven bomb grid. **[SLICE — Zones 1–4]**
 3. **The Neon Entertainment District** — high-tech, bright, hostile; holograms and clubs; pure enemy density rather than strict hazards, plus the market's security purge (escape) and the elevator ascent to the rooftop. **[SLICE — Zones 5–10]**
 4. **The Corporate High-Rise** — pristine and sterile; moving laser grids and drone strikes synced to the music. **[POST-SLICE]**
@@ -138,7 +138,7 @@ Scene-placed grunts stay dormant until Nick enters their zone (their `wake_zone`
 ### 4.2. District Boss Roster
 | District | Boss | Concept | Beat hook | Status |
 |---|---|---|---|---|
-| 1 · Suburbs | **Junk-Yard Maestro** | Makeshift mech of scrap speakers & neon signs | BPM / time-signature shifts per phase | [POST-SLICE] |
+| 1 · Suburbs | **Junk-Yard Maestro** | Makeshift mech of scrap speakers & neon signs | BPM / time-signature shifts per phase | [POST-SLICE — designed, §8.3 / `LevelOne.md` §5] |
 | 2 · Factory | **The Overseer** | Smelter/crane rig weaponising the foundry | Piston-slam AoEs on the downbeat | [POST-SLICE] |
 | 3 · Neon District | **The Headliner** | Holographic VJ/DJ idol commanding the crowd | Phase change to 160 BPM; projection storm | **[SLICE]** |
 | 4 · Corporate | **The Auditor** | Cold security-AI executive construct | Laser sweeps on-beat | [POST-SLICE] |
@@ -238,6 +238,46 @@ See `CodeArchitecture.md` for the locked contracts. In brief: Godot 4.6 (Forward
 
 ---
 
+## 8. Level One — The Suburbs **[POST-SLICE]**
+
+*Design rev. 1 (2026-10-27) — the full brief is `LevelOne.md`; this section is the contract summary. Nothing in it is built. Every number is first pass for `tools/balance_tool.html` unless this document already fixes it. Items marked [GDD EXTENSION] go beyond what §2–§6 state and need the owner's nod (`LevelOne.md` §9).*
+
+### 8.1 What it is
+Level One is **District 1, the Suburbs** (§2.2), launched by **START RUN**: eight sectors ending at the **Junk-Yard Maestro** (§4.2), 12–15 minutes on a first clear, played with the full meta-loop (§5). It is new content; the Vertical Slice (Zones 1–10) stays the public demo untouched and becomes the Factory and Neon levels of the full game later. Only the slice's enemies appear (Runner, Bruiser, Sniper); the district rests at **96 BPM** (first pass; the slice rests at 128) so the first telegraphs are slow, and 96 × 4/3 = 128 lets the boss hand the world over to the Factory's tempo.
+
+### 8.2 Sectors (numbered per level; the slice is not renumbered)
+| # | Working name | Camera | Encounter | Set piece | Teaches |
+|---|---|---|---|---|---|
+| 01 | LAST STOP | side | 1 Runner, then 2 | first jump; holo gates | move, jump, light/heavy, the telegraph, dash/roll |
+| 02 | STILT ROW | side | 3 placed Runners | canal (safe drop), a void culvert, a Double-Jump-only Scrap cache | Launcher, the fall rule |
+| 03 | CUL-DE-SAC | top-down | 3 Runners, then 4 | burnt-car pillars | depth, roll, the beat-dodge cue |
+| 04 | PIRATE RADIO | side | 1 Sniper + 2 Runners | **Bass Stacks** (speaker cabs whose lamps count the bar and pulse on the downbeat; knockback only here) | downbeat reading, the Sniper cycle |
+| 05 | EVICTION LINE | side | 1 Bruiser, then 1 Bruiser + 2 Runners + 1 Sniper | corporate barricade | shields, heavy ×2 |
+| 06 | THE SWEEP | side (escape) | 1 posted Runner | the **eviction crawler** (kill wall, 4.5 m/s), falling signs, a collapsing porch | run-or-die, dash-through |
+| 07 | THE STACKS | side | 2 placed Runners | junk-stack climb; **the meter drops to 3/4** | counting in three |
+| 08 | JUNK-YARD MAESTRO | side → top-down → side | the boss (+3 Runners, 0 Scrap) | tempo and meter shifts | the final exam |
+
+### 8.3 The Junk-Yard Maestro
+A 6 m mech of scavenged speaker cabs and torn neon with a turntable head (HP 1 500, Thump 18, Scrap 700, Cells 10, **1 Data Core** — first pass). Its rule: **it never changes two things at once.** P1 "Soundcheck" (side, 96 BPM, 4/4): shield while advancing, a white-hot flare on beat 4, a floor-shockwave **Thump** on the downbeat, three vulnerable beats. P2 "Waltz" at 60 % HP (top-down, 96 BPM, **3/4**): shielded; corner-cab rings and a vinyl ring from the pool every downbeat; ends on a shield-breaker **or after 24 beats when the speakers overheat** (the Headliner's no-soft-lock rule). P3 "Encore" (side, **128 BPM**, 4/4): no shield, a double Thump, +20 % speed, three Runner adds. Every shift opens with one silent count-in bar.
+
+### 8.4 Meta-loop changes for the full game
+- **Fresh profile:** START RUN goes straight into Sector 01; the first death introduces Karen's Shop; every later START RUN opens the shop first. One save: the demo stays a read-only overlay (`demo_mode`) that banks nothing.
+- **Double Jump** is a real **200-Scrap purchase** in the full game (§3.1): the profile starts locked, the demo forces it on. Nothing in Level One requires it; the Sector 02 cache and a Sector 07 shortcut reward it.
+- **Yields (first pass):** ≈ 1 050 Scrap, 35 Cells (Sector 03: 5, 05: 10, 06: 10, boss: 10), 1 Core per full clear — lower than the slice's ≈ 2 020 Scrap because Level One is the first third of a future Suburbs → Factory → Neon run on the same price list. Difficulty targets stay §1.3's 2–3 / 4–5 runs; the levers are boss threat and lives, not yields.
+- **Boosters:** Tempo Shield and Adrenaline unchanged; Scrap Magnet is Decision D15's input (recommended ×1.5); Suburbs Skip stays [POST-SLICE] until a victory chains into the next level.
+- **After the Maestro:** open owner decision (`LevelOne.md` L3) — recommended: chain into the slice inside the same run as the Factory/Neon stand-in, so START RUN is a full ≈ 30-minute run.
+
+### 8.5 Extensions to the design this level introduces [GDD EXTENSION]
+- **The Bass Stack** — a soft, beat-driven hazard in a district §2.2 calls hazard-free: read as *no industrial hazards*. Knockback only in Sector 04, 6 damage in Sector 07, 10 in the arena (owner decision L7).
+- **Meter changes** (§5.4): the Conductor gains a `set_meter` applied on the next downbeat and a `meter_changed` signal; Sniper and piston telegraphs become meter-relative. A per-level resting BPM replaces the single 128.
+- **A `LevelDef` per level** routes START RUN and maps sector numbers to music tiers, atmosphere and boss activation, so the "SECTOR NN" convention (§6.1) is per level.
+- **Level One owns onboarding** (§6.1's prompts stay demo-only): Karen's calibration lines carry the control cards inside the fiction, with their own seen-flag.
+
+### 8.6 Still to decide
+`LevelOne.md` §9 lists the eight deferred audit decisions as inputs with a recommended option each (Appendix B) and fifteen new questions (L1–L15): numbering, the resting tempo, what follows a victory, the fresh-profile flow, Double Jump's price and rewards, the Bass Stack's reach, Cores on repeat kills, a native Suburbs enemy, what starts the boss's last phase, and five narrative questions (the Maestro's survival, the girl, an early drone glitch, district names on Game Over, naming the corporation). Production: eleven batches (`LevelOne.md` §10).
+
+---
+
 ## Appendix A — What the slice deliberately leaves out (designed, not built)
 Overclock · Ground-Pound · dedicated Air-Combo route · parry · polyrhythm layers · holo-wall / crowd-surge boss hazards · Karen checkpoint (Retry Boss / Full Run) · damage & armour upgrade tiers · branching combo tree · Suburbs Skip / Extra-Life boosters · curved rails with camera yaw · destructible props · Suburbs, Corporate and Tower districts and their bosses · camera-as-weapon · the Double Jump shop purchase (the demo ships it unlocked).
 
@@ -253,3 +293,5 @@ Overclock · Ground-Pound · dedicated Air-Combo route · parry · polyrhythm la
 - D24 Zone 4 planks: decision deferred.
 - D27 HUD counters: decision deferred.
 - D33 stagger tiers and post-stagger protection: decision deferred.
+
+*Level One (§8) depends on several of these; `LevelOne.md` §9.1 states how and recommends an option for each without resolving any, and §9.2 adds the Level One decisions L1–L10.*

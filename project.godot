@@ -150,3 +150,4 @@ move_down={
 
 anti_aliasing/quality/msaa_3d=2
 anti_aliasing/quality/use_debanding=true
+lights_and_shadows/positional_shadow/soft_shadow_filter_quality=3

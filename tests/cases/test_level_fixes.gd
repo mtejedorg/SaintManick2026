@@ -20,11 +20,119 @@ func after_each() -> void:
 func _box(path: String) -> CSGBox3D:
 	return _slice.get_node(path) as CSGBox3D
 
-func test_z7_barrier_is_taller_than_a_jump() -> void:
+# P11: Double Jump is on by default (~11.0 m: two 18 m/s jumps under 3x gravity), so every
+# barrier the golden path relies on must rise >= DOUBLE_JUMP_CLEARANCE above its floor.
+# Top-down encounter walls are exempt: jumping is disabled while the camera is top-down.
+const DOUBLE_JUMP_CLEARANCE := 11.5
+const NICK_JUMP_FORCE := 18.0
+const NICK_GRAVITY := 9.8 * 3.0
+const NICK_RUN_SPEED := 8.0
+
+## [node, top_y, centre_x] of every side-scroll barrier: the "gates" group (minus top-down
+## encounters' walls) plus Z7_Barrier.
+func _barriers() -> Array:
+	var exempt := {}
+	for enc in _slice.find_children("*", "ZoneEncounter", true, false):
+		if (enc as ZoneEncounter).is_top_down:
+			for g in (enc as ZoneEncounter).gates:
+				exempt[g] = true
+	var out: Array = []
+	var nodes: Array = get_tree().get_nodes_in_group("gates").filter(func(n): return _slice.is_ancestor_of(n))
+	var barrier := _slice.get_node("Z7_Barrier")
+	if not nodes.has(barrier):
+		nodes.append(barrier)
+	for n in nodes:
+		if exempt.has(n):
+			continue
+		var top := 0.0
+		if n is CSGBox3D:
+			top = (n as CSGBox3D).global_position.y + (n as CSGBox3D).size.y * 0.5
+		else:
+			var col := (n as Node).get_node("CollisionShape3D") as CollisionShape3D
+			top = col.global_position.y + (col.shape as BoxShape3D).size.y * 0.5
+		out.append([n, top, (n as Node3D).global_position.x])
+	return out
+
+func _floor_under(space: PhysicsDirectSpaceState3D, x: float, from_y: float, search: bool = true) -> float:
+	for dx in ([0.0, 1.5, -1.5, 3.0, -3.0] if search else [0.0]):
+		var q := PhysicsRayQueryParameters3D.create(Vector3(x + dx, from_y, 0.0), Vector3(x + dx, from_y - 30.0, 0.0), 1)
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty():
+			return (hit["position"] as Vector3).y
+	return INF
+
+func _settle_physics() -> void:
+	await get_tree().process_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+func test_every_side_scroll_barrier_rises_above_the_double_jump() -> void:
+	await _settle_physics()
+	var space := _slice.get_world_3d().direct_space_state
+	var checked := 0
+	for b in _barriers():
+		var floor_y := _floor_under(space, b[2], b[1] - 0.5)
+		assert_true(floor_y != INF, "%s has a floor near it" % b[0].name)
+		if floor_y == INF:
+			continue
+		checked += 1
+		assert_true(b[1] - floor_y >= DOUBLE_JUMP_CLEARANCE, "%s rises %.2f m above its floor (needs %.1f)" % [b[0].get_path(), b[1] - floor_y, DOUBLE_JUMP_CLEARANCE])
+	assert_eq(checked, 9, "Z1/Z4/Z5 holo gates (6), Z7 entry gate, Z7 barrier and the Zone 10 left gate")
+
+## P11 probe: a body with Nick's capsule, run at the locked barrier from each side that has a
+## floor, jumping (18 m/s) and double-jumping at the apex, never ends up past it.
+func test_a_double_jumping_nick_never_crosses_a_locked_barrier() -> void:
+	# Let the encounters' deferred set_gate_locked(false) from _ready land first.
+	await _settle_physics()
+	for b in _barriers():
+		var n: Node = b[0]
+		# Locked exactly like ZoneEncounter.set_gate_locked: a hidden CSG shape has no collision.
+		(n as Node3D).visible = true
+		if n is CSGBox3D:
+			(n as CSGBox3D).use_collision = true
+		else:
+			(n.get_node("CollisionShape3D") as CollisionShape3D).disabled = false
+	await _settle_physics()
+	var space := _slice.get_world_3d().direct_space_state
+	var probes := 0
+	for b in _barriers():
+		for side in [-1.0, 1.0]:
+			var start_x: float = b[2] + side * 2.5
+			var floor_y := _floor_under(space, start_x, b[1] - 0.5, false)
+			if floor_y == INF:
+				continue
+			probes += 1
+			var body := CharacterBody3D.new()
+			body.collision_layer = 2
+			body.collision_mask = 1
+			var shape := CollisionShape3D.new()
+			var capsule := CapsuleShape3D.new()
+			capsule.radius = 0.5
+			capsule.height = 2.0
+			shape.shape = capsule
+			body.add_child(shape)
+			_slice.add_child(body)
+			body.global_position = Vector3(start_x, floor_y + 1.05, 0.0)
+			body.velocity = Vector3(-side * NICK_RUN_SPEED, NICK_JUMP_FORCE, 0.0)
+			var double_jumped := false
+			var crossed := false
+			for i in 150:
+				body.velocity.y -= NICK_GRAVITY / 60.0
+				if not double_jumped and body.velocity.y <= 0.0:
+					body.velocity.y = NICK_JUMP_FORCE
+					double_jumped = true
+				body.velocity.x = -side * NICK_RUN_SPEED
+				body.move_and_slide()
+				if signf(body.global_position.x - b[2]) != side:
+					crossed = true
+					break
+			assert_false(crossed, "A double jump from x %.1f carries Nick over %s" % [start_x, _slice.get_path_to(b[0])])
+			body.free()
+	assert_gt(probes, 8, "Every barrier was probed from at least one floored side (%d probes)" % probes)
+
+func test_z7_barrier_reaches_the_ground() -> void:
 	var barrier := _box("Z7_Barrier")
-	var top := barrier.global_position.y + barrier.size.y * 0.5
-	assert_gt(top - GROUND_TOP_Z7_Z8, 5.5, "The Zone 7 barrier must stand above the 5.5 m jump height")
-	assert_true(barrier.global_position.y - barrier.size.y * 0.5 <= GROUND_TOP_Z7_Z8, "...and reach the ground")
+	assert_true(barrier.global_position.y - barrier.size.y * 0.5 <= GROUND_TOP_Z7_Z8, "The Zone 7 barrier reaches the ground")
 
 func test_z7_barrier_sits_behind_the_enforcer_and_opens_when_he_dies() -> void:
 	var barrier := _box("Z7_Barrier")

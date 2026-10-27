@@ -147,13 +147,16 @@ const LOW_HP_PULSE_COLOR := Color(1.0, 0.0, 0.666667)
 const LOW_HP_PULSE_STRENGTH := 4.0
 const LOW_HP_PULSE_SECONDS := 0.25
 ## F9: Bass Drop cue — rim held white-hot while armed; detonation hit-stop and a magenta
-## shock ring that grows from RING_START_SCALE to bass_drop_radius at Nick's feet.
+## shock ring that grows from ShockRing.START_SCALE to bass_drop_radius at Nick's feet.
 const BASS_DROP_ARMED_RIM_STRENGTH := 5.0
 const BASS_DROP_HIT_STOP_DURATION := 0.12
 const BASS_DROP_HIT_STOP_SCALE := 0.05
 const BASS_DROP_RING_COLOR := Color(1.0, 0.0, 0.666667)
-const BASS_DROP_RING_START_SCALE := 0.5
 const BASS_DROP_RING_SECONDS := 0.3
+## P10: the detonation's white screen flash (ComboFlash plays it: peak alpha, fade seconds).
+const BASS_DROP_FLASH_ALPHA := 0.35
+const BASS_DROP_FLASH_SECONDS := 0.05
+const ShockRingScript := preload("res://vfx/shock_ring.gd")
 ## Capsule half-height: Nick's origin is the capsule centre, his feet are this far below.
 const FEET_OFFSET := 1.0
 ## K10 (D21): the subtle cyan ring under Nick, shown only off-rail (top-down).
@@ -355,33 +358,18 @@ func _detonate_bass_drop() -> void:
 
 	SignalBus.camera_shake_requested.emit(0.3, 0.4)
 	SignalBus.hit_stop_requested.emit(BASS_DROP_HIT_STOP_DURATION, BASS_DROP_HIT_STOP_SCALE)
+	SignalBus.screen_flash_requested.emit(BASS_DROP_FLASH_ALPHA, BASS_DROP_FLASH_SECONDS)
 	_spawn_bass_drop_ring()
 
 ## F9: one-shot shock ring at Nick's feet (Bass Drop fires at most once per full meter, so
 ## it is created and freed rather than pooled). Parented to Nick's parent so it stays where
 ## the drop landed while he moves.
+## P10: the ring itself is vfx/shock_ring.gd (HDR, fades over its last 40 %), shared with
+## the Headliner's phase-2 slam.
 func _spawn_bass_drop_ring() -> MeshInstance3D:
-	var host := get_parent()
-	if host == null or not is_inside_tree():
+	if not is_inside_tree():
 		return null
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.9
-	torus.outer_radius = 1.0
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = BASS_DROP_RING_COLOR
-	torus.material = mat
-	var ring := MeshInstance3D.new()
-	ring.name = "BassDropRing"
-	ring.mesh = torus
-	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	host.add_child(ring)
-	ring.global_position = global_position - Vector3(0.0, FEET_OFFSET, 0.0)
-	ring.scale = Vector3(BASS_DROP_RING_START_SCALE, 1.0, BASS_DROP_RING_START_SCALE)
-	var tween := ring.create_tween()
-	tween.tween_property(ring, "scale", Vector3(bass_drop_radius, 1.0, bass_drop_radius), BASS_DROP_RING_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(ring.queue_free)
-	return ring
+	return ShockRingScript.spawn(get_parent(), global_position - Vector3(0.0, FEET_OFFSET, 0.0), bass_drop_radius, BASS_DROP_RING_COLOR, BASS_DROP_RING_SECONDS, "BassDropRing")
 
 ## H3: a checkpoint respawn hands Nick back in a clean state -- Idle, idle clip, no stale
 ## buffers, no armed Bass Drop, no dodge cooldown, at rest. GameManager has already

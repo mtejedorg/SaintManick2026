@@ -58,6 +58,7 @@ func take_damage(damage_info: DamageInfo) -> void:
 	regen_timer = shield_regen_delay
 	
 	var dmg_amount = damage_info.amount
+	var shield_before := current_shield
 	
 	if damage_info.is_shield_breaker:
 		current_shield = 0.0
@@ -84,6 +85,10 @@ func take_damage(damage_info: DamageInfo) -> void:
 	damaged.emit(damage_info)
 	health_changed.emit(current_health, max_health)
 	shield_changed.emit(current_shield, max_shield)
+	if shield_before > 0.0 and current_shield <= 0.0:
+		# P7: the shield just broke -- one global cue per break (regen re-arms it).
+		var at := get_parent() as Node3D
+		SignalBus.shield_broken.emit(at.global_position if at and at.is_inside_tree() else Vector3.ZERO)
 
 	if is_player:
 		SignalBus.player_health_changed.emit(current_health, max_health)

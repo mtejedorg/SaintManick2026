@@ -47,6 +47,11 @@ signal hit_landed(position: Vector3, hit_type: String)
 signal hit_blocked(position: Vector3)
 ## Emitted by enemy _on_died() before queue_free so VFX can burst at the death position.
 signal enemy_died(position: Vector3)
+## P7: a HealthComponent shield was knocked from > 0 to 0 by a hit (the Bruiser's 80, Nick's
+## own). VFX bursts steel sparks at `position` with a shake; AudioManager plays shield_break.
+signal shield_broken(position: Vector3)
+## P10: a brief full-screen white flash (ComboFlash plays it): peak alpha, fade seconds.
+signal screen_flash_requested(alpha: float, duration: float)
 
 
 # --- Music/Rhythm Events ---

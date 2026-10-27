@@ -23,6 +23,12 @@ var combat_comp: Node = null
 ## and the speed below which the grunt faces the player instead of its velocity.
 const FACING_TURN_WEIGHT := 0.2
 const FACING_MIN_SPEED := 0.1
+## P7: while the 80-point shield holds, the rim rests steel-white (stronger than the default
+## magenta) so the shield is visible; the break flashes white-hot and drops back to magenta.
+const SHIELD_RIM_COLOR := Color(0.75, 0.85, 1.0)
+const SHIELD_RIM_STRENGTH := 3.5
+const SHIELD_BREAK_FLASH_STRENGTH := 6.0
+const SHIELD_BREAK_FLASH_SECONDS := 0.25
 
 var player: Node3D
 var attack_step: int = AttackStep.IDLE
@@ -35,6 +41,10 @@ var is_active: bool = false
 var _base_scale: Vector3 = Vector3.ONE
 ## H2: origin -> feet distance for the ledge probe.
 var _feet_offset: float = 0.0
+## P7: whether the rim currently shows the shield (tracks shield_changed, incl. regen).
+var _shield_rim_shown: bool = false
+## The authored resting rim strength (restored when the shield is down).
+var _default_rim_strength: float = 3.0
 
 func _ready() -> void:
 	var combat_script = load("res://_core/components/enemy_combat_component.gd")
@@ -52,6 +62,7 @@ func _ready() -> void:
 	health_component.max_shield = stats.shield
 	health_component.current_shield = stats.shield
 	health_component.health_changed.connect(_on_health_changed)
+	health_component.shield_changed.connect(_on_shield_changed)
 	health_component.died.connect(_on_died)
 
 	hitbox.damage_info = DamageInfo.new()
@@ -63,6 +74,8 @@ func _ready() -> void:
 	# during the active step, gated by the beat.
 	hitbox.is_active = false
 	_base_scale = mesh_instance.scale
+	_default_rim_strength = character_visual.get_base_rim_strength()
+	_on_shield_changed(health_component.current_shield, health_component.max_shield)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 	_feet_offset = EnemyStats.feet_offset_of(self)
@@ -173,7 +186,26 @@ func _update_facing() -> void:
 func _on_stun_started() -> void:
 	attack_step = AttackStep.IDLE
 	hitbox.is_active = false
+	character_visual.update_rim_color(resting_rim_color())
+
+## The rim the Bruiser rests at: steel-white while its shield holds, magenta otherwise.
+func resting_rim_color() -> Color:
+	return SHIELD_RIM_COLOR if health_component.current_shield > 0.0 else character_visual.get_default_rim_color()
+
+## P7: shield up -> steel rim; shield broken -> white-hot flash, then the magenta default.
+## Regeneration re-arms it (the rim goes steel again on the first regen tick).
+func _on_shield_changed(new_shield: float, _max_shield: float) -> void:
+	var up := new_shield > 0.0
+	if up == _shield_rim_shown:
+		return
+	_shield_rim_shown = up
+	if up:
+		character_visual.update_rim_color(SHIELD_RIM_COLOR)
+		character_visual.update_rim_strength(SHIELD_RIM_STRENGTH)
+		return
 	character_visual.update_rim_color(character_visual.get_default_rim_color())
+	character_visual.update_rim_strength(_default_rim_strength)
+	character_visual.flash_rim(Color.WHITE, SHIELD_BREAK_FLASH_STRENGTH, SHIELD_BREAK_FLASH_SECONDS)
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
 ## for good.

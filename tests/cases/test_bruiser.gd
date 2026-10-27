@@ -74,7 +74,8 @@ func test_bruiser_telegraphs_one_beat_before_downbeat() -> void:
 	var visual: CharacterVisual = bruiser.character_visual
 	assert_eq(visual.get_current_rim_color(), CharacterVisual.TELEGRAPH_RIM_COLOR, "Telegraph flashes the rim white-hot")
 	assert_almost_eq(visual.get_current_rim_strength(), CharacterVisual.TELEGRAPH_RIM_STRENGTH, 0.01, "Telegraph rim strength is 6")
-	assert_eq(visual.get_base_rim_color(), CharacterVisual.ENEMY_RIM_COLOR, "The flash returns to the magenta faction rim")
+	# P7: a shielded Bruiser rests at the steel shield rim; the flash returns to it.
+	assert_eq(visual.get_base_rim_color(), BruiserEnemy.SHIELD_RIM_COLOR, "The flash returns to the steel shield rim")
 
 	bruiser.queue_free()
 	player_stub.queue_free()

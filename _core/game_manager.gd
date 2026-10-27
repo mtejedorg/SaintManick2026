@@ -65,6 +65,11 @@ var last_killer: String = ""
 const DEATH_BEAT_SECONDS := 0.9
 const DEATH_HIT_STOP_DURATION := 0.5
 const DEATH_HIT_STOP_SCALE := 0.2
+## P9: the zone card names the killer DURING the death beat (time is slowed, the cause is on
+## screen), and the respawn card says where the run resumes. Both are priority cards
+## (banner_requested). The respawn card is emitted right after player_life_lost, so it
+## replaces the HUD's own life-lost card on the same frame.
+const RESPAWN_BANNER_HOLD := 1.2
 ## Bumped per death beat and per new run: a pending beat from an older death or run
 ## never resolves into this one.
 var _death_beat_token: int = 0
@@ -195,11 +200,28 @@ func begin_death_beat() -> void:
 	var hit_stop := get_node_or_null("/root/HitStop")
 	if hit_stop:
 		hit_stop.start_hit_stop(DEATH_HIT_STOP_DURATION, DEATH_HIT_STOP_SCALE, true)
+	SignalBus.banner_requested.emit(death_banner_text(last_killer), DEATH_BEAT_SECONDS)
 	get_tree().create_timer(DEATH_BEAT_SECONDS, false, false, true).timeout.connect(func():
 		if token == _death_beat_token:
 			death_beat_pending = false
 			respawn_or_game_over()
 	)
+
+## P9: the death-beat card ("DESTROYED BY RUNNER"; plain "DESTROYED" for an unknown cause).
+static func death_banner_text(killer: String) -> String:
+	return "DESTROYED BY %s" % killer if killer != "" else "DESTROYED"
+
+## P9: the respawn card. `lives_left` is the count after the life was spent: > 0 ->
+## "LIFE LOST — N LEFT", 0 -> "LAST LIFE"; then " — RESUMING SECTOR NN" for the checkpoint
+## zone (omitted when the zone name carries no number).
+static func respawn_banner_text(lives_left: int, zone_name: String) -> String:
+	var text := "LIFE LOST — %d LEFT" % lives_left if lives_left > 0 else "LAST LIFE"
+	for part in zone_name.split(" "):
+		var zone := part.to_int()
+		if zone > 0:
+			text += " — RESUMING SECTOR %02d" % zone
+			break
+	return text
 
 ## Ends a pending death beat now: the respawn or game over lands at once.
 func finish_death_beat_now() -> void:
@@ -228,6 +250,7 @@ func respawn_or_game_over() -> void:
 		current_shield = max_shield
 		lives_changed.emit(current_lives)
 		SignalBus.player_life_lost.emit(current_lives)
+		SignalBus.banner_requested.emit(respawn_banner_text(current_lives, checkpoint_zone), RESPAWN_BANNER_HOLD)
 		# T3: checkpoint respawn instead of a full scene reload. Cleared encounters
 		# stay cleared (dead enemies never respawn — no death-farming); uncleared
 		# fights and activated bosses reset via player_respawned listeners.

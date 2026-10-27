@@ -200,9 +200,10 @@ func test_l5_side_scroll_encounters_have_a_holo_gate_pair() -> void:
 		for gate in enc.gates:
 			assert_true(gate is CSGBox3D, "%s gate is a CSGBox3D" % enc_name)
 			var box := gate as CSGBox3D
-			assert_eq(box.size, Vector3(1, 12, 8), "%s/%s is 1 x 12 x 8 (taller than the 5.5 m jump apex)" % [enc_name, gate.name])
-			var mat := box.material as StandardMaterial3D
-			assert_true(mat != null and mat.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED, "%s/%s is a hologram" % [enc_name, gate.name])
+			# P2: 3.2 m deep (was 8: an opaque slab filling the frame edges), still 12 m tall.
+			assert_eq(box.size, Vector3(1, 12, 3.2), "%s/%s is 1 x 12 x 3.2 (taller than the double jump)" % [enc_name, gate.name])
+			var mat := box.material as ShaderMaterial
+			assert_true(mat != null and mat.shader != null and mat.shader.code.contains("blend_add"), "%s/%s is an additive hologram" % [enc_name, gate.name])
 			assert_true(gate.is_in_group("gates"), "%s/%s is a legal golden-path obstacle" % [enc_name, gate.name])
 			assert_false(box.use_collision or box.visible, "%s/%s is open at rest" % [enc_name, gate.name])
 		var entrance := _x_span(enc.gates[0])

@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://characters/enemies/headliner/headliner.gd" id="1_headliner"]
 [ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_health"]
@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner_visual.tscn" id="18_visual"]
 [ext_resource type="AudioStream" path="res://audio/music/boss_headliner.ogg" id="19_boss_music_a"]
 [ext_resource type="AudioStream" path="res://audio/music/boss_headliner.ogg" id="20_boss_music_b"]
+[ext_resource type="Shader" path="res://assets/shaders/shield_bubble.gdshader" id="90_shield_bubble"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_headliner"]
 radius = 2.0
@@ -29,11 +30,19 @@ height = 6.0
 radius = 3.5
 height = 7.0
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shield_rim"]
+render_priority = 1
+shader = ExtResource("90_shield_bubble")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shield"]
-albedo_color = Color(0, 0.6, 1, 0.25)
+next_pass = SubResource("ShaderMaterial_shield_rim")
 transparency = 1
+blend_mode = 1
+depth_draw_mode = 2
+albedo_color = Color(0, 0.6, 1, 0.1)
 emission_enabled = true
 emission = Color(0, 0.4, 0.8, 1)
+emission_energy_multiplier = 0.5
 
 [node name="Headliner" type="CharacterBody3D"]
 collision_layer = 4

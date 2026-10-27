@@ -440,3 +440,35 @@ func test_k11_the_final_death_also_waits_the_beat_before_the_game_over() -> void
 	assert_true(GameManager.run_ended, "K11: ...and lands after it (1.05 s)")
 	GameManager.is_test = was_test
 	GameManager.start_new_run()
+
+# --- P9: the killer is named during the death beat; the respawn says where -----------------
+
+func test_p9_the_death_beat_banner_names_the_killer() -> void:
+	GameManager.start_new_run()
+	var got: Array[String] = []
+	var holds: Array[float] = []
+	SignalBus.banner_requested.connect(func(text: String, hold: float):
+		got.append(text)
+		holds.append(hold))
+	GameManager.last_killer = "RUNNER"
+	GameManager.begin_death_beat()
+	assert_eq(got, ["DESTROYED BY RUNNER"] as Array[String], "The death beat puts the cause on screen while time is slowed")
+	assert_almost_eq(holds[0] if holds.size() > 0 else 0.0, GameManager.DEATH_BEAT_SECONDS, 0.0001, "...for the 0.9 s beat")
+	GameManager.cancel_death_beat()
+	assert_eq(GameManager.death_banner_text(""), "DESTROYED", "Unknown cause -> plain DESTROYED")
+	GameManager.last_killer = ""
+	GameManager.start_new_run()
+
+func test_p9_the_respawn_banner_names_lives_and_the_checkpoint_sector() -> void:
+	assert_eq(GameManager.respawn_banner_text(2, "SECTOR 05 — NEON MARKET"), "LIFE LOST — 2 LEFT — RESUMING SECTOR 05")
+	assert_eq(GameManager.respawn_banner_text(0, "SECTOR 10 — THE HEADLINER"), "LAST LIFE — RESUMING SECTOR 10", "The LAST LIFE variant stays")
+	assert_eq(GameManager.respawn_banner_text(1, ""), "LIFE LOST — 1 LEFT", "No checkpoint zone -> no sector suffix")
+	GameManager.start_new_run()
+	GameManager.checkpoint_zone = "SECTOR 07 — ENFORCER"
+	var lives: int = GameManager.current_lives
+	var got: Array[String] = []
+	SignalBus.banner_requested.connect(func(text: String, _hold: float): got.append(text))
+	GameManager.respawn_or_game_over()
+	assert_eq(got, [GameManager.respawn_banner_text(lives - 1, "SECTOR 07 — ENFORCER")] as Array[String], "respawn_or_game_over shows the respawn card")
+	assert_true(got.size() == 1 and got[0].ends_with("RESUMING SECTOR 07"), "...naming the checkpoint sector (%s)" % str(got))
+	GameManager.start_new_run()

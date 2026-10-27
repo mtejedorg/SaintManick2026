@@ -112,6 +112,7 @@ func _connect_signals() -> void:
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.player_respawned.connect(_on_player_respawned)
 	SignalBus.combo_increased.connect(_on_combo_increased)
+	SignalBus.shield_broken.connect(_on_shield_broken)
 
 	# Zone transitions
 	SignalBus.zone_entered.connect(_on_zone_entered)
@@ -159,6 +160,10 @@ func _on_player_respawned() -> void:
 
 func _on_combo_increased(_current_combo: int) -> void:
 	play_sfx("combo_tick")
+
+## P7: any HealthComponent shield knocked to 0 (no-ops if the clip is missing).
+func _on_shield_broken(_position: Vector3) -> void:
+	play_sfx("shield_break")
 
 
 ## Maps a zone name to its audio tier, following the slice's Factory→Neon arc

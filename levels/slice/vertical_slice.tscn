@@ -1,4 +1,4 @@
-[gd_scene load_steps=83 format=3]
+[gd_scene load_steps=85 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -38,6 +38,8 @@
 [ext_resource type="Script" path="res://levels/components/zone_atmosphere.gd" id="56_zone_atmosphere"]
 [ext_resource type="Script" path="res://levels/components/holo_gate.gd" id="57_holo_gate"]
 [ext_resource type="Script" path="res://levels/components/onboarding_prompts.gd" id="58_onboarding_prompts"]
+[ext_resource type="Shader" path="res://assets/shaders/holo_gate.gdshader" id="59_holo_gate_shader"]
+[ext_resource type="Material" path="res://assets/materials/skyline_dark.tres" id="60_skyline_dark"]
 
 
 ; --- Curve 3D Resources ---
@@ -97,12 +99,8 @@ size = Vector3(6, 4, 6)
 [sub_resource type="BoxShape3D" id="BoxShape3D_z6_trig"]
 size = Vector3(8, 4, 8)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hologram"]
-transparency = 1
-albedo_color = Color(0.0, 0.8, 1.0, 0.3)
-emission_enabled = true
-emission = Color(0.0, 0.5, 1.0, 1.0)
-emission_energy_multiplier = 2.5
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hologram"]
+shader = ExtResource("59_holo_gate_shader")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gate"]
 transparency = 1
@@ -158,10 +156,10 @@ size = Vector3(8, 1, 6)
 size = Vector3(2, 4, 4)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gate"]
-size = Vector3(1, 4, 14)
+size = Vector3(1, 14, 14)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_z7_gate"]
-size = Vector3(0.5, 5, 14)
+size = Vector3(0.5, 14, 14)
 
 [sub_resource type="Curve3D" id="Curve3D_z10"]
 _data = {
@@ -236,11 +234,12 @@ emission = Color(1, 0.690196, 0, 1)
 emission_energy_multiplier = 2.0
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_void"]
-sky_top_color = Color(0.0196078, 0.0196078, 0.0588235, 1)
-sky_horizon_color = Color(0.227451, 0.0392157, 0.227451, 1)
-sky_energy_multiplier = 0.25
-ground_bottom_color = Color(0.0196078, 0.0196078, 0.0392157, 1)
-ground_horizon_color = Color(0.101961, 0.0392157, 0.164706, 1)
+sky_top_color = Color(0.02, 0.02, 0.06, 1)
+sky_horizon_color = Color(0.35, 0.05, 0.35, 1)
+sky_curve = 0.12
+sky_energy_multiplier = 1.0
+ground_bottom_color = Color(0.008, 0.008, 0.016, 1)
+ground_horizon_color = Color(0.175, 0.025, 0.175, 1)
 sun_angle_max = 0.0
 
 [sub_resource type="Sky" id="Sky_void"]
@@ -250,11 +249,17 @@ sky_material = SubResource("ProceduralSkyMaterial_void")
 background_mode = 2
 background_color = Color(0.02, 0.02, 0.05, 1)
 sky = SubResource("Sky_void")
-ambient_light_source = 2
+ambient_light_source = 3
 ambient_light_color = Color(0.063, 0.063, 0.141, 1)
-ambient_light_energy = 2.2
+ambient_light_sky_contribution = 0.7
+ambient_light_energy = 1.0
 tonemap_mode = 2
 tonemap_white = 6.0
+ssr_enabled = true
+ssr_max_steps = 64
+ssr_fade_in = 0.15
+ssr_fade_out = 2.0
+ssr_depth_tolerance = 0.2
 ssao_enabled = true
 ssao_radius = 0.5
 ssao_intensity = 2.0
@@ -288,8 +293,8 @@ script = ExtResource("33_vs_script")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
-light_color = Color(0.35, 0.42, 1, 1)
-light_energy = 0.45
+light_color = Color(1, 0.55, 0.2, 1)
+light_energy = 0.9
 sky_mode = 1
 shadow_enabled = true
 shadow_blur = 1.5
@@ -307,9 +312,11 @@ shadow_enabled = false
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_glow")
 
-[node name="ZoneAtmosphere" type="Node" parent="WorldEnvironment" node_paths=PackedStringArray("world_environment")]
+[node name="ZoneAtmosphere" type="Node" parent="WorldEnvironment" node_paths=PackedStringArray("world_environment", "sun_light", "rim_light")]
 script = ExtResource("56_zone_atmosphere")
 world_environment = NodePath("..")
+sun_light = NodePath("../../DirectionalLight3D")
+rim_light = NodePath("../../RimFill")
 
 [node name="HUD" parent="." instance=ExtResource("7_hud")]
 
@@ -321,8 +328,9 @@ world_environment = NodePath("..")
 [node name="Tower1" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 5.0, -42)
 size = Vector3(12, 26, 10)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 6, -42)
@@ -339,8 +347,9 @@ cast_shadow = 0
 [node name="Tower2" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 10.0, -55)
 size = Vector3(14, 36, 12)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 9, -55)
@@ -363,8 +372,9 @@ cast_shadow = 0
 [node name="Tower3" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 7.0, -48)
 size = Vector3(12, 30, 10)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower3Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 8, -48)
@@ -381,8 +391,9 @@ cast_shadow = 0
 [node name="Tower4" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 11.0, -58)
 size = Vector3(16, 38, 12)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower4Strip1" type="CSGBox3D" parent="Skyline_Z1_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 10, -58)
@@ -407,8 +418,9 @@ cast_shadow = 0
 [node name="Tower1" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 11.0, -50)
 size = Vector3(14, 46, 12)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 2, -50)
@@ -437,8 +449,9 @@ cast_shadow = 0
 [node name="Tower2" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 16.0, -62)
 size = Vector3(16, 56, 14)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, 0, -62)
@@ -473,8 +486,9 @@ cast_shadow = 0
 [node name="Tower3" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 8.0, -48)
 size = Vector3(12, 40, 10)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower3Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 322, 0, -48)
@@ -503,8 +517,9 @@ cast_shadow = 0
 [node name="Tower4" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, 15.0, -68)
 size = Vector3(16, 54, 14)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower4Strip1" type="CSGBox3D" parent="Skyline_Z7_9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 350, -2, -68)
@@ -541,8 +556,9 @@ cast_shadow = 0
 [node name="Tower1" type="CSGBox3D" parent="Skyline_Z10"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 418, 23.0, -30)
 size = Vector3(12, 58, 10)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower1Strip1" type="CSGBox3D" parent="Skyline_Z10"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 418, 10, -30)
@@ -571,8 +587,9 @@ cast_shadow = 0
 [node name="Tower2" type="CSGBox3D" parent="Skyline_Z10"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436, 19.0, -34)
 size = Vector3(14, 50, 12)
-material = ExtResource("51_wall_dark")
+material = ExtResource("60_skyline_dark")
 cast_shadow = 0
+gi_mode = 0
 
 [node name="Tower2Strip1" type="CSGBox3D" parent="Skyline_Z10"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436, 12, -34)
@@ -645,13 +662,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1, 0)
 
 [node name="GateEntrance" type="CSGBox3D" parent="Z1_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 6, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 [node name="GateExit" type="CSGBox3D" parent="Z1_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 6, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 ; ================= ZONE 2: Piston Platforming (2.5D) =================
 [node name="Z2_Trigger" type="Area3D" parent="."]
@@ -1166,13 +1183,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 5, -5.5)
 
 [node name="GateEntrance" type="CSGBox3D" parent="Z4_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 130, 6, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 [node name="GateExit" type="CSGBox3D" parent="Z4_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160, 6, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 ; ================= ZONE 5: Neon Market Entrance (2.5D) =================
 [node name="Z5_Market" type="Node3D" parent="." unique_id=410000024]
@@ -1220,7 +1237,7 @@ size = Vector3(2, 1.2, 1.5)
 material = ExtResource("51_wall_dark")
 
 [node name="MarketStallR" type="CSGBox3D" parent="Z5_Market" unique_id=410000031]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 180, 0.1, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 171, 0.1, -2)
 use_collision = true
 size = Vector3(2, 1.2, 1.5)
 material = ExtResource("51_wall_dark")
@@ -1232,7 +1249,7 @@ size = Vector3(1.5, 1, 1.5)
 material = ExtResource("51_wall_dark")
 
 [node name="Crate2" type="CSGBox3D" parent="Z5_Market" unique_id=410000033]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 189, -1, 1.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 186, -1, -1.45)
 use_collision = true
 size = Vector3(1.5, 1, 1)
 material = ExtResource("51_wall_dark")
@@ -1272,13 +1289,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, 1.5)
 
 [node name="GateEntrance" type="CSGBox3D" parent="Z5_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 166, 6, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 [node name="GateExit" type="CSGBox3D" parent="Z5_Gates"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 202, 3, 0)
-size = Vector3(1, 12, 8)
-material = SubResource("StandardMaterial3D_hologram")
+size = Vector3(1, 12, 3.2)
+material = SubResource("ShaderMaterial_hologram")
 
 ; ================= ZONE 6: Market Square Ambush (Top-Down) =================
 [node name="Z6_Plaza" type="Node3D" parent="."]
@@ -1304,12 +1321,14 @@ material = ExtResource("51_wall_dark")
 [node name="WallEntrance" type="CSGBox3D" parent="Z6_Plaza"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 210, -1.5, 0)
 size = Vector3(1, 5, 30)
-material = SubResource("StandardMaterial3D_hologram")
+material = SubResource("ShaderMaterial_hologram")
+instance_shader_parameters/half_height = 2.5
 
 [node name="WallExit" type="CSGBox3D" parent="Z6_Plaza"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 240, -1.5, 0)
 size = Vector3(1, 5, 30)
-material = SubResource("StandardMaterial3D_hologram")
+material = SubResource("ShaderMaterial_hologram")
+instance_shader_parameters/half_height = 2.5
 
 [node name="CoverPillar1" type="CSGBox3D" parent="Z6_Plaza" unique_id=410000045]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 219, -2.5, -6)
@@ -1411,9 +1430,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 249, -3, 0)
 wake_zone = "07"
 
 [node name="Z7_Barrier" type="CSGBox3D" parent="." unique_id=410000051 node_paths=PackedStringArray("opened_by")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 279, -1.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 279, 3.5, 0)
 use_collision = true
-size = Vector3(0.5, 7, 4)
+size = Vector3(0.5, 16, 4)
 material = ExtResource("51_wall_dark")
 script = ExtResource("57_holo_gate")
 opened_by = NodePath("../RhythmEnforcer")
@@ -1423,7 +1442,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, -3.0, 0)
 entry_gate = NodePath("../Z7_EntryGate")
 
 [node name="Z7_EntryGate" type="StaticBody3D" parent="." groups=["gates"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 240.75, -1.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 240.75, 3.0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Z7_EntryGate"]
 shape = SubResource("BoxShape3D_z7_gate")
@@ -1431,7 +1450,7 @@ disabled = true
 
 [node name="Visual" type="CSGBox3D" parent="Z7_EntryGate"]
 visible = false
-size = Vector3(0.5, 5, 14)
+size = Vector3(0.5, 14, 14)
 material = SubResource("StandardMaterial3D_gate")
 
 ; ================= ZONE 8: Rhythm-Action Escape (2.5D) =================
@@ -1766,7 +1785,8 @@ material = ExtResource("51_wall_dark")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 7)
 use_collision = true
 size = Vector3(25, 0.6, 0.5)
-material = SubResource("StandardMaterial3D_hologram")
+material = SubResource("ShaderMaterial_hologram")
+instance_shader_parameters/half_height = 0.3
 
 [node name="RightWall" type="CSGBox3D" parent="Zone10_Dock"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 2.5, 0)
@@ -1787,7 +1807,7 @@ size = Vector3(1, 2.5, 1)
 material = ExtResource("51_wall_dark")
 
 [node name="LeftGate" type="StaticBody3D" parent="." groups=["gates"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 412.5, 17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 412.5, 22, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LeftGate"]
 shape = SubResource("BoxShape3D_gate")
@@ -1795,7 +1815,7 @@ disabled = true
 
 [node name="Visual" type="CSGBox3D" parent="LeftGate"]
 visible = false
-size = Vector3(0.5, 4, 14)
+size = Vector3(0.5, 14, 14)
 material = SubResource("StandardMaterial3D_gate")
 
 [node name="Path_Z10" type="Path3D" parent="."]

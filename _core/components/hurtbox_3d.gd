@@ -6,6 +6,9 @@ signal hit_received(damage_info: DamageInfo)
 ## F12: a light shake so an absorbed (blocked) hit still reads as contact.
 const BLOCKED_SHAKE_STRENGTH := 0.03
 const BLOCKED_SHAKE_DURATION := 0.08
+## P7: DamageInfo meta set on every player_hit_landed this hurtbox emits -- true when a
+## HealthComponent shield absorbed the whole hit (HitStop skips the freeze for it).
+const SHIELD_ABSORBED_META := &"shield_absorbed"
 
 @export var health_component: HealthComponent
 
@@ -30,11 +33,21 @@ func receive_blocked_hit(damage_info: DamageInfo) -> void:
 
 func receive_hit(damage_info: DamageInfo) -> void:
 	var was_invincible = health_component and health_component.is_invincible
+	var shield_before: float = health_component.current_shield if health_component else 0.0
 	if health_component:
 		health_component.take_damage(damage_info)
 	hit_received.emit(damage_info)
 	if damage_info.source is PlayerController and not was_invincible:
+		# P7: a HealthComponent shield (the Bruiser's) took the hit and is still up -- it still
+		# feeds the combo/meter (player_hit_landed, flagged so HitStop skips the freeze), but
+		# it reads as a steel clink (hit_blocked), not a cyan/magenta hit spark.
+		var absorbed := shield_before > 0.0 and health_component != null and health_component.current_shield > 0.0
+		damage_info.set_meta(SHIELD_ABSORBED_META, absorbed)
 		SignalBus.player_hit_landed.emit(damage_info)
+		if absorbed:
+			SignalBus.hit_blocked.emit(global_position)
+			SignalBus.camera_shake_requested.emit(BLOCKED_SHAKE_STRENGTH, BLOCKED_SHAKE_DURATION)
+			return
 		var hit_type := "heavy" if damage_info.amount >= DamageInfo.HEAVY_THRESHOLD else "light"
 		SignalBus.hit_landed.emit(global_position, hit_type)
 		# Camera shake: light hit 0.05 strength / 0.12s, heavy hit 0.1 / 0.2s.

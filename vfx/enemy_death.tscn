@@ -1,6 +1,13 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://vfx/enemy_death.gd" id="1_script"]
+
+[sub_resource type="Gradient" id="Gradient_death"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(1, 0, 0.666667, 1, 0.6, 0, 0.4, 0.8, 0.04, 0.02, 0.05, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_death"]
+gradient = SubResource("Gradient_death")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_death"]
 lifetime_randomness = 0.4
@@ -8,12 +15,62 @@ direction = Vector3(0, 1, 0)
 spread = 180.0
 initial_velocity_min = 5.0
 initial_velocity_max = 14.0
-angular_velocity_min = -180.0
-angular_velocity_max = 180.0
 gravity = Vector3(0, -6.0, 0)
-scale_min = 0.06
-scale_max = 0.18
-color = Color(1, 0.133, 0, 1)
+scale_min = 0.6
+scale_max = 1.8
+color_ramp = SubResource("GradientTexture1D_death")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_death"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(2, 2, 2, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_death"]
+material = SubResource("StandardMaterial3D_death")
+radius = 0.1
+height = 0.2
+radial_segments = 8
+rings = 4
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.25, 1)
+colors = PackedColorArray(0.012, 0.012, 0.02, 0, 0.012, 0.012, 0.02, 0.7, 0.012, 0.012, 0.02, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_smoke"]
+gradient = SubResource("Gradient_smoke")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 0.6
+initial_velocity_max = 1.4
+gravity = Vector3(0, 0.5, 0)
+scale_min = 0.8
+scale_max = 1.6
+color_ramp = SubResource("GradientTexture1D_smoke")
+
+[sub_resource type="Gradient" id="Gradient_puff"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_puff"]
+gradient = SubResource("Gradient_puff")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smoke"]
+transparency = 1
+albedo_texture = SubResource("GradientTexture2D_puff")
+shading_mode = 0
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_smoke"]
+material = SubResource("StandardMaterial3D_smoke")
+size = Vector2(0.6, 0.6)
 
 [node name="EnemyDeath" type="GPUParticles3D"]
 amount = 32
@@ -23,5 +80,15 @@ explosiveness = 0.98
 randomness = 0.3
 visibility_aabb = AABB(-5, -5, -5, 10, 10, 10)
 process_material = SubResource("ParticleProcessMaterial_death")
-draw_pass_1 = null
+draw_pass_1 = SubResource("SphereMesh_death")
 script = ExtResource("1_script")
+
+[node name="Smoke" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 8
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.9
+visibility_aabb = AABB(-3, -2, -3, 6, 6, 6)
+process_material = SubResource("ParticleProcessMaterial_smoke")
+draw_pass_1 = SubResource("QuadMesh_smoke")

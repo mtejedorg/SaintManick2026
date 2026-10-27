@@ -35,6 +35,15 @@ var speed_multiplier: float = 1.0
 var phase_2_triggered: bool = false
 ## Phase 2 swaps the resting rim to magenta (phase 1 rests at the authored amber).
 const PHASE_2_RIM_COLOR := CharacterVisual.ENEMY_RIM_COLOR
+## P10: the phase-2 moment (shake, deep stop, magenta ring at the feet).
+const PHASE_2_SHAKE_STRENGTH := 0.55
+const PHASE_2_SHAKE_DURATION := 0.5
+const PHASE_2_HIT_STOP_DURATION := 0.15
+const PHASE_2_HIT_STOP_SCALE := 0.05
+const PHASE_2_RING_RADIUS := 14.0
+const PHASE_2_RING_SECONDS := 0.45
+const PHASE_2_RING_COLOR := CharacterVisual.ENEMY_RIM_COLOR
+const ShockRingScript := preload("res://vfx/shock_ring.gd")
 ## Enraged pushes the rim hotter than the authored strength.
 const ENRAGED_RIM_STRENGTH := 5.0
 ## F8: unrigged 6 m model — procedural life on its Pivot instead of a root-scale pulse.
@@ -214,12 +223,22 @@ func _on_health_changed(current: float, max_health: float) -> void:
 	SignalBus.boss_health_changed.emit(int(current), int(max_health))
 	if current <= stats.max_health * 0.5 and not phase_2_triggered:
 		phase_2_triggered = true
+		_play_phase_2_moment()
 		if character_visual:
 			character_visual.update_rim_color(PHASE_2_RIM_COLOR)
 		if Conductor:
 			Conductor.target_bpm = 160.0
 		if state_machine:
 			state_machine.transition_to("StateTransition")
+
+## P10: the phase-2 moment -- a heavy shake, a deep hit-stop (merged through the bus, so it
+## never cuts a longer stop such as Nick's death beat) and a magenta shock ring at the feet.
+func _play_phase_2_moment() -> void:
+	SignalBus.camera_shake_requested.emit(PHASE_2_SHAKE_STRENGTH, PHASE_2_SHAKE_DURATION)
+	SignalBus.hit_stop_requested.emit(PHASE_2_HIT_STOP_DURATION, PHASE_2_HIT_STOP_SCALE)
+	if is_inside_tree():
+		var feet := global_position - Vector3(0.0, EnemyStats.feet_offset_of(self), 0.0)
+		ShockRingScript.spawn(get_parent(), feet, PHASE_2_RING_RADIUS, PHASE_2_RING_COLOR, PHASE_2_RING_SECONDS, "PhaseTwoRing")
 
 func _on_died() -> void:
 	SignalBus.boss_died.emit()

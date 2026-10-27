@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://characters/enemies/enforcer/enforcer.gd" id="1_enforcer"]
 [ext_resource type="Script" path="res://_core/components/health_component.gd" id="2_enforcer"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_recovery.gd" id="9_enforcer"]
 [ext_resource type="Script" path="res://characters/enemies/enforcer/states/enforcer_state_shield.gd" id="10_enforcer"]
 [ext_resource type="PackedScene" path="res://characters/enemies/enforcer/enforcer_visual.tscn" id="11_visual"]
+[ext_resource type="Shader" path="res://assets/shaders/shield_bubble.gdshader" id="90_shield_bubble"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enforcer"]
 radius = 1.2
@@ -27,11 +28,19 @@ albedo_color = Color(1, 0.5, 0, 1)
 radius = 2.3
 height = 4.6
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shield_rim"]
+render_priority = 1
+shader = ExtResource("90_shield_bubble")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shield"]
-albedo_color = Color(0.0, 0.6, 1.0, 0.25)
+next_pass = SubResource("ShaderMaterial_shield_rim")
 transparency = 1
+blend_mode = 1
+depth_draw_mode = 2
+albedo_color = Color(0, 0.6, 1, 0.1)
 emission_enabled = true
-emission = Color(0.0, 0.4, 0.8, 1.0)
+emission = Color(0, 0.4, 0.8, 1)
+emission_energy_multiplier = 0.5
 
 [node name="Enforcer" type="CharacterBody3D"]
 collision_layer = 4

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://ui/menus/title_screen.gd" id="1_title"]
 [ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
 [ext_resource type="Texture2D" path="res://ui/menus/art/title_logo.png" id="3_logo"]
 [ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="4_vcr"]
 [ext_resource type="PackedScene" path="res://ui/menus/options_menu.tscn" id="5_options"]
+[ext_resource type="PackedScene" path="res://ui/menus/demo_loadout.tscn" id="6_loadout"]
 
 [node name="TitleScreen" type="CanvasLayer"]
 script = ExtResource("1_title")
@@ -49,29 +50,49 @@ stretch_mode = 5
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
-anchor_top = 0.58
+anchor_top = 0.55
 anchor_right = 0.5
-anchor_bottom = 0.58
-offset_left = -180.0
+anchor_bottom = 0.55
+offset_left = -320.0
 offset_top = 0.0
-offset_right = 180.0
-offset_bottom = 234.0
+offset_right = 320.0
+offset_bottom = 352.0
 grow_horizontal = 2
 theme_override_constants/separation = 18
 
-[node name="StartButton" type="Button" parent="Root/ButtonContainer"]
-custom_minimum_size = Vector2(0, 66)
+[node name="StartDemoButton" type="Button" parent="Root/ButtonContainer"]
+custom_minimum_size = Vector2(360, 66)
 layout_mode = 2
+size_flags_horizontal = 4
+text = "START DEMO"
+
+[node name="StartRunGroup" type="VBoxContainer" parent="Root/ButtonContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StartRunButton" type="Button" parent="Root/ButtonContainer/StartRunGroup"]
+custom_minimum_size = Vector2(360, 66)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "START RUN"
 
-[node name="OptionsButton" type="Button" parent="Root/ButtonContainer"]
-custom_minimum_size = Vector2(0, 66)
+[node name="StartRunSubLabel" type="Label" parent="Root/ButtonContainer/StartRunGroup"]
 layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 17
+text = "LEVEL ONE — IN PRODUCTION · plays the slice via Karen's Shop"
+horizontal_alignment = 1
+
+[node name="OptionsButton" type="Button" parent="Root/ButtonContainer"]
+custom_minimum_size = Vector2(360, 66)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "OPTIONS"
 
 [node name="QuitButton" type="Button" parent="Root/ButtonContainer"]
-custom_minimum_size = Vector2(0, 66)
+custom_minimum_size = Vector2(360, 66)
 layout_mode = 2
+size_flags_horizontal = 4
 text = "QUIT"
 
 [node name="FooterLabel" type="Label" parent="Root"]
@@ -91,6 +112,9 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="OptionsMenu" parent="Root" instance=ExtResource("5_options")]
+layout_mode = 1
+
+[node name="DemoLoadout" parent="Root" instance=ExtResource("6_loadout")]
 layout_mode = 1
 
 [node name="VcrOverlay" parent="." instance=ExtResource("4_vcr")]

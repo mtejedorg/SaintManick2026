@@ -73,6 +73,17 @@ var death_beat_pending: bool = false
 
 var is_test: bool = false
 
+## Batch O: the public DEMO is the slice without Karen's Shop. A demo run plays with whatever
+## the profile already has (upgrades, lives, Double Jump) but never writes back: nothing is
+## banked or saved, its booster comes from demo_boosters (the title's demo loadout) instead
+## of the profile, and every post-run screen returns to the title. Set by start_new_run().
+var demo_mode: bool = false
+## The demo loadout's run boosters ("None" is never stored). Read only when demo_mode is on.
+var demo_boosters: Array[String] = []
+
+const TITLE_SCENE := "res://ui/menus/title_screen.tscn"
+const SHOP_SCENE := "res://ui/shop/karens_shop.tscn"
+
 ## Set once the run has terminated (full clear, game over or abandon) so a second
 ## terminal event in the same run can't bank currencies twice — e.g. a last-life death
 ## inside the Headliner's victory hold. Cleared by start_new_run().
@@ -84,7 +95,8 @@ func _ready() -> void:
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.zone_entered.connect(_on_zone_entered)
 
-func start_new_run() -> void:
+func start_new_run(demo: bool = false) -> void:
+	demo_mode = demo
 	if SaveManager and SaveManager.profile:
 		max_hp = 120.0 + 20.0 * SaveManager.profile.max_hp_upgrades
 		max_lives = 3 + SaveManager.profile.max_lives_upgrades
@@ -98,15 +110,14 @@ func start_new_run() -> void:
 	# the profile upgrades (before the volatile pools are filled from the maxima).
 	run_speed_multiplier = 1.0
 	scrap_multiplier = 1
-	if SaveManager and SaveManager.profile:
-		for booster in SaveManager.profile.get_active_run_boosters():
-			match booster:
-				"Tempo Shield":
-					max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
-				"Adrenaline":
-					run_speed_multiplier = ADRENALINE_SPEED_MULTIPLIER
-				"Scrap Magnet":
-					scrap_multiplier = SCRAP_MAGNET_MULTIPLIER
+	for booster in run_boosters():
+		match booster:
+			"Tempo Shield":
+				max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
+			"Adrenaline":
+				run_speed_multiplier = ADRENALINE_SPEED_MULTIPLIER
+			"Scrap Magnet":
+				scrap_multiplier = SCRAP_MAGNET_MULTIPLIER
 
 	scrap = 0
 	cells = 0
@@ -134,6 +145,23 @@ func start_new_run() -> void:
 	cores_changed.emit(cores)
 	lives_changed.emit(current_lives)
 	SignalBus.run_started.emit()
+
+## The boosters this run applies: the demo loadout's in demo mode (distinct, no "None"),
+## otherwise the profile's equipped ones.
+func run_boosters() -> Array[String]:
+	var result: Array[String] = []
+	if demo_mode:
+		for booster in demo_boosters:
+			if booster != "" and booster != "None" and not result.has(booster):
+				result.append(booster)
+	elif SaveManager and SaveManager.profile:
+		result = SaveManager.profile.get_active_run_boosters()
+	return result
+
+## Batch O: where every post-run screen (results, game over, pause ABANDON RUN) goes --
+## the title after a demo run, Karen's Shop after a full run.
+func post_run_scene() -> String:
+	return TITLE_SCENE if demo_mode else SHOP_SCENE
 
 func add_scrap(amount: int) -> void:
 	scrap += amount * scrap_multiplier
@@ -252,8 +280,11 @@ func abandon_run() -> void:
 	cores_changed.emit(cores)
 
 ## Transfers the run's currencies into the persistent profile and saves. Shared by
-## game over, full clear and abandon.
+## game over, full clear and abandon. A demo run banks and saves nothing (batch O); its
+## volatile scrap/cells/cores still show on the results screen.
 func _bank_run_currencies() -> void:
+	if demo_mode:
+		return
 	if SaveManager and SaveManager.profile:
 		SaveManager.profile.scrap += scrap
 		SaveManager.profile.cells += cells

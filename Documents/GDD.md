@@ -1,6 +1,7 @@
 > [!IMPORTANT]
 > **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 3, 2026-10-26)**
 > This Game Design Document is the officially approved vision for Saint Manick. It supersedes every earlier draft, PDF and presentation in the archives. It is written for the **current stage**: the mechanics are defined, the ten-zone level layout is decided, and the Vertical Slice is the demo. Every mechanic in §3–§6 marked **[SLICE]** is implemented and verified in the build; everything marked **[POST-SLICE]** is designed but deliberately not built yet. Numbers live in the data files named next to them (`.tres`), never only here. **Numbers mirror the `.tres`/scene at commit 8937f29** (rev. 3 applies the owner decisions of 2026-10-26; where this document and a data file ever disagree, the file wins).
+> **Flow (owner direction 2026-10-27):** the public DEMO is the vertical slice with no shop: title -> START DEMO -> loadout pick -> slice -> results -> title, nothing banked. START RUN launches LEVEL ONE (the full-game flow with Karen's Shop; design TBD after the demo); until Level One exists it opens the shop -> slice loop as a stand-in.
 
 # Game Design Document: Saint Manick
 

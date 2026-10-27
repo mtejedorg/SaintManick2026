@@ -1,0 +1,65 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/menus/demo_loadout.gd" id="1_loadout"]
+[ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
+
+[node name="DemoLoadout" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_loadout")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039, 0.039, 0.071, 0.78)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(620, 0)
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "DEMO LOADOUT"
+horizontal_alignment = 1
+
+[node name="BoosterButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "RUN BOOSTER: NONE"
+
+[node name="DescriptionLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "No modifier"
+horizontal_alignment = 1
+
+[node name="StartDemoButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "START DEMO"
+
+[node name="BackButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "BACK"

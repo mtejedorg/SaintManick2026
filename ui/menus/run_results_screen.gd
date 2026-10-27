@@ -2,9 +2,22 @@ extends CanvasLayer
 
 const FocusGrace = preload("res://ui/menus/focus_grace.gd")
 
+## Batch O: a demo run returns to the title and banks nothing.
+const DEMO_RETURN_TEXT := "RETURN TO TITLE"
+
+@onready var continue_button: Button = $CenterBox/ContinueButton
+@onready var demo_label: Label = $CenterBox/DemoLabel
+
+## Scene-change hook (path) -> void; a seam so tests can observe navigation.
+var change_scene: Callable = _change_scene_to
+
 func _ready() -> void:
-	$CenterBox/ContinueButton.pressed.connect(_on_continue)
+	continue_button.pressed.connect(_on_continue)
 	_populate_stats()
+	var demo: bool = GameManager.demo_mode
+	demo_label.visible = demo
+	if demo:
+		continue_button.text = DEMO_RETURN_TEXT
 	# Gamepad navigation: the only button takes focus once the input grace is over (U2).
 	FocusGrace.arm($CenterBox/ContinueButton, FocusGrace.END_SCREEN_GRACE)
 
@@ -19,4 +32,7 @@ func _populate_stats() -> void:
 	$CenterBox/StatsContainer/ZonesLabel.text = "ZONES CLEARED      %d / 10" % gm.zones_cleared
 
 func _on_continue() -> void:
-	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
+	change_scene.call(GameManager.post_run_scene())
+
+func _change_scene_to(path: String) -> void:
+	get_tree().change_scene_to_file(path)

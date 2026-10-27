@@ -120,6 +120,14 @@ theme_override_colors/font_color = Color(0, 0.949, 1, 1)
 theme_override_font_sizes/font_size = 32
 text = "ZONES CLEARED      0 / 10"
 
+[node name="DemoLabel" type="Label" parent="CenterBox"]
+visible = false
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"DimLabel"
+text = "DEMO RUN — NOTHING BANKED"
+horizontal_alignment = 1
+
 [node name="Sep2" type="HSeparator" parent="CenterBox"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2

@@ -17,6 +17,9 @@ const VICTORY_BOSS := "Headliner"
 var _last_boss: String = ""
 var _victory_hold: bool = false
 
+## Scene-change hook (path) -> void; a seam so tests can observe ABANDON RUN's navigation.
+var change_scene: Callable = _change_scene_to
+
 func _ready() -> void:
 	resume_button.pressed.connect(_on_resume_pressed)
 	quit_button.pressed.connect(_on_quit_pressed)
@@ -104,4 +107,9 @@ func _on_quit_pressed() -> void:
 	if GameManager.has_method("abandon_run"):
 		GameManager.call("abandon_run")
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://ui/shop/karens_shop.tscn")
+	# Batch O: a demo run abandons to the title (abandon_run banked nothing), a full run to
+	# Karen's Shop.
+	change_scene.call(GameManager.post_run_scene())
+
+func _change_scene_to(path: String) -> void:
+	get_tree().change_scene_to_file(path)

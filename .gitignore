@@ -2,7 +2,8 @@
 .godot/
 /android/
 /builds/
-export_presets.cfg
+# export_presets.cfg is committed on purpose (D32); credentials stay in .godot/export_credentials.cfg
+export_credentials.cfg
 *.translation
 
 # Godot import cache (Godot 3 legacy, harmless to keep ignored)
@@ -40,3 +41,4 @@ Thumbs.db
 
 # game-audit evidence captures (regenerate with tools/capture)
 Captures/
+

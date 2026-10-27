@@ -1,4 +1,7 @@
-[gd_resource type="Theme" load_steps=24 format=3]
+[gd_resource type="Theme" load_steps=28 format=3]
+
+[ext_resource type="FontFile" uid="uid://44lt8o1swa0x" path="res://assets/fonts/Orbitron-Variable.ttf" id="1_orbitron"]
+[ext_resource type="FontFile" uid="uid://mnxte31sy64y" path="res://assets/fonts/ShareTechMono-Regular.ttf" id="2_mono"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
 content_margin_left = 16.0
@@ -209,13 +212,33 @@ bg_color = Color(0.039, 0.039, 0.071, 0.6)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_strip_fill"]
 bg_color = Color(0.549, 0.961, 1, 1)
 
-[sub_resource type="SystemFont" id="SystemFont_hud_mono"]
-font_names = PackedStringArray("Consolas", "DejaVu Sans Mono", "Menlo", "Monospace")
-font_weight = 700
+[sub_resource type="FontVariation" id="FontVariation_orbitron_bold"]
+base_font = ExtResource("1_orbitron")
+fallbacks = Array[Font]([ExtResource("2_mono")])
+variation_opentype = {
+2003265652: 700
+}
+
+[sub_resource type="FontVariation" id="FontVariation_orbitron_medium"]
+base_font = ExtResource("1_orbitron")
+fallbacks = Array[Font]([ExtResource("2_mono")])
+variation_opentype = {
+2003265652: 500
+}
+
+[sub_resource type="FontVariation" id="FontVariation_orbitron_combo"]
+base_font = ExtResource("1_orbitron")
+fallbacks = Array[Font]([ExtResource("2_mono")])
+variation_opentype = {
+2003265652: 700
+}
+spacing_glyph = 3
 
 [resource]
+default_font = ExtResource("2_mono")
 HSeparator/styles/separator = SubResource("StyleBoxLine_sep")
 Label/colors/font_color = Color(0.91, 0.965, 1, 1)
+Label/fonts/font = ExtResource("2_mono")
 ProgressBar/styles/background = SubResource("StyleBoxFlat_pb_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_pb_fill")
 BossBar/base_type = &"ProgressBar"
@@ -241,7 +264,7 @@ HudNumeral/colors/font_color = Color(0, 0.961, 1, 1)
 HudNumeral/colors/font_outline_color = Color(0.039, 0.039, 0.071, 1)
 HudNumeral/constants/outline_size = 5
 HudNumeral/font_sizes/font_size = 20
-HudNumeral/fonts/font = SubResource("SystemFont_hud_mono")
+HudNumeral/fonts/font = ExtResource("2_mono")
 HudNumeralDanger/base_type = &"HudNumeral"
 HudNumeralDanger/colors/font_color = Color(1, 0, 0.667, 1)
 HudScale/base_type = &"Label"
@@ -249,10 +272,11 @@ HudScale/colors/font_color = Color(0.55, 0.78, 0.82, 0.85)
 HudScale/colors/font_outline_color = Color(0.039, 0.039, 0.071, 1)
 HudScale/constants/outline_size = 4
 HudScale/font_sizes/font_size = 14
-HudScale/fonts/font = SubResource("SystemFont_hud_mono")
+HudScale/fonts/font = ExtResource("2_mono")
 DimLabel/base_type = &"Label"
 DimLabel/colors/font_color = Color(0.62, 0.66, 0.72, 1)
 DimLabel/font_sizes/font_size = 20
+DimLabel/fonts/font = ExtResource("2_mono")
 UpgradeRow/base_type = &"Button"
 UpgradeRow/colors/font_color = Color(0, 0.949, 1, 1)
 UpgradeRow/colors/font_disabled_color = Color(0.62, 0.66, 0.72, 1)
@@ -261,6 +285,7 @@ UpgradeRow/colors/font_hover_color = Color(1, 1, 1, 1)
 UpgradeRow/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
 UpgradeRow/colors/font_pressed_color = Color(1, 1, 1, 1)
 UpgradeRow/font_sizes/font_size = 20
+UpgradeRow/fonts/font = ExtResource("2_mono")
 UpgradeRow/styles/disabled = SubResource("StyleBoxFlat_row_disabled")
 UpgradeRow/styles/focus = SubResource("StyleBoxFlat_btn_focus")
 UpgradeRow/styles/hover = SubResource("StyleBoxFlat_row_hover")
@@ -275,9 +300,22 @@ Button/colors/font_hover_color = Color(0.039, 0.039, 0.071, 1)
 Button/colors/font_hover_pressed_color = Color(0.039, 0.039, 0.071, 1)
 Button/colors/font_pressed_color = Color(0.039, 0.039, 0.071, 1)
 Button/font_sizes/font_size = 22
+Button/fonts/font = SubResource("FontVariation_orbitron_bold")
 Button/styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
 Button/styles/focus = SubResource("StyleBoxFlat_btn_focus")
 Button/styles/hover = SubResource("StyleBoxFlat_btn_hover")
 Button/styles/hover_pressed = SubResource("StyleBoxFlat_btn_hover")
 Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
 Button/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+TitleLabel/base_type = &"Label"
+TitleLabel/fonts/font = SubResource("FontVariation_orbitron_bold")
+HeadingLabel/base_type = &"Label"
+HeadingLabel/fonts/font = SubResource("FontVariation_orbitron_bold")
+EyebrowLabel/base_type = &"Label"
+EyebrowLabel/fonts/font = SubResource("FontVariation_orbitron_medium")
+DimHeading/base_type = &"DimLabel"
+DimHeading/fonts/font = SubResource("FontVariation_orbitron_medium")
+ZoneCardLabel/base_type = &"Label"
+ZoneCardLabel/fonts/font = SubResource("FontVariation_orbitron_bold")
+HudCombo/base_type = &"Label"
+HudCombo/fonts/font = SubResource("FontVariation_orbitron_combo")

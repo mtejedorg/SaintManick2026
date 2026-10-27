@@ -45,6 +45,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 1
+theme_type_variation = &"ZoneCardLabel"
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

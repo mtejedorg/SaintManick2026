@@ -48,6 +48,10 @@ project/assembly_name="Saint Manick"
 
 import/blender/enabled=false
 
+[editor]
+
+export/convert_text_resources_to_binary=false
+
 [gui]
 
 theme/custom="res://ui/theme/neon_theme.tres"

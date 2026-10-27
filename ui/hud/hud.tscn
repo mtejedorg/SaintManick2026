@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://ui/hud/zone_title_card.tscn" id="3_ztc"]
@@ -35,9 +35,6 @@ corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 shadow_color = Color(1, 0, 0.667, 0.4)
 shadow_size = 8
-
-[sub_resource type="FontVariation" id="FontVariation_combo"]
-spacing_glyph = 3
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -275,6 +272,7 @@ theme_override_constants/separation = 6
 
 [node name="BossNameLabel" type="Label" parent="BossBarContainer/BossBarVBox"]
 layout_mode = 2
+theme_type_variation = &"HeadingLabel"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(1, 0, 0.667, 0.85)
 theme_override_constants/shadow_offset_x = 0
@@ -302,6 +300,7 @@ mouse_filter = 2
 value = 100.0
 
 [node name="ComboLabel" type="Label" parent="."]
+theme_type_variation = &"HudCombo"
 visible = false
 modulate = Color(0, 0.961, 1, 1)
 anchors_preset = 5
@@ -312,7 +311,6 @@ offset_top = 80.0
 offset_right = 80.0
 offset_bottom = 124.0
 grow_horizontal = 2
-theme_override_fonts/font = SubResource("FontVariation_combo")
 theme_override_font_sizes/font_size = 32
 text = ""
 horizontal_alignment = 1

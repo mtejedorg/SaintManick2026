@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://ui/menus/title_screen.gd" id="1_title"]
 [ext_resource type="Theme" path="res://ui/theme/neon_theme.tres" id="2_theme"]
-[ext_resource type="Texture2D" path="res://2D_Assets/Logos_and_Branding/logo1.png" id="3_logo"]
+[ext_resource type="Texture2D" path="res://ui/menus/art/title_logo.png" id="3_logo"]
 [ext_resource type="PackedScene" path="res://ui/vcr/vcr_overlay.tscn" id="4_vcr"]
 [ext_resource type="PackedScene" path="res://ui/menus/options_menu.tscn" id="5_options"]
 

@@ -40,7 +40,7 @@ theme_override_constants/separation = 18
 
 [node name="Header" type="Label" parent="Panel/VBox"]
 layout_mode = 2
-theme_type_variation = &"DimLabel"
+theme_type_variation = &"DimHeading"
 text = "OPTIONS"
 horizontal_alignment = 1
 

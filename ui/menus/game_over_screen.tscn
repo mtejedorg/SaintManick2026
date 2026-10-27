@@ -44,6 +44,7 @@ alignment = 1
 
 [node name="EyebrowLabel" type="Label" parent="Root/CenterBox"]
 layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
 theme_override_colors/font_color = Color(1, 0, 0.667, 1)
 theme_override_font_sizes/font_size = 20
 text = "SIGNAL LOST"
@@ -51,6 +52,7 @@ horizontal_alignment = 1
 
 [node name="TitleLabel" type="Label" parent="Root/CenterBox"]
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(1, 0, 0.667, 0.9)
 theme_override_constants/shadow_offset_x = 0

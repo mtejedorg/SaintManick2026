@@ -4,6 +4,10 @@ extends CanvasLayer
 ## starts, per VerticalSlice.md). The logo pulses subtly on the Conductor's primary beat.
 
 const SHOP_SCENE := "res://ui/shop/karens_shop.tscn"
+const SLICE_SCENE := "res://levels/slice/vertical_slice.tscn"
+## D32 export smoke: release templates refuse a scene path on the command line, so the
+## exported exe is driven into the slice with a user arg: `SaintManick.exe ... -- --start-run`.
+const AUTOSTART_ARG := "--start-run"
 const PULSE_SCALE := 1.03
 const PULSE_TIME := 0.15
 
@@ -29,6 +33,17 @@ func _ready() -> void:
 	_update_logo_pivot()
 	# Gamepad navigation: focus the first button.
 	start_button.grab_focus()
+	if wants_autostart(OS.get_cmdline_user_args()):
+		_autostart_run.call_deferred()
+
+## True when the user args (after `--`) ask for an immediate run (export smoke / CI).
+static func wants_autostart(user_args: PackedStringArray) -> bool:
+	return AUTOSTART_ARG in user_args
+
+func _autostart_run() -> void:
+	if GameManager:
+		GameManager.start_new_run()
+	get_tree().change_scene_to_file(SLICE_SCENE)
 
 func _update_logo_pivot() -> void:
 	logo.pivot_offset = logo.size / 2.0

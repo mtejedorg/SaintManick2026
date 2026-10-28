@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tech - Saint Manick</title>
+<meta name="description" content="How Saint Manick is built: Godot 4.6, GDScript, a beat-driven tempo engine, one damage path, a headless test suite, and an AI-agent workflow.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Saint Manick</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="mechanics.html">Mechanics</a>
+      <a href="tech.html" aria-current="page">Tech</a>
+      <a href="https://github.com/mtejedorg/SaintManick2026">Repo</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Tech</h1>
+  <p class="tagline">How Saint Manick is built. The project is in early development, and this page describes the code as it is today.</p>
+
+  <h2>Stack</h2>
+  <!-- Sources: project.godot (Godot 4.6, Forward Plus); Documents/GDD.md section 1.2; Documents/CodeArchitecture.md section 8; Documents/HANDOFF.md H4 (audio files are synthetic tones). -->
+  <p>Godot 4.6.3 (Forward+), GDScript only. It is a 3D project: characters are <code>CharacterBody3D</code>, hit areas are <code>Area3D</code>, and the 2.5D look comes from a 3D world filmed by a constrained camera. The audio files are placeholder tones, wired through <code>AudioManager</code>.</p>
+
+  <h2>Architecture</h2>
+  <!-- Sources: project.godot [autoload]; Documents/CodeArchitecture.md sections 5, 7 and 11; .claude/CLAUDE.md (AudioManager no-ops on missing files). -->
+  <p>Six autoloads:</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Autoload</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>SignalBus</code></td><td>Global events only (health to HUD, enemy died, beat). Parent-child talk inside a scene uses plain node signals.</td></tr>
+        <tr><td><code>Conductor</code></td><td>The tempo engine. It runs its own clock, emits <code>beat</code>, <code>downbeat</code> and <code>tempo_changed</code>, and supports variable BPM and several meter layers.</td></tr>
+        <tr><td><code>SaveManager</code></td><td>The only code that touches <code>user://</code>. It saves meta-progression, never volatile run state, and writes atomically with a backup.</td></tr>
+        <tr><td><code>GameManager</code></td><td>Run state, currencies, checkpoints, the death beat and the demo-mode flag.</td></tr>
+        <tr><td><code>HitStop</code></td><td>Hit-stop graded by the damage of the landed hit.</td></tr>
+        <tr><td><code>AudioManager</code></td><td>Loads clips by name, and does nothing on a missing file by design.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Sources: Documents/CodeArchitecture.md sections 4, 6, 9, 12 and 13; .claude/CLAUDE.md. -->
+  <p>Nick, the enemies and the camera each run on a node-based hierarchical state machine, so a new behaviour is a new state node, not another branch in an <code>if</code> ladder. The camera's machine (Sidescroll, Transitioning, TopDown) owns the swap between plane-locked and free movement. Every tuning number lives in a <code>Resource</code> (<code>.tres</code>): enemy stats, combo definitions, shop upgrades, run boosters and the player's tuning. Projectiles for the bullet-hell phase come from an object pool and are never freed mid-combat.</p>
+
+  <h2>Combat: one damage path</h2>
+  <!-- Sources: Documents/CodeArchitecture.md sections 10 and 13; Documents/HANDOFF.md section 4, trap 0. Files: _core/components/hitbox_3d.gd, hurtbox_3d.gd, damage_info.gd, health_component.gd. -->
+  <div class="diagram" role="img" aria-label="Diagram: Hitbox3D feeds Hurtbox3D, which calls take_hit with a DamageInfo on the HealthComponent.">
+    <div class="node">Hitbox3D<small>an Area3D on an attack</small></div>
+    <div class="arrow" aria-hidden="true">&rarr;</div>
+    <div class="node">Hurtbox3D<small>an Area3D on a victim</small></div>
+    <div class="arrow" aria-hidden="true">&rarr;</div>
+    <div class="node">take_hit(DamageInfo)</div>
+    <div class="arrow" aria-hidden="true">&rarr;</div>
+    <div class="node">HealthComponent<small>the death rule, global signals</small></div>
+  </div>
+  <p class="figure-note">Diagram, drawn from the architecture document.</p>
+  <p>A hit is a <code>DamageInfo</code> carrying amount, knockback, stun, shield-breaker, source and invulnerability flags, never a raw integer. The <code>HealthComponent</code> owns the one death rule: shield, then HP, then a life, then permadeath at 0 HP with 0 lives. Hazards, falls and boss attacks go through the same path. Respawn is deferred out of the physics callback, because changing physics state during a flush caused real bugs.</p>
+
+  <h2>Tests and verification</h2>
+  <!-- Sources: test runner output, 2026-10-28 (Total Tests Run: 610, Passed: 610); tests/cases/ holds 77 files; TESTPLAN.md section 1; .claude/CLAUDE.md (validation protocol, visual gate, export gate). -->
+  <p>The suite has 610 tests in 77 files, all passing on 2026-10-28. It runs headless with the project's own framework, and the runner swaps in a temporary save file, so a test never touches a real profile. Every change also gets an import pass, a 300-frame smoke run of the title screen and of the slice, and a log search for script, shader and loader errors. The tests cannot see those errors. A capture tool renders every zone, the HUD and the menus through the real drone camera for visual review. The Windows export has its own gate: the exported build is smoke-tested as well.</p>
+
+  <h2>Built solo with AI coding agents</h2>
+  <!-- Sources: .claude/agents/*.md (16 files); .claude/CLAUDE.md (agent routing table, "audit DONE claims" rule); Documents/HANDOFF.md (developer-sonnet / developer-haiku implementers). -->
+  <p>Saint Manick is built solo with AI coding agents (Claude Code). The repository configures sixteen specialist agents in <code>.claude/agents/</code>, and a routing table in <code>CLAUDE.md</code> sends each kind of request to one of them:</p>
+  <p><code>code-architect</code> (triage, docs, housekeeping) &middot; <code>senior-dev</code> (multi-file implementation) &middot; <code>ui-designer</code> &middot; <code>ux-designer</code> &middot; <code>tester</code> &middot; <code>qa-reviewer</code> &middot; <code>mechanics-designer</code> &middot; <code>level-designer</code> &middot; <code>artist-2d</code> &middot; <code>artist-3d</code> &middot; <code>vfx-artist</code> &middot; <code>render-pipeline</code> &middot; <code>shader-artist</code> &middot; <code>audio-designer</code> &middot; <code>narrative-designer</code> &middot; <code>librarian</code> (knowledge lookups)</p>
+  <p>Two implementer agents, <code>developer-sonnet</code> and <code>developer-haiku</code>, write the code from briefs. They live in the author's own agent folder, outside the repository. One house rule: an agent's &ldquo;done&rdquo; report is checked against the logs before anything is built on it.</p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Early development build. Everything on this site describes the game as it is today and will be updated.</p>
+    <p><a href="https://github.com/mtejedorg/SaintManick2026">github.com/mtejedorg/SaintManick2026</a></p>
+  </div>
+</footer>
+</body>
+</html>

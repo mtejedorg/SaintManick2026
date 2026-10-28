@@ -1,0 +1,113 @@
+/* Saint Manick project site. System fonts, no external resources, mobile-first. */
+:root {
+  --bg: #07070f;
+  --panel: #10101c;
+  --line: #26263a;
+  --text: #e6e6f0;
+  --dim: #a0a0b8;
+  --cyan: #00f5ff;
+  --magenta: #ff00aa;
+  --amber: #ffb000;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 1rem/1.6 var(--sans);
+}
+
+a { color: var(--cyan); }
+a:hover, a:focus-visible { color: #fff; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap { max-width: 56rem; margin: 0 auto; padding: 0 1rem; }
+
+/* Header and footer */
+.site-header { border-bottom: 1px solid var(--line); }
+.site-header .wrap {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 0.5rem 1.5rem; padding-top: 0.9rem; padding-bottom: 0.9rem;
+}
+.brand {
+  font: 700 1.1rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--cyan); text-decoration: none;
+}
+.site-nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.site-nav a { color: var(--text); text-decoration: none; padding: 0.25rem 0; border-bottom: 2px solid transparent; }
+.site-nav a:hover, .site-nav a:focus-visible { border-bottom-color: var(--magenta); }
+.site-nav a[aria-current="page"] { border-bottom-color: var(--cyan); }
+
+.site-footer { border-top: 1px solid var(--line); margin-top: 3rem; color: var(--dim); font-size: 0.9rem; }
+.site-footer .wrap { padding-top: 1.25rem; padding-bottom: 2rem; }
+.site-footer p { margin: 0 0 0.4rem; }
+
+/* Content */
+main { padding-top: 1.5rem; }
+
+h1 { font-size: 2rem; line-height: 1.15; margin: 1.25rem 0 0.25rem; letter-spacing: 0.02em; }
+h2 { font-size: 1.35rem; line-height: 1.25; margin: 2.25rem 0 0.5rem; color: var(--cyan); }
+h3 { font-size: 1.1rem; margin: 1.5rem 0 0.25rem; color: var(--magenta); }
+p, ul, ol, table, figure { margin: 0 0 1rem; }
+ul, ol { padding-left: 1.25rem; }
+li { margin-bottom: 0.3rem; }
+
+.tagline { color: var(--dim); font-size: 1.1rem; margin-top: 0; }
+.lede { font-size: 1.1rem; }
+
+figure { margin-left: 0; margin-right: 0; }
+figure img { width: 100%; border: 1px solid var(--line); background: var(--panel); }
+figcaption { color: var(--dim); font-size: 0.9rem; margin-top: 0.4rem; }
+
+.status {
+  border: 1px solid var(--line); border-left: 4px solid var(--amber);
+  background: var(--panel); padding: 0.75rem 1rem; margin: 1.5rem 0;
+}
+.status strong { color: var(--amber); }
+.status p { margin: 0; }
+
+.links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0; padding: 0; list-style: none; }
+.links li { margin: 0; }
+.button {
+  display: inline-block; padding: 0.6rem 1rem; border: 1px solid var(--cyan);
+  color: var(--cyan); text-decoration: none; font-weight: 600;
+}
+.button:hover, .button:focus-visible { background: var(--cyan); color: var(--bg); }
+
+/* Tables: scroll inside their own box on narrow screens, never the page */
+.table-scroll { overflow-x: auto; margin: 0 0 1rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--dim); font-weight: 600; white-space: nowrap; }
+
+code, kbd { font-family: var(--mono); font-size: 0.9em; color: var(--cyan); }
+
+.figure-note { color: var(--dim); font-size: 0.9rem; margin-top: 0; }
+
+/* Diagram (tech page) */
+.diagram {
+  border: 1px solid var(--line); background: var(--panel); padding: 1rem; margin: 0 0 0.5rem;
+  display: flex; flex-direction: column; align-items: stretch; gap: 0.4rem;
+}
+.diagram .node { border: 1px solid var(--cyan); padding: 0.5rem 0.75rem; font-family: var(--mono); font-size: 0.9rem; }
+.diagram .node small { display: block; color: var(--dim); font-family: var(--sans); font-size: 0.85rem; }
+.diagram .arrow { text-align: center; color: var(--magenta); font-family: var(--mono); }
+
+@media (min-width: 40rem) {
+  h1 { font-size: 2.6rem; }
+  .diagram { flex-direction: row; align-items: center; }
+  .diagram .node { flex: 1; }
+  .diagram .arrow { flex: 0 0 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; }
+}

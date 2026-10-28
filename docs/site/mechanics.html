@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mechanics - Saint Manick</title>
+<meta name="description" content="How Saint Manick plays today: the run loop, the ten zones, enemies and bosses, the beat rule, and the shop.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Saint Manick</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="mechanics.html" aria-current="page">Mechanics</a>
+      <a href="tech.html">Tech</a>
+      <a href="https://github.com/mtejedorg/SaintManick2026">Repo</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Mechanics</h1>
+  <p class="tagline">How Saint Manick plays today. Numbers come from the design document and the game's data files, and may change while the game is in early development.</p>
+
+  <!-- Capture: real frame from the running build (Zone 1), taken 2026-10-28 with the F12 capture helper. -->
+  <figure>
+    <img src="assets/mechanics.jpg" width="1600" height="900"
+         alt="Nick leaps over a Runner in Zone 1, in front of the RAMEN 24H and PAWN shop signs.">
+    <figcaption>Zone 1, current build.</figcaption>
+  </figure>
+
+  <h2>The loop</h2>
+  <!-- Sources: Documents/GDD.md sections 1.3 and 5 (120 HP, 40 shield, 12/s after 3 s, 3 lives, 2-3 / 4-5 run target); section 5 notes the economy is deferred. -->
+  <p>Nick has 120 HP, a 40-point shield that regenerates after 3 seconds without damage, and 3 lives. At 0 HP he loses a life and respawns at the last zone checkpoint. With no lives left the run ends. After Game Over, Karen's Shop lets the player spend what the run collected on permanent upgrades and equip a Run Booster, then start again from Zone 1. The design target is 2&ndash;3 runs to clear the slice for an average player and 4&ndash;5 for a weaker one. That target is not tuned yet.</p>
+
+  <h2>Zones</h2>
+  <!-- Sources: Documents/VerticalSlice.md (zone blocks), Documents/GDD.md sections 2.2, 3.1 and 3.5. -->
+  <p>The slice has ten zones, the Factory (1&ndash;4) then the Neon District (5&ndash;10).</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Zone</th><th>Name</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Street Entrance</td><td>A short street fight with 3 Runners</td></tr>
+        <tr><td>2</td><td>Piston Gauntlet</td><td>Platforms over a toxic pit, with ceiling pistons that slam on the downbeat</td></tr>
+        <tr><td>3</td><td>Security Lock</td><td>A top-down room with a bomb grid and two waves</td></tr>
+        <tr><td>4</td><td>Scaffolding &amp; Vista</td><td>Catwalks, with Runners, a Bruiser and two Snipers</td></tr>
+        <tr><td>5</td><td>Neon Market</td><td>A tiered street with Runners and a Bruiser</td></tr>
+        <tr><td>6</td><td>Plaza Brawl</td><td>A top-down crowd fight</td></tr>
+        <tr><td>7</td><td>Enforcer</td><td>The Rhythm Enforcer mini-boss</td></tr>
+        <tr><td>8</td><td>Escape</td><td>A kill wall at 5.5 m/s, with blast doors and falling signs</td></tr>
+        <tr><td>9</td><td>Ascent</td><td>A freight elevator ride with two waves</td></tr>
+        <tr><td>10</td><td>The Headliner</td><td>The boss</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The camera is Karen's drone. In side-scroll Nick is locked to one plane, and up and down do nothing. In top-down (Zones 3 and 6 and the Headliner's second phase) depth movement unlocks and jumping is suppressed.</p>
+
+  <h2>Combat and controls</h2>
+  <!-- Sources: Documents/GDD.md section 3.2 (light 12, heavy 28), section 3.3 (Ability Bar, EMP Dash-Cancel 25, Bass Drop 90 / 10 m), section 6.3 (controls). -->
+  <p>There is no stamina. A light attack with the katana does 12 damage and a heavy attack with the bionic arm does 28. Dash and roll give invincibility frames. The Ability Bar fills as hits land and never blocks an input. It pays for the EMP Dash-Cancel (25) and, when full, Bass Drop: 90 damage in a 10 m radius, detonating on the next downbeat.</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Action</th><th>Keyboard</th><th>Gamepad</th></tr></thead>
+      <tbody>
+        <tr><td>Move</td><td>A/D or &larr;/&rarr;</td><td>Left stick or D-pad</td></tr>
+        <tr><td>Depth (top-down only)</td><td>W/S or &uarr;/&darr;</td><td>Left stick up/down or D-pad up/down</td></tr>
+        <tr><td>Jump</td><td>Space</td><td>A</td></tr>
+        <tr><td>Light / Heavy</td><td>J / K</td><td>X / Y</td></tr>
+        <tr><td>Dash / Roll</td><td>Shift or Q / Ctrl or E</td><td>RB / B</td></tr>
+        <tr><td>Ultimate (Bass Drop)</td><td>L</td><td>LB</td></tr>
+        <tr><td>Pause</td><td>Esc</td><td>Start</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Enemies and bosses</h2>
+  <!-- Sources: Documents/GDD.md section 4 (4.1 table, 4.3 Enforcer, 4.4 Headliner); characters/enemies/*/*_stats.tres per the GDD. -->
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Enemy</th><th>HP</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td>Runner</td><td>30</td><td>Chases, telegraphs on a beat, lunges on the next</td></tr>
+        <tr><td>Bruiser</td><td>90, plus an 80-point shield</td><td>Swings only on the downbeat</td></tr>
+        <tr><td>Sniper</td><td>24</td><td>Arms within 16 m, aims, locks, fires on beat 1</td></tr>
+        <tr><td>Rhythm Enforcer (Zone 7)</td><td>900</td><td>An 8-beat cycle: shield up while advancing, a telegraph, a 3-hit burst, two vulnerable beats</td></tr>
+        <tr><td>The Headliner (Zone 10)</td><td>2400</td><td>Phase 1 is a shielded side-scroll duel. At 50% HP the tempo jumps to 160 BPM and the camera goes top-down for a bullet hell. The shield overheats after 24 beats. It ends with an enraged melee.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>The beat rule</h2>
+  <!-- Sources: Documents/GDD.md sections 1.3, 3.2 (beat-aligned dodge +-0.06 s, half refund), 5.4 (128 BPM, +2 per enemy, cap +16, 160 boss); Documents/CodeArchitecture.md section 7. -->
+  <p>The beat belongs to the world, not the player. Enemy telegraphs, pistons and other hazards are locked to the Conductor's tempo, and an attack shows a white-hot rim flash one beat before it lands. Nothing the player does is checked against the beat. The tempo rests at 128 BPM, rises by 2 BPM per active enemy up to +16, and runs at 160 for the boss. The beat offers two small rewards and no requirements: Bass Drop detonates on a downbeat, and a dodge started within &plusmn;0.06 s of a beat refunds half its cooldown.</p>
+
+  <h2>Meta-progression, shop and combo skill tree</h2>
+  <!-- Sources: Documents/GDD.md section 5.1 (currencies), 5.2 (upgrades, combo chain), 5.3 (boosters), 6.4 (demo); section 5 and Appendix B (economy deferred). -->
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Currency</th><th>Comes from</th><th>Spent on</th></tr></thead>
+      <tbody>
+        <tr><td>Scrap</td><td>Every kill</td><td>Permanent upgrades: Max HP +20 (100), Max Shield +10 (150), Extra Life (300)</td></tr>
+        <tr><td>Cells</td><td>The Enforcer (15), the escape (10), the elevator (10)</td><td>The combo tree</td></tr>
+        <tr><td>Cores</td><td>District bosses (the Headliner: 1)</td><td>The second Run Booster slot (1)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The combo skill tree is a chain: Tri-Cut (A-A-A) and Launcher (A-A-B) are free, then Sweeper (A-B-B, 20 Cells), then Battery Ram (B-B, 25 Cells). A locked route still works as a plain hit. Run Boosters last one run: Tempo Shield (+50% max shield), Adrenaline (+20% move speed) and Scrap Magnet (double Scrap). The demo has no shop, unlocks every route and banks nothing. Prices and yields are first-pass and not balanced yet.</p>
+
+  <h2>Not built yet</h2>
+  <!-- Sources: Documents/GDD.md section 8 and Appendix A; Documents/LevelOne.md (status: design only). -->
+  <p>Level One, the Suburbs, is designed and not built. The Corporate High-Rise and Central Tower districts, Karen as the final boss, a parry, upgrade tiers for damage and armour, and a branching skill tree are designed or planned and are not in the game.</p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Early development build. Everything on this site describes the game as it is today and will be updated.</p>
+    <p><a href="https://github.com/mtejedorg/SaintManick2026">github.com/mtejedorg/SaintManick2026</a></p>
+  </div>
+</footer>
+</body>
+</html>

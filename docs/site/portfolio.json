@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "Saint Manick",
+  "slug": "saintmanick",
+  "status": "in development",
+  "engine": "Godot 4.6",
+  "blurb": "A 2.5D action-roguelite beat'em up where enemy telegraphs and traps follow the world's tempo and the player is never forced to act on the beat. Early development: a ten-zone vertical slice is playable. Built solo with AI coding agents.",
+  "tags": ["Godot 4.6", "GDScript", "State machines", "Signal bus", "Automated tests"],
+  "preview": "assets/preview.jpg",
+  "site": "https://mtejedorg.github.io/SaintManick2026/",
+  "repo": "https://github.com/mtejedorg/SaintManick2026",
+  "pages": { "mechanics": "mechanics.html", "tech": "tech.html" },
+  "updated": "2026-10-28",
+  "base_url": null
+}

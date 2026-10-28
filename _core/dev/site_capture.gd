@@ -1,7 +1,12 @@
 extends Node
 ## Debug-only screenshot helper for the project site: F12 saves the viewport to user://site_captures/.
+## Deliberate exemption from the "only SaveManager touches user://" rule: it writes screenshots, never game data.
+## In release builds the node frees itself in _ready().
 
 func _ready() -> void:
+	if OS.has_feature("release"):
+		queue_free()
+		return
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 

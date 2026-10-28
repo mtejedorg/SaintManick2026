@@ -1,6 +1,6 @@
 > [!IMPORTANT]
-> **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 3.1, 2026-10-27: Level One addendum, §8)**
-> This Game Design Document is the officially approved vision for Saint Manick. It supersedes every earlier draft, PDF and presentation in the archives. It is written for the **current stage**: the mechanics are defined, the ten-zone level layout is decided, and the Vertical Slice is the demo. Every mechanic in §3–§6 marked **[SLICE]** is implemented and verified in the build; everything marked **[POST-SLICE]** is designed but deliberately not built yet. Numbers live in the data files named next to them (`.tres`), never only here. **Numbers mirror the `.tres`/scene at commit 8937f29** (rev. 3 applies the owner decisions of 2026-10-26; where this document and a data file ever disagree, the file wins).
+> **MASTER SOURCE OF TRUTH — Vertical Slice stage (rev. 3.2, 28 Oct 2026: rewritten against the round-4 build; Level One addendum, §8)**
+> This Game Design Document is the officially approved vision for Saint Manick. It supersedes every earlier draft, PDF and presentation in the archives. It is written for the **current stage**: the mechanics are defined, the ten-zone level layout is decided, and the Vertical Slice is the demo. Every mechanic in §3–§6 marked **[SLICE]** is implemented and verified in the build; everything marked **[POST-SLICE]** is designed but deliberately not built yet. Numbers live in the data files named next to them (`.tres`), never only here. **Numbers mirror the `.tres`/scene/consts of HEAD as of 28 Oct 2026** (rev. 3 applied the owner decisions of 2026-10-26; rev. 3.2 re-reads the hit feedback, player tuning, HUD, options and demo flow from the code; where this document and a data file ever disagree, the file wins).
 > **Flow (owner direction 2026-10-27):** the public DEMO is the vertical slice with no shop: title -> START DEMO -> loadout pick -> slice -> results -> title, nothing banked. START RUN launches LEVEL ONE (the full-game flow with Karen's Shop; **designed in `LevelOne.md` rev. 1 and summarised in §8 — not built**); until Level One exists it opens the shop -> slice loop as a stand-in.
 
 # Game Design Document: Saint Manick
@@ -73,10 +73,12 @@ Nick moves left and right with inertia, but the environment is rarely flat:
 ### 3.2. Combat System & Combos **[SLICE]**
 Nick fights with two tools that read as one fighter: the **katana** (A, light — fast, blade-forward) and the **bionic arm** (B, heavy — slow, charged, mechanical). There is **no stamina**: mash and chain at will. Basic values *(`characters/player/states/player_state_attack.gd`)*:
 
-| Input | Damage | Window (hit 1 / 2 / 3 of a chain) | Knockback | Notes |
-|---|---|---|---|---|
-| A (light, katana) | 12 | 0.3 / 0.3 / 0.6 s | 4 | hits pressure shields ×1 |
-| B (heavy, arm) | 28 | 0.45 / 0.45 / 0.75 s | 8 | pressures shields at **×2** but does **not** shatter them |
+| Input | Damage | Window (hit 1 / 2 / 3 of a chain) | Knockback | Effective displacement | Notes |
+|---|---|---|---|---|---|
+| A (light, katana) | 12 | 0.3 / 0.3 / 0.6 s | 4 | ≈ 0.1 m (lone hit) | hits pressure shields ×1 |
+| B (heavy, arm) | 28 | 0.45 / 0.45 / 0.75 s | 8 | ≈ 0.3 m (lone hit) | pressures shields at **×2** but does **not** shatter them |
+
+*Effective displacement is how far the target actually slides, computed (not measured) on flat ground from `_core/components/enemy_combat_component.gd` and `characters/player/player_tuning.tres`: a hit the chain can still follow up is a **chain opener** and knocks back at ×0.4 (`opener_knockback_scale`); a hit pops the enemy 3 m/s up (8 m/s for a launcher), and while it is airborne its horizontal speed decays at `air_friction` 18 m/s², so a hit slides the target about `(knockback × scale)² / 36` metres. Nick also steps toward the target at the start of each hit (`attack_step_in` 3 / 3 / 4 m/s for `attack_step_in_seconds` 0.1 s, i.e. 0.3 / 0.3 / 0.4 m) so a chain stays in reach.*
 
 *Decision D3:* heavy windows are deliberately slower than lights so that the named routes out-DPS heavy mashing (`heavy_attack_durations`; a matched route uses its own `ComboDef.duration` instead).
 
@@ -84,15 +86,16 @@ Nick fights with two tools that read as one fighter: the **katana** (A, light �
 
 | Route | Input | Finisher | Identity |
 |---|---|---|---|
-| **Tri-Cut** | A-A-A | 32 dmg, knockback 4, 0.6 s | three fast blade cuts; single targets |
-| **Launcher** | A-A-B | 40 dmg, knockback 12, 0.6 s, **launches** | blade opens, arm punches the enemy airborne |
-| **Sweeper** | A-B-B | 20 dmg, knockback 8, 0.5 s, hitbox ×1.5 wide | wide spinning arm strike; crowd control |
-| **Battery Ram** | B-B | 55 dmg, **guard-breaking + shield-breaker**, 0.8 s | the only pure-arm route; the arm commits |
+| **Tri-Cut** | A-A-A | 32 dmg, knockback 4, 0.6 s (≈ 0.6 m total slide: two ×0.4 openers + the full finisher) | three fast blade cuts; single targets |
+| **Launcher** | A-A-B | 40 dmg, knockback 12, 0.6 s, **launches** (≈ 4 m) | blade opens, arm punches the enemy airborne |
+| **Sweeper** | A-B-B | 20 dmg, knockback 8, 0.5 s (≈ 1.8 m), hitbox ×1.5 wide | wide spinning arm strike; crowd control |
+| **Battery Ram** | B-B | 55 dmg, knockback 8 (≈ 1.8 m), **guard-breaking + shield-breaker**, 0.8 s | the only pure-arm route; the arm commits |
 
 - **Air attacks:** A/B pressed while airborne attack in the air (the ground routes apply). A dedicated *Air-Combo* route that holds launched enemies airborne is **[POST-SLICE]**.
 - **Shields — two kinds:** the **Bruiser** carries an 80-point *HP shield* (`HealthComponent`, `bruiser_stats.tres`): light hits pressure it ×1, heavy hits ×2, overflow carries to HP, it regenerates 12/s after 3 s, and while it holds the Bruiser has hyper-armour (no knockback or stun). *(Decision D7: raised from 50 to 80. Because of the ×2 shield-damage multiplier, a generic heavy deals 56 shield damage, so **two** generic heavies still break it (overflow carries to HP) while **Battery Ram** breaks it outright in one hit; the owner will revisit this.)* The **Enforcer** and **The Headliner** use a *state shield* (on/off per cycle phase): while it is up, non-breaker hits deal nothing and are absorbed without knockback or stun; only **Battery Ram** and **Bass Drop** (`is_shield_breaker`) shatter it and stun them for two beats.
-- **Hit feedback:** hit-stop (0.08 s at 5 % time scale), camera shake (light 0.05 / heavy 0.1), cyan sparks for light hits and magenta for heavy, enemy knockback + stun. A hit is classed *heavy* at ≥ 20 damage, so every route finisher (Tri-Cut 32, Launcher 40, Sweeper 20, Battery Ram 55) gets heavy feedback and +9 meter. Hitboxes are fixed boxes in front of Nick — katana 1.5 wide × 1.5 tall × 2.5 m deep, arm 3.0 wide × 3.0 tall × 1.6 m deep (the arm sweeps a wide arc, which matters in top-down) — deliberately **not** parented to the animated weapon so hit detection stays deterministic.
+- **Hit feedback** *(`_core/juice/hit_stop.gd`, `_core/components/hurtbox_3d.gd`, `vfx/vfx_manager.gd`)*: hit-stop is **graded by the damage of the landed hit** — light (< 20) 0.04 s at 10 % time scale, heavy (≥ 20) 0.07 s at 8 %, finisher (≥ 32: Tri-Cut, Launcher, Battery Ram) 0.11 s at 5 %. A **kill** adds its own beat on top (0.12 s at 5 %) plus a 0.12 strength / 0.2 s camera shake; overlapping stops never shorten or weaken one already running. A hit a shield absorbed (the Bruiser's HP shield, or an Enforcer/Headliner state shield) **never stops time** — it reads as a clink instead. Camera shake per hit: light 0.05 for 0.12 s, heavy 0.1 for 0.2 s, blocked 0.03 for 0.08 s (all scaled by the SCREEN SHAKE option, §6.3). Sparks: light **cyan with white**, heavy **magenta with cyan**, blocked **white with steel** (a cold clink), plus enemy knockback and stun. A hit is classed *heavy* at ≥ 20 damage (`DamageInfo.HEAVY_THRESHOLD`), so every route finisher (Tri-Cut 32, Launcher 40, Sweeper 20, Battery Ram 55) gets heavy feedback and +9 meter. Hitboxes are fixed boxes in front of Nick — katana 1.5 wide × 1.5 tall × 2.5 m deep, arm 3.0 wide × 3.0 tall × 1.6 m deep (the arm sweeps a wide arc, which matters in top-down) — deliberately **not** parented to the animated weapon so hit detection stays deterministic.
 - **Nick getting hit:** a hit that gets through (dodge i-frames and the respawn grace never reach this point) puts Nick in a hurt state: knockback away from the source and a stagger capped at **0.4 s**, so a stagger never spans a whole beat.
+- **Player tuning** *(`characters/player/player_tuning.tres`, a `PlayerTuning` resource assigned by `player.tscn`; the .tres wins over this list)*: `dash_speed` 18 · `roll_speed` 11 · `dodge_cooldown` 0.3 · `beat_align_window` 0.06 · `beat_aligned_cooldown_refund` 0.5 · `attack_durations` 0.3 / 0.3 / 0.6 · `heavy_attack_durations` 0.45 / 0.45 / 0.75 · `free_cancel_recovery_fraction` 0.4 · `attack_step_in` 3 / 3 / 4 · `attack_step_in_seconds` 0.1 · generic hits `light_damage` 12 / `heavy_damage` 28 · `light_knockback` 4 / `heavy_knockback` 8 · `light_stun` 0.25 / `heavy_stun` 0.4 · `bass_drop_radius` 10 · `bass_drop_damage` 90 · `death_beat_seconds` 0.9 · `fall_damage` 20 · `fall_grace` 0.5. Bass Drop's knockback 16 and stun 1 s are exports on `player.gd`.
 - **Defensive move — Dash & Roll:**
   - **Dash** (dedicated input: Shift / RB): 0.25 s burst at 18 m/s (~4.5 m), **fully invincible** for its duration, **0.3 s** shared dodge cooldown (Decision D6; was 0.5 s).
   - **Roll** (dedicated input: Ctrl / B): 0.45 s of i-frames then a 0.2 s vulnerable recovery tail, **11 m/s** (~7.2 m per roll; Decision D14, was 18 m/s). The primary way to survive bullet hell in top-down.
@@ -110,11 +113,11 @@ In place of stamina, Nick has an **Ability Bar** (the HUD's old stamina slot). I
 ### 3.4. Rhythm-Action Escape Sequences (the "Run or Die" sequences) **[SLICE — Zone 8]**
 Bespoke traversal set pieces inspired by *Rayman Legends*: the world (collapsing floor, closing blast doors, falling signs) moves to the beat while Nick sprints, jumps and dashes. Reading the heartbeat makes it flow, but inputs are *traversal*, not note-matching.
 - **Failure is NOT instant death:** a clipped door or a falling sign costs **HP** (12–15, roughly one battery segment), a touch of the pursuing kill wall costs 15 per beat. Only the universal death rule applies (§5).
-- **The pursuer (Decision D10):** the kill wall starts 10 m behind Nick and advances at **5.5 m/s** over a ~119 m course; Nick at full run (8 m/s) still outpaces it by roughly 9 s. The course carries two blast doors and two falling signs, deliberately out of phase with each other (`cycle_offset`). Layout: `VerticalSlice.md` Zone 8.
+- **The pursuer (Decision D10):** the kill wall starts 10 m behind Nick and advances at **5.5 m/s** over a ~119 m course; Nick at full run (8 m/s) still outpaces it by roughly 9 s. The course carries two blast doors and two falling signs, deliberately out of phase with each other (`cycle_offset`), and a **climax** in its last 38 m: a third blast door (x 378) and a third falling sign (x 388) with the elevator mouth glowing magenta ahead. Layout: `VerticalSlice.md` Zone 8.
 
 ### 3.5. Dynamic Camera Perspectives **[SLICE]**
 The camera is Karen's drone and moves to give Nick the best tactical view *(`characters/player/drone_camera.gd`, a camera state machine: Sidescroll → Transitioning → TopDown)*.
-- **Side-scrolling (depth locked):** offset (0, 3, 10); lateral movement only; jump enabled.
+- **Side-scrolling (depth locked):** offset (0, 3, 10); lateral movement only; jump enabled. The drone **leads Nick by 2.5 m** in the direction he faces and holds its height inside a **2.5 m vertical dead zone** (it only trails when Nick strays further up or down) *(`characters/player/camera_states/state_sidescroll.gd`: `LOOK_AHEAD`, `VERTICAL_DEAD_ZONE`)*.
 - **Top-down bullet hell (depth unlocked):** the drone climbs to offset **(0, 12, 4.5)** *(Decision D21; was (0, 15, 5))* and pitches 60°; Nick moves freely on X and Z (W/S, ↑/↓ or stick up/down move him in depth); **jumping is suppressed**; the roll is the evasive tool. A **cyan ground ring** under Nick shows his position while top-down. Used in Zone 3 (security lock), Zone 6 (plaza) and the Headliner's phase 2.
 - **Transitions:** a 1.5 s tween (2 s for the boss). On completion the player's movement constraint flips (plane-locked ↔ free) and Nick blends onto the new rail. Every shift fires a VCR glitch burst (§6.2).
 
@@ -123,7 +126,7 @@ The camera is Karen's drone and moves to give Nick the best tactical view *(`cha
 ## 4. Enemies & Bosses
 
 ### 4.1. The Grunts (rhythmic telegraphing) **[SLICE]**
-Enemies hit hard; in compensation their attacks are locked to the Conductor so the beat is a readable cue. All telegraphs use the same language: a white-hot rim flash one beat before the hit. Stats live in `characters/enemies/<type>/<type>_stats.tres`.
+Enemies hit hard; in compensation their attacks are locked to the Conductor so the beat is a readable cue. All telegraphs use the same language: a white-hot rim flash one beat before the hit. Stats live in `characters/enemies/<type>/<type>_stats.tres` *(HP, hit, shield and Scrap below are read from them; knockback / stun in the list after the table)*.
 
 | Enemy | HP | Hit | Shield | Scrap | Behaviour |
 |---|---|---|---|---|---|
@@ -131,7 +134,12 @@ Enemies hit hard; in compensation their attacks are locked to the Conductor so t
 | **Bruiser** (Riot-Shield Enforcer) | 90 | 20 | 80 | 50 | plants and swings **only on the downbeat** (telegraph on beat 4; hitbox live for exactly one beat); heavy hits pressure the shield, Battery Ram shatters it |
 | **Sniper** (Laser-Sight Turret) | 24 | 18 | — | 25 | arms only within 16 m; aims on beat 3, locks on beat 4, **fires on beat 1**; the beam widens 0.15 → 0.3 → 0.6 m through the cycle; aims at Nick in 3D, and its hitbox is the full 0.6 m beam |
 
-Scene-placed grunts stay dormant until Nick enters their zone (their `wake_zone`) or, with none set, comes within their aggro range; grunts are ledge-aware and never walk off an edge on their own (knockback still can). Any enemy that falls out of the world is removed silently (no reward). The toxic pit damages enemies as well as Nick, so knocking a grunt into it is a valid kill with normal Scrap. The tempo controller only counts active enemies.
+Scene-placed grunts stay dormant until Nick enters their zone (their `wake_zone`) or, with none set, comes within their aggro range; grunts are ledge-aware and never walk off an edge on their own (knockback still can). Any enemy that falls out of the world is removed silently (no reward). The toxic pit damages enemies as well as Nick, so a grunt that ends up in it still dies for normal Scrap — but **only the Launcher (≈ 4 m) and Bass Drop (≈ 7 m) displace an enemy far enough to put it in a pit on purpose** (§3.2: a lone light/heavy slides ≈ 0.1–0.3 m and Tri-Cut ≈ 0.6 m), so "pit kill" is not currently a reliable valid play *(flagged as Decision D56 on the audit site)*. The tempo controller only counts active enemies.
+
+- **Hit reaction values** *(stats `.tres`: knockback / stun)*: Runner 5 / 0.5 s · Bruiser 8 / 1.0 s · Sniper 4 / 0.8 s (arms within 16 m) · Enforcer 10 / 1.5 s (900 HP, 22 hit, 300 Scrap, 15 Cells) · Headliner 12 / 2.0 s (2400 HP, 25 hit, 1000 Scrap, 1 Core). Speeds: Runner 3, Bruiser 2, Enforcer 2, Headliner 1.5 m/s.
+- **Bodies and tells:** Runners and Bruisers animate on the interim shared rigged body *(`characters/shared/enemy_animator.gd`)*: idle and run follow velocity, the telegraph beat freezes the swing clip at its wind-up pose, the active beat plays the strike, a hit plays the hit reaction fitted to the stun, and death plays a collapse before the shrink. The Bruiser's shield reads on its rim *(`bruiser.gd`)*: steel/magenta-white while the 80-point shield holds, a white-hot break flash when it goes (`SignalBus.shield_broken`), then back to magenta. Every melee attacker draws a **telegraph footprint** — a flat glowing disc on the floor under the spot its hitbox is about to hit (magenta for Runner/Bruiser/Enforcer, amber for the Headliner), fading up over the telegraph beat and gone the moment the hitbox arms *(`vfx/telegraph_zone.gd`)*.
+- **Staged wave entrances** *(`levels/components/wave_spawner.gd`, `WaveDef`)*: the slice's spawners release a wave one enemy at a time on the primary beat (`stagger_beats` 0.5 apart): in side-scroll an enemy **drops** onto a magenta ring that marks the landing one beat early (`drop_height` 6 m, 8 m for the Zone 9 shaft wave); in top-down rims it arrives on a short magenta **beam**.
+- **The elevator (Zone 9)** *(`levels/components/elevator_encounter.gd`, `stop_heights` 5 / 10 / 14.5)*: a three-stop ride — the platform lurches to a halt at **5 m** for the first wave and **10 m** for the second (the ride light flickers three beats at each stop and the camera lurches), then the last leg runs to the dock at **14.5 m** once both waves are dead.
 
 > **Parry — deferred [POST-SLICE].** Not designed into any enemy. When added, beat-synced telegraphs make its window a natural fit.
 
@@ -155,7 +163,8 @@ A towering holographic VJ/DJ idol projected above the rooftop plaza *(`headliner
 - **Phase 2 (at 50 % HP):** the track jumps to **160 BPM**, the drone executes a Nier-style shift to **top-down bullet hell**, depth movement unlocks, and the Headliner raises a shield while firing a pooled **projection storm**: a 12-shot radial on beat 1, aimed shots on beats 2 and 4, an 8-shot spiral on beat 3 (10 damage each). The phase ends when a shield-breaker lands **or after 24 beats, when the shield overheats** — so a first-run player without Battery Ram is never soft-locked. *(Shield uptime vs HP is Decision D19, to be revisited after human testing.)*
 - **Enraged:** back to side-scroll, no shield, +20 % speed, melee duel to the finish.
 - **Holo-walls and crowd-surge hazards** from the original concept are **[POST-SLICE]**; the slice's phase-2 hazard is the projection storm alone.
-- Beating The Headliner ends the Vertical Slice: a 2.5 s hold, then the results screen → Karen's Shop.
+- **The stage:** a stage ring and tick marks on the dock floor, a "HEADLINER LIVE" sign, and a marquee reading "THE HEADLINER" that is amber while the show runs and turns magenta at phase 2 *(`levels/components/headliner_marquee.gd`)*; the Headliner's telegraph footprint is amber.
+- Beating The Headliner ends the Vertical Slice: a 2.5 s hold, then the results screen (§6.4) → Karen's Shop in a full run, PLAY AGAIN / title in the demo.
 
 ### 4.5. The Final Boss: Karen **[POST-SLICE]**
 Once Nick reaches the central tower, the truth is revealed: Karen used the journey to test Nick as the ultimate weapon. The shop was her laboratory, and the drone that served as the player's camera becomes her weapon. A checkpoint sits immediately before this fight (**Retry Boss / Full Run** choice). *Camera-as-weapon guiding principle: the drone degrades the feed, never replaces it — Nick stays visible at all times (forced zoom-outs, brief 90° tilts, "signal-loss" static that hides enemy telegraphs so the player survives on the audio heartbeat).*
@@ -166,7 +175,7 @@ Once Nick reaches the central tower, the truth is revealed: Karen used the journ
 
 Saint Manick is **tense and short, but fair**. No mid-level save-scumming.
 - **The universal death rule:** Nick has an HP battery (120), a regenerating **shield** (40; regenerates 12/s after 3 s without damage) and **3 lives**. Damage drains shield, then HP. **HP 0 costs a life**: after a **0.9 s death beat** (input locked, a slow-motion hit-stop and the death clip; Decision D20) Nick respawns at full HP/shield at the **last zone checkpoint** (every zone entry is a checkpoint; cleared encounters stay cleared, uncleared ones reset) with 1 s of grace and an empty ability bar (§3.3). **Permadeath happens only when HP hits 0 with 0 lives remaining** — three lives are three respawns — and ends in the same death beat. Hazards, falls and escape failures obey the same rule through the same component.
-- **Permadeath → Game Over → Karen's Shop.** The Game Over screen shows the banked Scrap, the zone reached and a **"DESTROYED BY <enemy>"** line naming the lethal hit's source (the LIFE LOST banner carries the same name). The run's currencies are banked, permanent upgrades are bought, a Run Booster is equipped, and a new run starts from Zone 1. Abandoning a run from the pause menu banks the currencies the same way.
+- **Permadeath → Game Over → Karen's Shop** (in the demo: **RETRY** with the same loadout, or the title; nothing is banked — §6.4). The Game Over screen shows the banked Scrap, the zone reached and a **"DESTROYED BY <enemy>"** line naming the lethal hit's source (the LIFE LOST banner carries the same name). The run's currencies are banked, permanent upgrades are bought, a Run Booster is equipped, and a new run starts from Zone 1. Abandoning a run from the pause menu banks the currencies the same way.
 - **The Karen Checkpoint** (Retry Boss / Full Run before the final fight) is **[POST-SLICE]**.
 - **Meta-progression & out-levelling:** shop upgrades are permanent, so a returning Nick clears the early zones quickly.
 - **Difficulty targets:** tuned with `tools/balance_tool.html` toward **2–3 runs (average) / 4–5 runs (weaker)**. *(Audit Decision D2, **deferred as too early**: the slice's scrap yield was ~3.7× the tool's assumptions at the 2026-10-24 audit and prices are flat; the D9/D16 recompositions lower a full clear to ≈2020 Scrap, not yet re-measured against the tool. A cost curve and caps wait for human testing.)*
@@ -196,19 +205,22 @@ The Conductor rests at **128 BPM**. The IntensityController raises the target by
 
 ## 6. UI/UX Design **[SLICE]**
 
-The interface is diegetic: the camera feed transmitted by Karen's drone. The game boots to a **title screen** (START RUN → Karen's Shop → run; OPTIONS; QUIT).
+The interface is diegetic: the camera feed transmitted by Karen's drone. The game boots to a **title screen**: START DEMO (loadout pick → the slice), START RUN (Level One stand-in via Karen's Shop → the slice), OPTIONS, QUIT. Scene changes ride a short fade to a dark cover with a dim **"ACQUIRING SIGNAL…"** line while the next scene loads *(`ui/transition/scene_transition.gd`)*.
 
 ### 6.1. The HUD
-- **Battery Health Bar:** 12 segments (top-right) with the regenerating **shield** as a thin cyan strip along its top edge.
-- **Ability Bar:** the old stamina slot — a horizontal meter under the battery; fills with hits, drives EMP Dash-Cancel and Bass Drop (§3.3).
-- **Extra Lives:** stacked battery icons (one per remaining life, up to four shown).
-- **Currencies:** SCRAP (cyan), CELLS (magenta), CORES (white), top-left.
+*(Read from `ui/hud/*.gd` / `hud.tscn`; the cluster scales with the HUD SIZE option, §6.3.)*
+- **Vitals (top-right, 360 px wide):** a **12-segment battery** (the last 3 segments turn to the danger style at low HP) with a numeral beside it (`HP n/max`), and the regenerating **shield** as a thin cyan strip along its top edge.
+- **Ability Bar:** under the battery — a framed **10-cell** meter that fills with hits and drives EMP Dash-Cancel and Bass Drop (§3.3); when full its cells flicker on every beat, and a **BASS DROP** caption beneath lights while Bass Drop is armed.
+- **Extra Lives:** one cyan **diamond** per spare life (up to four shown, then an "xN" tag); at zero spare lives a LAST LIFE tag pulses.
+- **Low-HP vignette:** a magenta edge glow that fades in below 35 % HP, is full at 10 %, pulses on each hit and flashes briefly on damage (off with REDUCE FLASHES).
+- **Currencies and zone tag (top-left):** SCRAP (cyan), CELLS (magenta), CORES (white), and below them the **zone tag** "SECTOR N / 10", with " · BOOSTER" appended for every run booster in force (e.g. "SECTOR 03 / 10 · ADRENALINE").
 - **Epic Combo Multiplier:** a cyan counter that grows with successive landed hits; a whiff or taking damage drops it; at ×50 it glitches and explodes in neon colours (the cap is cosmetic in the slice).
 - **Beat pulse:** a small ring at the top centre pulses on every beat (cyan) and downbeat (magenta) — an implicit metronome.
-- **Zone title card:** "SECTOR NN — NAME" slides in on every zone entry. The same card carries the "LIFE LOST — N LEFT" / "LAST LIFE" banner.
+- **Zone-name banners:** "SECTOR NN — NAME" slides in on every zone entry. The same card carries the priority banners: **"DESTROYED BY <enemy>"** during the death beat, then **"LIFE LOST — N LEFT — RESUMING SECTOR NN"** (or **"LAST LIFE"**) on the respawn, and the one-shot hint cards below.
 - **Encounter gates and the GO card:** Zones 1, 4 and 5 are soft screen-locked by a pair of 12 m tall cyan holo-gates (Decision D23) that raise when the encounter starts and open when it is cleared, with a "GO ->" card. (Top-down encounters keep their gates shut until the camera has shifted back.) *(HUD counters are Decision D27, deferred.)*
-- **Control prompts:** the Zone 1 prompts are shown only until the player's first Zone 2 entry ever (`seen_controls` in the profile; Decision D34).
-- **Boss bar:** a magenta bar in a dark panel at the bottom when a boss or mini-boss activates.
+- **Hint chips (replace the Zone 1 prompt cards):** a strip at the bottom-left with one chip per core action — **J ATTACK · K HEAVY · SPACE JUMP · SHIFT/Q DASH · CTRL/E ROLL** (X / Y / A / RB / B labels once a gamepad is the last device used). A chip fades out the first time its action is performed; when all five have fired the controls count as seen (`seen_controls` in the profile; a demo run remembers it in memory only) and the strip never shows again *(`ui/hud/hud_hints.gd`; Decision D34's "until the first Zone 2 entry" rule is superseded)*. The strip hides while a boss bar shares the bottom edge.
+- **One-shot hint cards** *(`levels/components/onboarding_prompts.gd`; once ever, in memory only in a demo)*: **SHIELDED** (the first blocked hit: heavy-heavy breaks the guard), **TRI-CUT** (the first 3-hit chain: J J J), **WHITE RIM** (the first telegraph: a white rim means a hit is incoming — dodge); plus once per run the TOP-DOWN card and BASS DROP READY.
+- **Boss card and bar:** when a boss or mini-boss activates, a priority card with the eyebrow **"LIVE ON AIR"** over the boss name plays on the title card, then the magenta boss bar fades in inside a dark panel at the bottom.
 
 ### 6.2. Visual Camera Effects (VCR)
 A constant faint scanline overlay and vignette sell the surveillance feed. Whenever Nick takes damage or the drone changes perspective, the feed suffers a **chromatic-aberration burst** that decays over ~0.45 s. Pause, game over, results, shop and title all live on the same feed.
@@ -220,7 +232,7 @@ A constant faint scanline overlay and vignette sell the surveillance feed. Whene
 | Depth (top-down only) | W/S or ↑/↓ | Left stick up/down / D-pad up/down |
 | Jump | Space | A |
 | Light / Heavy | J / K | X / Y |
-| Dash / Roll | Shift / Ctrl | RB / B |
+| Dash / Roll | Shift or Q / Ctrl or E | RB / B |
 | Ultimate (Bass Drop) | L | LB |
 | Pause | Esc | Start |
 | Options | button on the title screen and the pause menu | same |
@@ -228,8 +240,15 @@ A constant faint scanline overlay and vignette sell the surveillance feed. Whene
 - **Depth:** W/S (and the equivalent stick/D-pad axis) do nothing in side-scroll; they move Nick in depth only while the drone is top-down (§3.1, §3.5).
 - **Free cancel:** a dash/roll press in the last 40 % of an attack's recovery, once the hit connected, cancels it for no meter (§3.2); the 25-meter EMP Dash-Cancel works in the active window (§3.3).
 - **Beat-dodge cue:** a dodge started within ±0.06 s of a beat flashes Nick's rim cyan (§3.2).
-- **Options menu (Decision D25):** Master / Music / SFX volume and a fullscreen toggle, reachable from the title screen and the pause menu, saved in the profile.
+- **Options menu (Decision D25 + round 4)** *(`ui/menus/options_menu.gd`)*: VOLUMES (Master / Music / SFX, 0–100), FULLSCREEN, **SCREEN SHAKE** (cycles 100 % / OFF / 50 %), **VCR EFFECTS** (on/off), **REDUCE FLASHES** (on/off; also silences the low-HP vignette) and **HUD SIZE** (100 / 125 / 150 %; a small window auto-selects 125 % until the player picks) — reachable from the title screen and the pause menu, saved in the profile.
+- **ABANDON RUN** in the pause menu needs a second press within **2 s** (the first press relabels the button "CONFIRM ABANDON?"; anything else disarms it) *(`pause_menu.gd`)*.
 - **Auto-pause (Decision D29):** the slice pauses itself when the window loses focus.
+
+### 6.4. Title, demo flow and end screens
+- **START DEMO** → a loadout panel with one **RUN BOOSTER** row — **None / Tempo Shield / Adrenaline** (Scrap Magnet is hidden: a demo banks nothing, so it would do nothing) — remembered for the session → START DEMO jumps into the slice *(`ui/menus/demo_loadout.gd`)*. All four combo routes and the Double Jump are available in the demo (it has no shop); the hint chips and one-shot hints are kept in memory only; nothing is banked or saved.
+- **Results** (after the Headliner): ZONES CLEARED, TIME, MAX COMBO, LIVES LOST, SCRAP, CELLS, CORES and a **rank S / A / B / C** from the run time (limits 360 / 540 / 720 s, `RANK_TIME_LIMITS`; one tier up for a run that lost no life), plus the line "THANKS FOR PLAYING THE DEMO". In a demo the buttons are **PLAY AGAIN** (same loadout) and RETURN TO TITLE; in a full run, CONTINUE TO SHOP *(`ui/menus/run_results_screen.gd`)*.
+- **Game Over** in a demo: **RETRY** (a fresh demo run with the same loadout) or RETURN TO TITLE ("Demo run — nothing banked."); in a full run it banks the run and returns to Karen's Shop *(`game_over_screen.gd`)*.
+- **START RUN** is the **Level One stand-in**: Karen's Shop → the slice, banking as the full game will (see §8 for Level One).
 
 ---
 
@@ -282,7 +301,7 @@ A 6 m mech of scavenged speaker cabs and torn neon with a turntable head (HP 1 5
 Overclock · Ground-Pound · dedicated Air-Combo route · parry · polyrhythm layers · holo-wall / crowd-surge boss hazards · Karen checkpoint (Retry Boss / Full Run) · damage & armour upgrade tiers · branching combo tree · Suburbs Skip / Extra-Life boosters · curved rails with camera yaw · destructible props · Suburbs, Corporate and Tower districts and their bosses · camera-as-weapon · the Double Jump shop purchase (the demo ships it unlocked).
 
 ## Appendix B — Open balance decisions (from the 2026-10-24 audit; numbers in `.tres`, tune in `tools/balance_tool.html`)
-**Resolved in rev. 3 (applied in code at 8937f29):** D1 Double Jump unlocked in the demo · D3 heavy windows 0.45/0.45/0.75 s and finishers Tri-Cut 32 / Launcher 40 / Battery Ram 55 / Sweeper 20 · D6 beat-dodge ±0.06 s, half refund, cooldown 0.3 s, cyan cue · D7 Bruiser shield 80 (owner will revisit: two generic heavies still break it) · D8 Bass Drop 10 m / 90 · D9/D16 Zone 3–5 wave compositions · D10 kill wall 5.5 m/s over ~119 m · D13 boss HP (Enforcer 900, Headliner 2400) · D14 roll 11 m/s · D17 pass-through on dodge i-frames · D20 death beat · D21 top-down camera (0, 12, 4.5) + ground ring · D22 free cancel · D23 holo gates + GO card · D25 options menu · D28 meter resets on a lost life · D29 auto-pause · D34 prompts once.
+**Resolved in rev. 3 (applied in code at 8937f29):** D1 Double Jump unlocked in the demo · D3 heavy windows 0.45/0.45/0.75 s and finishers Tri-Cut 32 / Launcher 40 / Battery Ram 55 / Sweeper 20 · D6 beat-dodge ±0.06 s, half refund, cooldown 0.3 s, cyan cue · D7 Bruiser shield 80 (owner will revisit: two generic heavies still break it) · D8 Bass Drop 10 m / 90 · D9/D16 Zone 3–5 wave compositions · D10 kill wall 5.5 m/s over ~119 m · D13 boss HP (Enforcer 900, Headliner 2400) · D14 roll 11 m/s · D17 pass-through on dodge i-frames · D20 death beat · D21 top-down camera (0, 12, 4.5) + ground ring · D22 free cancel · D23 holo gates + GO card · D25 options menu · D28 meter resets on a lost life · D29 auto-pause · D34 prompts once (superseded in round 4 by the action-gated hint chips, §6.1).
 
 **Still open / deferred (do not tune until decided):**
 - D2 shop economy: cost curve, caps and yields deferred as too early (prices are flat).
@@ -293,5 +312,6 @@ Overclock · Ground-Pound · dedicated Air-Combo route · parry · polyrhythm la
 - D24 Zone 4 planks: decision deferred.
 - D27 HUD counters: decision deferred.
 - D33 stagger tiers and post-stagger protection: decision deferred.
+- D56 pit kills as a valid play: only the Launcher (≈ 4 m) and Bass Drop (≈ 7 m) displace enough to use the toxic pit on purpose (§3.2 / §4.1); decide whether to raise opener/finisher knockback, add a pit-edge assist, or drop "pit kill" as a designed play.
 
 *Level One (§8) depends on several of these; `LevelOne.md` §9.1 states how and recommends an option for each without resolving any, and §9.2 adds the Level One decisions L1–L10.*

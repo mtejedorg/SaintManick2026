@@ -25,6 +25,10 @@ var target_path: String = ""
 var _cover: ColorRect
 var _loading: bool = false
 
+## True while a transition is on screen (V5: the pause menu refuses to open during it).
+static func is_busy() -> bool:
+	return _busy
+
 ## Changes the scene to `path`. Returns immediately; the swap happens over the next frames.
 static func go(tree: SceneTree, path: String) -> void:
 	if tree == null or path == "":
@@ -53,6 +57,9 @@ static func is_instant(tree: SceneTree) -> bool:
 func _ready() -> void:
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# V5: while the cover is up, keyboard / gamepad / mouse cannot reach the outgoing scene (an
+	# Esc in the fade used to pause the tree and the next screen loaded paused and dead).
+	_set_input_blocked(true)
 	_cover = ColorRect.new()
 	_cover.color = COVER_COLOR
 	_cover.mouse_filter = Control.MOUSE_FILTER_STOP # swallow clicks during the swap
@@ -70,6 +77,17 @@ func _ready() -> void:
 	var tween := create_tween()
 	tween.tween_property(_cover, "modulate:a", 1.0, FADE_TIME)
 	tween.tween_callback(_start_load)
+
+## V5: drops every input event while the transition is busy (this layer is last in the root, so
+## its _input runs first) and silences the GUI of whatever scene is current.
+func _input(_event: InputEvent) -> void:
+	if _busy:
+		get_viewport().set_input_as_handled()
+
+func _set_input_blocked(blocked: bool) -> void:
+	var viewport := get_viewport()
+	if viewport:
+		viewport.gui_disable_input = blocked
 
 func _start_load() -> void:
 	if ResourceLoader.load_threaded_request(target_path) != OK:
@@ -90,6 +108,8 @@ func _process(_delta: float) -> void:
 
 func _swap(packed: PackedScene) -> void:
 	var tree := get_tree()
+	# V5: the next screen must never inherit a paused tree.
+	tree.paused = false
 	if packed:
 		tree.change_scene_to_packed(packed)
 	else:
@@ -103,7 +123,11 @@ func _swap(packed: PackedScene) -> void:
 
 func _finish() -> void:
 	_busy = false
+	_set_input_blocked(false)
 	queue_free()
 
 func _exit_tree() -> void:
 	_busy = false
+	var viewport := get_viewport()
+	if viewport:
+		viewport.gui_disable_input = false

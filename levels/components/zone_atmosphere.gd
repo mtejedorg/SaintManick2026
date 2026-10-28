@@ -19,8 +19,9 @@ extends Node
 
 const TWEEN_TIME := 1.5
 const FOG_EMISSION_RATIO := 0.4
-## The ground-side horizon band follows the sky horizon at this fraction (no seam at y 0).
-const GROUND_HORIZON_RATIO := 0.5
+## The ground-side horizon band follows the sky horizon at this fraction (V1: 0.5 left a hard
+## luminance step at the horizon line; only ground_bottom_color is darkened).
+const GROUND_HORIZON_RATIO := 0.9
 
 ## Horizon / key / rim palettes per district (P4, P5).
 const HORIZON_SODIUM := Color(0.45, 0.18, 0.04)

@@ -117,6 +117,10 @@ func _run() -> void:
 		await _frames(3)
 		_save(shot["name"])
 
+	# V7: a mid-swing frame per attack so the katana ribbon can be judged (light = cyan, heavy = amber).
+	await _swing_shot("vfx_swing_light", false)
+	await _swing_shot("vfx_swing_heavy", true)
+
 	# VCR-only variant of one zone so the overlay can be judged in isolation.
 	vcr.visible = true
 	_place(zone_shots[4]["pos"], "side", 4)
@@ -180,6 +184,31 @@ func _place(pos: Vector3, mode: String, zone: int = 0) -> void:
 	# Keep Nick facing right so the lineup/zones are comparable.
 	var mesh: Node3D = player.get_node("MeshInstance3D")
 	mesh.rotation.y = PI / 2.0
+
+## V7: wakes Nick for a moment, starts a light / heavy swing, steps 6 physics frames (mid-swing,
+## the ribbon has 6 samples) and shoots from a close side camera; then freezes him again.
+func _swing_shot(shot_name: String, heavy: bool) -> void:
+	_place(zone_shots[0]["pos"], "side", 1)
+	var pos: Vector3 = zone_shots[0]["pos"]
+	camera.base_position = pos + Vector3(0.0, 1.3, 4.2)
+	camera.global_position = pos + Vector3(0.0, 1.3, 4.2)
+	camera.rotation = Vector3.ZERO
+	player.process_mode = Node.PROCESS_MODE_INHERIT
+	await _frames(2)
+	player.global_position = pos
+	player.velocity = Vector3.ZERO
+	player.set("pending_attack_heavy", heavy)
+	player.state_machine.transition_to("StateAttack")
+	for i in 6:
+		await get_tree().physics_frame
+	await _frames(1)
+	_save(shot_name)
+	player.state_machine.transition_to("StateIdle")
+	# Let the idle pose settle before freezing him again (the lineup close-ups reuse this body).
+	for i in 40:
+		await get_tree().physics_frame
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	await _frames(2)
 
 func _lineup() -> void:
 	var rig := Node3D.new()

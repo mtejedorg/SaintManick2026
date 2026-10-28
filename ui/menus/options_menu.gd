@@ -22,6 +22,7 @@ const SHAKE_STEPS: Array[float] = [0.0, 0.5, 1.0]
 @onready var shake_button: Button = $Panel/VBox/ShakeButton
 @onready var vcr_toggle: Button = $Panel/VBox/VcrToggle
 @onready var flash_toggle: Button = $Panel/VBox/FlashToggle
+@onready var hud_size_button: Button = $Panel/VBox/HudSizeButton
 @onready var back_button: Button = $Panel/VBox/BackButton
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func _ready() -> void:
 	shake_button.pressed.connect(cycle_shake.bind(1))
 	vcr_toggle.toggled.connect(_on_vcr_toggled)
 	flash_toggle.toggled.connect(_on_flash_toggled)
+	hud_size_button.pressed.connect(cycle_hud_scale.bind(1))
 	back_button.pressed.connect(close)
 	_wire_focus()
 	_sync_from_profile()
@@ -64,6 +66,12 @@ func _input(event: InputEvent) -> void:
 	elif shake_button.has_focus() and event.is_action_pressed("ui_right"):
 		cycle_shake(1)
 		get_viewport().set_input_as_handled()
+	elif hud_size_button.has_focus() and event.is_action_pressed("ui_left"):
+		cycle_hud_scale(-1)
+		get_viewport().set_input_as_handled()
+	elif hud_size_button.has_focus() and event.is_action_pressed("ui_right"):
+		cycle_hud_scale(1)
+		get_viewport().set_input_as_handled()
 
 func _sliders() -> Array[HSlider]:
 	return [master_slider, music_slider, sfx_slider]
@@ -71,7 +79,7 @@ func _sliders() -> Array[HSlider]:
 ## Up/down walk the column and wrap; left/right stay on the sliders' values, and never leave
 ## the panel from the buttons.
 func _wire_focus() -> void:
-	var chain: Array[Control] = [master_slider, music_slider, sfx_slider, fullscreen_toggle, shake_button, vcr_toggle, flash_toggle, back_button]
+	var chain: Array[Control] = [master_slider, music_slider, sfx_slider, fullscreen_toggle, shake_button, vcr_toggle, flash_toggle, hud_size_button, back_button]
 	for i in chain.size():
 		var c := chain[i]
 		var prev := chain[(i - 1 + chain.size()) % chain.size()]
@@ -80,7 +88,7 @@ func _wire_focus() -> void:
 		c.focus_neighbor_bottom = c.get_path_to(next)
 		c.focus_previous = c.get_path_to(prev)
 		c.focus_next = c.get_path_to(next)
-	for b in [fullscreen_toggle, shake_button, vcr_toggle, flash_toggle, back_button]:
+	for b in [fullscreen_toggle, shake_button, vcr_toggle, flash_toggle, hud_size_button, back_button]:
 		b.focus_neighbor_left = b.get_path_to(b)
 		b.focus_neighbor_right = b.get_path_to(b)
 
@@ -104,6 +112,7 @@ func _refresh_labels() -> void:
 	shake_button.text = "SCREEN SHAKE: %s" % shake_text(_shake_value())
 	vcr_toggle.text = "VCR EFFECTS: %s" % ("ON" if vcr_toggle.button_pressed else "OFF")
 	flash_toggle.text = "REDUCE FLASHES: %s" % ("ON" if flash_toggle.button_pressed else "OFF")
+	hud_size_button.text = "HUD SIZE: %s" % hud_scale_text(_hud_scale_value())
 
 func _on_volume_changed(value: float, bus: StringName) -> void:
 	var linear := clampf(value / 100.0, 0.0, 1.0)
@@ -150,6 +159,36 @@ func cycle_shake(step: int) -> void:
 	var count := SHAKE_STEPS.size()
 	p.screen_shake = SHAKE_STEPS[((idx + step) % count + count) % count]
 	SaveManager.save_profile()
+	_refresh_labels()
+
+## V11: "100 %" / "125 %" / "150 %".
+static func hud_scale_text(value: float) -> String:
+	return "%d %%" % roundi(value * 100.0)
+
+## The HUD scale in force (the auto 125 % of a small window included).
+func _hud_scale_value() -> float:
+	var p: PlayerProfile = SaveManager.profile if SaveManager else null
+	if p == null:
+		return 1.0
+	return p.effective_hud_scale(float(get_window().size.y))
+
+## V11: steps HUD SIZE through PlayerProfile.HUD_SCALE_STEPS by `step`, wrapping, from the value
+## in force; the pick is saved and the HUD (listening to the profile's `changed`) re-scales.
+func cycle_hud_scale(step: int) -> void:
+	var p: PlayerProfile = SaveManager.profile if SaveManager else null
+	if p == null:
+		return
+	var steps := PlayerProfile.HUD_SCALE_STEPS
+	var current := _hud_scale_value()
+	var idx := 0
+	for i in steps.size():
+		if absf(steps[i] - current) < absf(steps[idx] - current):
+			idx = i
+	var count := steps.size()
+	p.hud_scale = steps[((idx + step) % count + count) % count]
+	p.hud_scale_chosen = true
+	SaveManager.save_profile()
+	p.emit_changed()
 	_refresh_labels()
 
 func _on_vcr_toggled(on: bool) -> void:

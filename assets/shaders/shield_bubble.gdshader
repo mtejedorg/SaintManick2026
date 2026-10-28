@@ -13,14 +13,17 @@
 // hit_pos (world) and tweens hit_time 0 -> 1: a bright ring expands from hit_pos and fades out
 // by hit_time 1.0 (the resting value, which draws nothing). Each boss owns its own copy of the
 // material, so uniforms are never shared.
+//
+// V4: rim_color is set per boss in the scene (Enforcer magenta, Headliner amber); intensity 1.6 and
+// fresnel_power 4.5 keep the bubble a thin outline instead of a pale solid ball.
 
 shader_type spatial;
 render_mode blend_add, depth_draw_never, cull_back, unshaded;
 
 uniform vec4 rim_color : source_color = vec4(0.6, 0.8, 1.0, 1.0);
-uniform float fresnel_power : hint_range(0.5, 8.0) = 3.0;
+uniform float fresnel_power : hint_range(0.5, 8.0) = 4.5;
 uniform float rim_alpha : hint_range(0.0, 1.0) = 0.6;
-uniform float intensity = 3.0;
+uniform float intensity = 1.6;
 uniform vec3 hit_pos = vec3(0.0);
 uniform float hit_time = 1.0;
 uniform float ripple_radius = 4.0;   // metres the ring travels by hit_time 1.0

@@ -30,9 +30,9 @@ var telegraph_zone: Node3D = null
 ## and the speed below which the grunt faces the player instead of its velocity.
 const FACING_TURN_WEIGHT := 0.2
 const FACING_MIN_SPEED := 0.1
-## P7: while the 80-point shield holds, the rim rests steel-white (stronger than the default
+## P7: while the 80-point shield holds, the rim rests magenta-white (V4; stronger than the default
 ## magenta) so the shield is visible; the break flashes white-hot and drops back to magenta.
-const SHIELD_RIM_COLOR := Color(0.75, 0.85, 1.0)
+const SHIELD_RIM_COLOR := Color(1.0, 0.55, 1.0)
 const SHIELD_RIM_STRENGTH := 3.5
 const SHIELD_BREAK_FLASH_STRENGTH := 6.0
 const SHIELD_BREAK_FLASH_SECONDS := 0.25
@@ -206,12 +206,12 @@ func _on_stun_started() -> void:
 	_hide_telegraph_zone()
 	character_visual.update_rim_color(resting_rim_color())
 
-## The rim the Bruiser rests at: steel-white while its shield holds, magenta otherwise.
+## The rim the Bruiser rests at: magenta-white while its shield holds, magenta otherwise.
 func resting_rim_color() -> Color:
 	return SHIELD_RIM_COLOR if health_component.current_shield > 0.0 else character_visual.get_default_rim_color()
 
-## P7: shield up -> steel rim; shield broken -> white-hot flash, then the magenta default.
-## Regeneration re-arms it (the rim goes steel again on the first regen tick).
+## P7: shield up -> magenta-white rim; shield broken -> white-hot flash, then the magenta default.
+## Regeneration re-arms it (the rim goes magenta-white again on the first regen tick).
 func _on_shield_changed(new_shield: float, _max_shield: float) -> void:
 	var up := new_shield > 0.0
 	if up == _shield_rim_shown:

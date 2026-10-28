@@ -6,6 +6,8 @@ This document outlines the testing architecture, runner instructions, and manual
 
 ## 1. Automated Headless Test Suite
 
+**Hermetic since round 4:** `tests/framework/test_runner.gd` swaps `SaveManager.save_path` to `user://test_profile_<pid>.tres` before the first case and gives every case a fresh `PlayerProfile`; the suite fails if the real `user://save_data.tres` changes during the run. `-- --only=<substring>` runs a subset of case files. The headless log must contain zero `Parameter "material" is null` lines; the two remaining `ERROR` lines (an unknown state name, an out-of-range tuning value) are tests exercising error paths on purpose.
+
 Saint Manick features a self-contained, custom GDScript test framework designed to run headless and validate core gameplay and persistence logic.
 
 ### 1.1 Running Instructions
@@ -30,7 +32,7 @@ On success, the suite outputs `Result: SUCCESS` and exits with process code `0`.
 grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke_title.log /tmp/smoke.log
 ```
 
-Pass = exit 0 on all commands, zero grep hits (the two exit-time leak lines are known), test count at or above the last known-good baseline (currently **447**). Visual gate: `tools/capture/capture_scene.tscn` (see `.claude/CLAUDE.md`).
+Pass = exit 0 on all commands, zero grep hits (the two exit-time leak lines are known), test count at or above the last known-good baseline (currently **610**). Visual gate: `tools/capture/capture_scene.tscn` (see `.claude/CLAUDE.md`).
 
 ---
 
@@ -135,3 +137,16 @@ For features and visual/game-feel parameters that cannot be fully validated prog
 - [ ] **Phase 2 Transition**: Verify the 50% HP threshold triggers `StateTransition`, top-down camera shift, and BPM ramp to 160.
 - [ ] **Bullet Hell + Enrage**: Verify beat-driven projectile waves, and that breaking the shield in this phase triggers `StateEnraged` + camera shift back to sidescroll.
 - [ ] **Death & Run Completion**: Verify `StateDead` disables collisions, awards scrap **and 1 core (M7b)**, and triggers `complete_run()`.
+
+
+## 5. Manual regression added in round 4 (28 Oct 2026)
+
+**Demo flow:** title → START DEMO → loadout (START focused; LEFT/RIGHT cycles NONE / TEMPO SHIELD / ADRENALINE, Scrap Magnet absent) → slice → lose four lives → Game Over shows RETRY (focused) and RETURN TO TITLE → RETRY restarts with the same booster → win → RUN COMPLETE grid (time, max combo, lives lost, rank, THANKS line) → PLAY AGAIN. Nothing banks: SCRAP in the shop unchanged after a demo run. Hint chips (J ATTACK … CTRL/E ROLL) fade the first time each action fires and never return in the session; SHIELDED / TRI-CUT / WHITE RIM one-shots fire once.
+
+**Pause paths:** Esc spam; Esc during the death beat and during the victory hold; OPTIONS inside pause (SCREEN SHAKE 100/OFF/50, VCR EFFECTS, REDUCE FLASHES persist across a restart); alt-tab then click back (auto-pause; the click must not land on a button); ABANDON RUN first press shows CONFIRM ABANDON? for 2 s, any other input disarms.
+
+**Gamepad-only full run:** every menu reachable; chips show A/X/Y/RB/B labels after the first stick input.
+
+**Sequence-break probes:** double-jump at every gate and the Zone 7 barrier (none passable); top-down walls during the 1.5 s shift; the Zone 7 pocket behind the barrier must be unreachable.
+
+**Round-4 feel items (never seen in motion):** staged wave drops land on their ring on the beat; the elevator halts at 5 m and 10 m with a lurch until its wave is cleared; katana trail / dash streak / landing dust; telegraph footprints under Runner, Bruiser, Enforcer, Headliner; Bruiser steel rim and break flash; shield ripples on the Enforcer and Headliner; combo flash only at the cap or every 10th hit; ambient motes and trim flicker; the Headliner marquee turns magenta in phase 2; scene fades with ACQUIRING SIGNAL…

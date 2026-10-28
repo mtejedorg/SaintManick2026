@@ -15,6 +15,8 @@ const FLASH_ALPHA: float = 0.12
 const FLASH_DURATION: float = 0.05
 ## U4: a combo_increased flashes only when the count is a multiple of this.
 const FLASH_EVERY: int = 10
+## V6: Reduce Flashes multiplies the flash alpha by this.
+const REDUCED_ALPHA_FACTOR: float = 0.5
 
 ## How many milestone flashes fired (tests; Bass Drop's screen_flash_requested does not count).
 var milestone_flashes: int = 0
@@ -40,6 +42,9 @@ func _milestone_flash() -> void:
 ## Snaps the overlay to white at `alpha` and fades it out over `duration` seconds. A weaker
 ## flash never cuts a stronger one that is still brighter.
 func flash(alpha: float, duration: float) -> void:
+	# V6 (accessibility): Reduce Flashes halves every flash, milestone or requested.
+	if GameManager.reduce_flashes():
+		alpha *= REDUCED_ALPHA_FACTOR
 	if _tween and _tween.is_valid() and rect.color.a > alpha:
 		return
 	if _tween:

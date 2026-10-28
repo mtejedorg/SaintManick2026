@@ -114,6 +114,8 @@ func _ready() -> void:
 	_vignette_material = (low_hp_vignette.material as ShaderMaterial).duplicate() as ShaderMaterial
 	low_hp_vignette.material = _vignette_material
 	get_viewport().size_changed.connect(_update_safe_area)
+	if SaveManager and SaveManager.profile and not SaveManager.profile.changed.is_connected(_update_safe_area):
+		SaveManager.profile.changed.connect(_update_safe_area) # V11: HUD SIZE picked in the options
 	_update_safe_area()
 	_setup_boss_shield_strip()
 	_update_battery_ui(GameManager.current_hp, GameManager.max_hp)
@@ -173,6 +175,25 @@ func _update_safe_area() -> void:
 	safe_area.add_theme_constant_override("margin_right", roundi(margin_x))
 	safe_area.add_theme_constant_override("margin_top", roundi(margin_y))
 	safe_area.add_theme_constant_override("margin_bottom", roundi(margin_y))
+	_apply_hud_scale(rect)
+
+## V11: HUD SIZE. SafeArea scales uniformly about its top-left corner while its size shrinks to
+## rect / scale, so every corner widget stays pinned to its own corner at any step.
+func _apply_hud_scale(rect: Vector2) -> void:
+	var s := hud_scale()
+	safe_area.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	safe_area.pivot_offset = Vector2.ZERO
+	safe_area.scale = Vector2(s, s)
+	safe_area.position = Vector2.ZERO
+	safe_area.size = rect / s
+
+## The scale in force: the profile's HUD SIZE (auto 125 % in a window under 900 px high).
+func hud_scale() -> float:
+	var profile: PlayerProfile = SaveManager.profile if SaveManager else null
+	if profile == null:
+		return 1.0
+	var window_height := float(get_window().size.y) if get_window() else 1080.0
+	return maxf(profile.effective_hud_scale(window_height), 0.5)
 
 ## Q5: the first integer of a zone name ("SECTOR 03 — ..." -> 3), the audio parser's rule;
 ## 0 when there is none.

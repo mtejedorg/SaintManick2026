@@ -39,6 +39,20 @@ extends Resource
 @export var screen_shake: float = 1.0
 @export var vcr_effects: bool = true
 @export var reduce_flashes: bool = false
+## V11: HUD SIZE (1.0 / 1.25 / 1.5), a uniform scale on the HUD's SafeArea. `hud_scale_chosen`
+## flips once the player picks a step in the options; until then a small window (< 900 px high)
+## auto-selects 1.25 (see effective_hud_scale).
+const HUD_SCALE_STEPS: Array[float] = [1.0, 1.25, 1.5]
+const SMALL_WINDOW_HEIGHT: float = 900.0
+const SMALL_WINDOW_HUD_SCALE: float = 1.25
+@export var hud_scale: float = 1.0
+@export var hud_scale_chosen: bool = false
+
+## The HUD scale that applies in a window `window_height` px high.
+func effective_hud_scale(window_height: float) -> float:
+	if not hud_scale_chosen and is_equal_approx(hud_scale, 1.0) and window_height < SMALL_WINDOW_HEIGHT:
+		return SMALL_WINDOW_HUD_SCALE
+	return hud_scale
 
 ## The boosters a run actually applies: distinct, non-empty, non-"None" entries in slot
 ## order, trimmed to booster_slots.

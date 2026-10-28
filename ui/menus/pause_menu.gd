@@ -51,6 +51,10 @@ func _input(event: InputEvent) -> void:
 	# L8: the open options panel owns ui_cancel / pause (both mean "back" there).
 	if options_menu.visible:
 		return
+	# V5: no pause while the run is over or a scene transition is fading (the tree used to load
+	# the next screen paused and dead to input).
+	if _transition_locked():
+		return
 	# Q4: any other press disarms a pending ABANDON confirm (the confirm press itself is the
 	# ui_accept that reaches the focused button, and a click on it).
 	if abandon_armed and _is_other_press(event):
@@ -68,6 +72,8 @@ func _input(event: InputEvent) -> void:
 ## `from_focus_loss`: the window lost focus (L7) -- every button is held for
 ## FocusGrace.FOCUS_LOSS_GRACE (Q4), the player may be clicking back into the window.
 func toggle(from_focus_loss: bool = false) -> void:
+	if _transition_locked():
+		return
 	if visible:
 		_resume()
 	else:
@@ -84,6 +90,10 @@ func toggle(from_focus_loss: bool = false) -> void:
 			FocusGrace.arm(quit_button, FocusGrace.FOCUS_LOSS_GRACE, false)
 		else:
 			FocusGrace.arm(resume_button, FocusGrace.PAUSE_GRACE)
+
+## V5: the run is over (game over / results / abandon) or SceneTransition is mid-fade.
+func _transition_locked() -> bool:
+	return GameManager.run_ended or SceneTransition.is_busy()
 
 func _resume() -> void:
 	if options_menu.visible:

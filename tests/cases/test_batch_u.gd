@@ -1,6 +1,6 @@
 extends "res://tests/framework/test_case.gd"
 
-# Batch U (the motion layer): katana trail / dash streak / landing dust (U1), telegraph
+# Batch U (the motion layer): katana ribbon / dash streak / landing dust (U1), telegraph
 # footprints (U2), reactive shield bubbles (U3), combo flash hygiene (U4), ambient life and the
 # neon flicker (U5).
 
@@ -41,49 +41,73 @@ func _player_with_fx() -> Array:
 
 # --- U1 ------------------------------------------------------------------------------------
 
-func test_u1_the_trail_attaches_to_a_hand_bone_of_the_players_skeleton() -> void:
+func test_u1_the_ribbon_samples_a_hand_bone_of_the_players_skeleton() -> void:
 	var pair := _player_with_fx()
 	var player: PlayerController = pair[0]
 	var fx: Node = pair[1]
-	assert_not_null(fx.attachment, "The trail has a BoneAttachment3D")
+	assert_not_null(fx.attachment, "The ribbon samples a BoneAttachment3D")
 	assert_true(fx.attachment.get_parent() is Skeleton3D, "...on the player's own Skeleton3D")
 	assert_true(player.is_ancestor_of(fx.attachment), "...inside the player scene (no scene file edited)")
 	assert_true(fx.attachment.get_bone_idx() >= 0, "...bound to a real bone (idx %d)" % fx.attachment.get_bone_idx())
 	assert_eq(fx.attachment.bone_name, "mixamorig_RightHand", "The katana hand")
-	assert_eq(fx.trail.get_parent(), fx.attachment, "The ribbon rides the attachment")
-	var trail := fx.trail as GPUParticles3D
-	assert_true(trail.trail_enabled and trail.draw_pass_1 is RibbonTrailMesh, "A ribbon trail")
-	assert_eq(trail.amount, 12, "12 particles")
-	assert_almost_eq(trail.lifetime, 0.18, 0.0001, "0.18 s")
-	assert_false(trail.emitting, "Idle: not emitting")
+	assert_true(fx.ribbon is MeshInstance3D and fx.ribbon.mesh is ImmediateMesh, "V7: a script ribbon on an ImmediateMesh (no GPU particles)")
+	assert_true(fx.ribbon.top_level, "...in world space")
+	assert_false(fx.ribbon.visible, "Idle: hidden")
+	var mat := fx.ribbon_material as StandardMaterial3D
+	assert_true(mat.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED and mat.blend_mode == BaseMaterial3D.BLEND_MODE_ADD, "Unshaded additive")
 
-func test_u1_the_trail_emits_only_during_the_attack_window() -> void:
+func test_u1_the_ribbon_shows_only_during_the_attack_window() -> void:
 	var pair := _player_with_fx()
 	var player: PlayerController = pair[0]
 	var fx: Node = pair[1]
-	var trail := fx.trail as GPUParticles3D
 	fx.update_attack_window(false, false, 0.016)
-	assert_false(trail.emitting, "No hitbox live: no trail")
+	assert_false(fx.ribbon_open, "No hitbox live: no ribbon")
 	fx.update_attack_window(true, false, 0.016)
-	assert_true(trail.emitting, "Katana hitbox live: trail on")
-	assert_false(trail.heavy, "Light swing: cyan")
+	assert_true(fx.ribbon_open, "Katana hitbox live: ribbon window open")
+	assert_false(fx.heavy, "Light swing: cyan")
+	fx.add_ribbon_sample(Vector3(0, 1, 0))
+	fx.add_ribbon_sample(Vector3(0.3, 1.1, 0))
+	assert_true(fx.ribbon.visible, "Two samples in an open window: shown")
 	fx.update_attack_window(false, false, 0.02)
-	assert_true(trail.emitting, "A short hold bridges the chain's one-frame hitbox re-arm")
+	assert_true(fx.ribbon_open, "A short hold bridges the chain's one-frame hitbox re-arm")
 	fx.update_attack_window(false, false, 0.1)
-	assert_false(trail.emitting, "Window closed: trail off")
+	assert_false(fx.ribbon_open, "Window closed: ribbon off")
+	assert_false(fx.ribbon.visible, "...hidden")
+	assert_eq(fx.ribbon_points.size(), 0, "...and the samples dropped")
 	fx.update_attack_window(false, true, 0.016)
-	assert_true(trail.emitting and trail.heavy, "Bionic-arm (heavy) swing: trail on, amber")
-	assert_true(trail._material.albedo_color.r > trail._material.albedo_color.b, "...amber, not cyan")
+	assert_true(fx.ribbon_open and fx.heavy, "Bionic-arm (heavy) swing: ribbon on, amber")
+	assert_true(fx.ribbon_material.albedo_color.r > fx.ribbon_material.albedo_color.b, "...amber, not cyan")
 	fx.update_attack_window(true, false, 0.016)
-	assert_false(trail.heavy, "...and back to cyan on the next light swing")
+	assert_false(fx.heavy, "...and back to cyan on the next light swing")
 	# The live path: the real hitbox flag, polled in _process.
 	fx.update_attack_window(false, false, 1.0)
 	player.katana_hitbox.is_active = true
 	fx._process(0.016)
-	assert_true(trail.emitting, "_process reads katana_hitbox.is_active")
+	assert_true(fx.ribbon_open, "_process reads katana_hitbox.is_active")
 	player.katana_hitbox.is_active = false
 	fx._process(1.0)
-	assert_false(trail.emitting, "...and closes with it")
+	assert_false(fx.ribbon_open, "...and closes with it")
+
+## V7: the ribbon must be provable -- 8 samples give a strip of >= 14 vertices.
+func test_v7_eight_samples_build_a_ribbon_mesh_with_length() -> void:
+	var pair := _player_with_fx()
+	var fx: Node = pair[1]
+	fx.update_attack_window(true, false, 0.016)
+	for i in 8:
+		fx.add_ribbon_sample(Vector3(float(i) * 0.25, 1.0 + 0.05 * i, 0.0))
+	var mesh := fx.ribbon_mesh as ImmediateMesh
+	assert_gt(mesh.get_surface_count(), 0, "The mesh has a surface")
+	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert_true(verts.size() >= 14, "A strip of >= 14 vertices (got %d)" % verts.size())
+	assert_eq(verts.size(), 16, "Two vertices per sample")
+	assert_gt(verts[verts.size() - 1].distance_to(verts[0]), 1.5, "The ribbon has real length")
+	var head_width: float = verts[verts.size() - 2].distance_to(verts[verts.size() - 1])
+	var tail_width: float = verts[0].distance_to(verts[1])
+	assert_almost_eq(head_width, 0.25, 0.01, "Head 0.25 m wide")
+	assert_almost_eq(tail_width, 0.0, 0.01, "Tail tapers to 0")
+	fx.add_ribbon_sample(Vector3(2.5, 1.5, 0.0))
+	assert_eq(fx.ribbon_points.size(), 8, "Only the last 8 samples are kept")
+	assert_true(fx.ribbon.visible, "Shown while the window is open")
 
 func test_u1_the_dash_streak_fires_once_per_dash_or_roll() -> void:
 	var pair := _player_with_fx()
@@ -127,7 +151,7 @@ func test_u1_the_vfx_manager_owns_the_motion_layer_once() -> void:
 	add_child(vfx)
 	assert_not_null(vfx.motion_fx, "VFXManager builds the motion layer")
 	assert_not_null(vfx.neon_flicker, "...and the neon flicker")
-	assert_eq(vfx.motion_fx.get_children().size(), 2, "One pooled streak and one pooled puff (no trail without a player)")
+	assert_eq(vfx.motion_fx.get_children().size(), 3, "One script ribbon, one pooled streak and one pooled puff")
 
 # --- U2 ------------------------------------------------------------------------------------
 

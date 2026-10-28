@@ -60,7 +60,7 @@ func test_zone_10_stage_light_pulses_on_beat() -> void:
 func test_zone_10_stage_light_cycles_palette_on_downbeat() -> void:
 	var stage_light = load("res://levels/components/stage_light.gd").new()
 	add_child(stage_light)
-	stage_light._ready() # populate initial color from palette[0] without waiting on tree entry
+	# add_child already ran _ready(): the initial palette[0] colour is in place (V6: no re-ready).
 
 	if not SignalBus.downbeat.is_connected(stage_light._on_downbeat):
 		SignalBus.downbeat.connect(stage_light._on_downbeat)

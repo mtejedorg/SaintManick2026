@@ -164,11 +164,13 @@ func _start_attack(is_heavy: bool) -> void:
 		# heavy is NOT a shield-breaker (that's Battery Ram's identity alone); it only
 		# pressures shields harder via shield_damage_multiplier, and it doesn't launch
 		# (launching is the Launcher route's identity).
-		active_hitbox.damage_info.amount = 28.0 if is_heavy else 12.0
+		# V10: the plain hit values live in player.tuning, not here.
+		var tuning: PlayerTuning = player.tuning
+		active_hitbox.damage_info.amount = tuning.heavy_damage if is_heavy else tuning.light_damage
 		active_hitbox.damage_info.is_shield_breaker = false
 		active_hitbox.damage_info.shield_damage_multiplier = generic_heavy_shield_multiplier if is_heavy else 1.0
-		active_hitbox.damage_info.knockback = 8.0 if is_heavy else 4.0
-		active_hitbox.damage_info.stun = 0.4 if is_heavy else 0.25
+		active_hitbox.damage_info.knockback = tuning.heavy_knockback if is_heavy else tuning.light_knockback
+		active_hitbox.damage_info.stun = tuning.heavy_stun if is_heavy else tuning.light_stun
 		active_hitbox.damage_info.is_launcher = false
 		active_hitbox.damage_info.is_guard_breaking = false
 

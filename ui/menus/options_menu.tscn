@@ -134,6 +134,11 @@ layout_mode = 2
 toggle_mode = true
 text = "REDUCE FLASHES: OFF"
 
+[node name="HudSizeButton" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "HUD SIZE: 100 %"
+
 [node name="BackButton" type="Button" parent="Panel/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2

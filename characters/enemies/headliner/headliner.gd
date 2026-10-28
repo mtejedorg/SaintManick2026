@@ -48,6 +48,14 @@ const PHASE_2_HIT_STOP_SCALE := 0.05
 const PHASE_2_RING_RADIUS := 14.0
 const PHASE_2_RING_SECONDS := 0.45
 const PHASE_2_RING_COLOR := CharacterVisual.ENEMY_RIM_COLOR
+## V6: the phase-2 flash and the victory punctuation (flash + amber ring) in the death hold.
+const PHASE_2_FLASH_ALPHA := 0.3
+const PHASE_2_FLASH_SECONDS := 0.05
+const DEATH_FLASH_ALPHA := 0.3
+const DEATH_FLASH_SECONDS := 0.05
+const DEATH_RING_RADIUS := 10.0
+const DEATH_RING_SECONDS := 0.5
+const DEATH_RING_COLOR := Color(1.0, 0.6, 0.15)
 const ShockRingScript := preload("res://vfx/shock_ring.gd")
 ## Enraged pushes the rim hotter than the authored strength.
 const ENRAGED_RIM_STRENGTH := 5.0
@@ -248,6 +256,7 @@ func _on_health_changed(current: float, max_health: float) -> void:
 func _play_phase_2_moment() -> void:
 	SignalBus.camera_shake_requested.emit(PHASE_2_SHAKE_STRENGTH, PHASE_2_SHAKE_DURATION)
 	SignalBus.hit_stop_requested.emit(PHASE_2_HIT_STOP_DURATION, PHASE_2_HIT_STOP_SCALE)
+	SignalBus.screen_flash_requested.emit(PHASE_2_FLASH_ALPHA, PHASE_2_FLASH_SECONDS)
 	if is_inside_tree():
 		var feet := global_position - Vector3(0.0, EnemyStats.feet_offset_of(self), 0.0)
 		ShockRingScript.spawn(get_parent(), feet, PHASE_2_RING_RADIUS, PHASE_2_RING_COLOR, PHASE_2_RING_SECONDS, "PhaseTwoRing")
@@ -256,6 +265,7 @@ func _on_died() -> void:
 	hide_telegraph_zone()
 	SignalBus.boss_died.emit()
 	SignalBus.enemy_died.emit(global_position)
+	_play_victory_punctuation()
 	if stats:
 		GameManager.add_scrap(stats.scrap)
 	# Data Cores (GDD §5.1/§4.2): "Defeating one drops a Data Core" — district bosses only.
@@ -264,6 +274,14 @@ func _on_died() -> void:
 		Conductor.target_bpm = Conductor.get_resting_bpm()
 	if state_machine:
 		state_machine.transition_to("StateDead")
+
+## V6: the kill lands with a white flash and an amber shock ring at the feet (the three extra
+## death bursts come from VfxManager on boss_died).
+func _play_victory_punctuation() -> void:
+	SignalBus.screen_flash_requested.emit(DEATH_FLASH_ALPHA, DEATH_FLASH_SECONDS)
+	if is_inside_tree():
+		var feet := global_position - Vector3(0.0, EnemyStats.feet_offset_of(self), 0.0)
+		ShockRingScript.spawn(get_parent(), feet, DEATH_RING_RADIUS, DEATH_RING_COLOR, DEATH_RING_SECONDS, "VictoryRing")
 
 ## U3: a blocked hit (hit_blocked carries the hurtbox position) while this shield is up sends a
 ## ripple across the bubble toward where it landed.

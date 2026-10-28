@@ -286,7 +286,7 @@ func spend_scrap(amount: int) -> bool:
 	return false
 
 ## K11 (D20): called (deferred) by the player HealthComponent on the lethal hit. A 0.5 s
-## slow-motion hit-stop (replacing the hit's own short stop), then DEATH_BEAT_SECONDS of
+## slow-motion hit-stop (replacing the hit's own short stop), then death_beat_length() of
 ## real time later the existing respawn_or_game_over -- the respawn and the final death
 ## alike (the run_ended guard stays inside respawn_or_game_over). The lethal hit has
 ## already burst the VCR overlay (player_damaged).
@@ -294,15 +294,26 @@ func begin_death_beat() -> void:
 	_death_beat_token += 1
 	var token := _death_beat_token
 	death_beat_pending = true
+	var beat_seconds := death_beat_length()
 	var hit_stop := get_node_or_null("/root/HitStop")
 	if hit_stop:
 		hit_stop.start_hit_stop(DEATH_HIT_STOP_DURATION, DEATH_HIT_STOP_SCALE, true)
-	SignalBus.banner_requested.emit(death_banner_text(last_killer), DEATH_BEAT_SECONDS)
-	get_tree().create_timer(DEATH_BEAT_SECONDS, false, false, true).timeout.connect(func():
+	SignalBus.banner_requested.emit(death_banner_text(last_killer), beat_seconds)
+	get_tree().create_timer(beat_seconds, false, false, true).timeout.connect(func():
 		if token == _death_beat_token:
 			death_beat_pending = false
 			respawn_or_game_over()
 	)
+
+## V13: the death beat length -- Nick's PlayerTuning.death_beat_seconds (read through the
+## player in the "player" group), DEATH_BEAT_SECONDS when there is no player to ask.
+func death_beat_length() -> float:
+	var tree := get_tree()
+	if tree:
+		var player := tree.get_first_node_in_group("player")
+		if player and player.has_method("death_beat_seconds"):
+			return maxf(float(player.death_beat_seconds()), 0.0)
+	return DEATH_BEAT_SECONDS
 
 ## P9: the death-beat card ("DESTROYED BY RUNNER"; plain "DESTROYED" for an unknown cause).
 static func death_banner_text(killer: String) -> String:

@@ -20,8 +20,11 @@ var _palette_index: int = 0
 func _ready() -> void:
 	light_energy = base_energy
 	light_color = palette[0] if not palette.is_empty() else Color.WHITE
-	SignalBus.beat.connect(_on_beat)
-	SignalBus.downbeat.connect(_on_downbeat)
+	# V6: guarded, a second _ready() must not double-connect.
+	if not SignalBus.beat.is_connected(_on_beat):
+		SignalBus.beat.connect(_on_beat)
+	if not SignalBus.downbeat.is_connected(_on_downbeat):
+		SignalBus.downbeat.connect(_on_downbeat)
 
 func _on_beat(layer: String, _beat_index: int) -> void:
 	if layer != "primary":

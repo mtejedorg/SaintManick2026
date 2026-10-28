@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://levels/components/ceiling_piston.gd" id="1_zzzzz"]
 [ext_resource type="Script" path="res://_core/components/hitbox_3d.gd" id="2_zzzzz"]
-[ext_resource type="Material" path="res://assets/materials/hazard_orange.tres" id="3_band"]
+[ext_resource type="Material" path="res://assets/materials/trim_sodium.tres" id="3_band"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.5, 3.0, 1.5)

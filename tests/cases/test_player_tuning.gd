@@ -34,7 +34,8 @@ func test_the_shipped_tuning_matches_gdd_rev_3() -> void:
 		assert_almost_eq(float(t.get(key)), expected[key], 0.0001, "GDD rev. 3: %s = %s (got %s)" % [key, expected[key], t.get(key)])
 	assert_eq(t.attack_durations, [0.3, 0.3, 0.6] as Array[float], "GDD rev. 3: light windows 0.3 / 0.3 / 0.6 s")
 	assert_eq(t.heavy_attack_durations, [0.45, 0.45, 0.75] as Array[float], "GDD rev. 3 (D3): heavy windows 0.45 / 0.45 / 0.75 s")
-	assert_almost_eq(t.death_beat_seconds, GameManager.DEATH_BEAT_SECONDS, 0.0001, "The GameManager fallback agrees with the resource")
+	# V13: the fallback const is no longer pinned to the resource -- the resource drives the beat
+	# (test_the_death_beat_follows_the_tuning_resource).
 
 func test_the_shipped_tuning_validates() -> void:
 	var t: PlayerTuning = load(TUNING)

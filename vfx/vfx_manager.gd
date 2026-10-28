@@ -27,6 +27,11 @@ var _spark_pool: Array[GPUParticles3D] = []
 var _death_pool: Array[GPUParticles3D] = []
 var _spark_busy: Array[bool] = []
 var _death_busy: Array[bool] = []
+## V6: where the last enemy died (the boss death bursts land there).
+var _last_death_position: Vector3 = Vector3.ZERO
+var _has_death_position: bool = false
+## V6: pooled bursts fired over a boss kill (on top of the one its enemy_died already gives).
+const BOSS_DEATH_BURSTS: int = 3
 var motion_fx: Node = null
 var neon_flicker: Node = null
 
@@ -38,6 +43,7 @@ func _ready() -> void:
 	SignalBus.hit_blocked.connect(_on_hit_blocked)
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.shield_broken.connect(_on_shield_broken)
+	SignalBus.boss_died.connect(_on_boss_died)
 
 	motion_fx = PlayerMotionFxScript.new()
 	motion_fx.name = "PlayerMotionFx"
@@ -82,7 +88,25 @@ func _on_shield_broken(position: Vector3) -> void:
 		_fire_spark(position + Vector3.UP + jitter, COLOR_WHITE, COLOR_STEEL)
 	SignalBus.camera_shake_requested.emit(SHIELD_BREAK_SHAKE_STRENGTH, SHIELD_BREAK_SHAKE_DURATION)
 
+## V6: a boss kill adds BOSS_DEATH_BURSTS pooled death bursts around where it fell. Deferred so
+## the boss's own enemy_died (emitted just before or after boss_died) has set the position.
+func _on_boss_died() -> void:
+	call_deferred("_fire_boss_death_bursts")
+
+func _fire_boss_death_bursts() -> void:
+	if not _has_death_position:
+		return
+	for i in BOSS_DEATH_BURSTS:
+		var jitter := Vector3(randf_range(-1.5, 1.5), randf_range(0.5, 2.5), randf_range(-0.5, 0.5))
+		var idx := _first_free(_death_busy)
+		if idx == -1:
+			return
+		_death_busy[idx] = true
+		_death_pool[idx].burst(_last_death_position + jitter)
+
 func _on_enemy_died(position: Vector3) -> void:
+	_last_death_position = position
+	_has_death_position = true
 	var idx := _first_free(_death_busy)
 	if idx == -1:
 		return

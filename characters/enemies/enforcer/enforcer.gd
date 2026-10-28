@@ -28,6 +28,9 @@ const TELEGRAPH_LEAN_DEGREES := 8.0  # tips toward the model's front for the tel
 const TURN_RATE := 10.0
 
 var player: Node3D
+## V6: the kill's white flash (the Headliner uses the same numbers).
+const KILL_FLASH_ALPHA := 0.3
+const KILL_FLASH_SECONDS := 0.05
 ## U5: the shield is on/off; the HUD strip reads it as full (SHIELD_STRIP_MAX) or empty.
 const SHIELD_STRIP_MAX := 1.0
 ## Set by the states. Only a live fight reports it (the dormant boss boots in StateShield).
@@ -185,6 +188,7 @@ func _on_died() -> void:
 	SignalBus.enemy_died.emit(global_position if is_inside_tree() else Vector3.ZERO)
 	SignalBus.miniboss_defeated.emit()
 	SignalBus.boss_died.emit()
+	SignalBus.screen_flash_requested.emit(KILL_FLASH_ALPHA, KILL_FLASH_SECONDS) # V6
 	_set_entry_gate_closed(false)
 	# F3: flash + shrink, then free (rewards and signals above stay immediate).
 	if shield_bubble:

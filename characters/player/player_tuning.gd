@@ -31,14 +31,25 @@ extends Resource
 ## Q4: how long (s) each hit's step-in lasts.
 @export var attack_step_in_seconds: float = 0.1
 
+@export_group("Generic hits")
+## V10: the plain light / heavy basic-input hit values (an unmatched route; named routes use
+## their ComboDef). Damage, knockback and stun time (s) -- first-pass values from the balance tool.
+@export var light_damage: float = 12.0
+@export var heavy_damage: float = 28.0
+@export var light_knockback: float = 4.0
+@export var heavy_knockback: float = 8.0
+@export var light_stun: float = 0.25
+@export var heavy_stun: float = 0.4
+
 @export_group("Bass Drop")
 ## K6 (D8): Bass Drop radius (m) and damage.
 @export var bass_drop_radius: float = 10.0
 @export var bass_drop_damage: float = 90.0
 
 @export_group("Death and falls")
-## K11 (D20): the death beat (s) before the respawn / game over. GameManager reads it
-## through PlayerController.death_beat_seconds() when it can; its own const is the fallback.
+## K11 (D20): the death beat (s) before the respawn / game over. GameManager.begin_death_beat
+## reads it through PlayerController.death_beat_seconds() (V13); GameManager.DEATH_BEAT_SECONDS
+## is only the fallback when no player is in the tree.
 @export var death_beat_seconds: float = 0.9
 ## J4: HP a fall out of the world costs, and the grace (s) after a survivable one.
 @export var fall_damage: float = 20.0
@@ -58,6 +69,12 @@ func validate() -> bool:
 		["free_cancel_recovery_fraction", free_cancel_recovery_fraction >= 0.0 and free_cancel_recovery_fraction <= 1.0],
 		["attack_step_in", attack_step_in.size() == attack_durations.size() and attack_step_in.all(func(v: float): return v >= 0.0)],
 		["attack_step_in_seconds", attack_step_in_seconds >= 0.0 and attack_step_in_seconds <= attack_durations.min()],
+		["light_damage", light_damage > 0.0],
+		["heavy_damage", heavy_damage >= light_damage],
+		["light_knockback", light_knockback >= 0.0],
+		["heavy_knockback", heavy_knockback >= 0.0],
+		["light_stun", light_stun >= 0.0],
+		["heavy_stun", heavy_stun >= 0.0],
 		["bass_drop_radius", bass_drop_radius > 0.0],
 		["bass_drop_damage", bass_drop_damage >= 0.0],
 		["death_beat_seconds", death_beat_seconds >= 0.0],

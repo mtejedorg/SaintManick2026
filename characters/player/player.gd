@@ -649,8 +649,8 @@ func is_double_jump_available() -> bool:
 	var sm = get_node_or_null("/root/SaveManager")
 	return sm != null and sm.profile != null and sm.profile.double_jump_unlocked
 
-## K11 (D20) / Q2: the death beat length from the tuning resource (GameManager can read it
-## via has_method; its DEATH_BEAT_SECONDS stays the fallback).
+## K11 (D20) / Q2: the death beat length from the tuning resource. GameManager.begin_death_beat
+## reads it (V13) through the "player" group; its DEATH_BEAT_SECONDS is only the fallback.
 func death_beat_seconds() -> float:
 	return tuning.death_beat_seconds
 

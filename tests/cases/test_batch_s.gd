@@ -304,7 +304,7 @@ func test_s3_the_headliner_plays_on_a_stage() -> void:
 	assert_false(ring.use_collision, "The ring is paint, not a step")
 	var marquee: Label3D = slice.get_node("Z10_Dressing/Marquee")
 	assert_eq(marquee.text, "THE HEADLINER", "Marquee text")
-	assert_true(marquee.global_position.is_equal_approx(Vector3(425.0, 18.6, -6.7)), "Marquee over the far wall")
+	assert_true(marquee.global_position.is_equal_approx(Vector3(425.0, 23.0, -6.7)), "Marquee over the far wall (V2: above the truss)")
 	assert_eq(slice.get_node("Z10_Dressing/Truss/Z10_SpotL").global_position, Vector3(415.0, 14.0, -3.0), "SpotL keeps its world position under the truss")
 	assert_eq(slice.get_node("Z10_Dressing/Truss/Z10_SpotR").global_position, Vector3(435.0, 14.0, -3.0), "SpotR keeps its world position under the truss")
 	var p1: Node3D = slice.get_node("Zone10_Dock/Pillar1")

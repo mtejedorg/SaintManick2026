@@ -325,7 +325,9 @@ func test_q4_options_rows_exist_and_cycle() -> void:
 	assert_eq(flash.text, "REDUCE FLASHES: ON")
 	var back: Button = om.get_node("Panel/VBox/BackButton")
 	assert_eq(om.get_node("Panel/VBox/FullscreenToggle").get_node(om.get_node("Panel/VBox/FullscreenToggle").focus_neighbor_bottom), shake, "Gamepad: FULLSCREEN -> SHAKE")
-	assert_eq(flash.get_node(flash.focus_neighbor_bottom), back, "...-> REDUCE FLASHES -> BACK")
+	var hud_size: Button = om.get_node("Panel/VBox/HudSizeButton")
+	assert_eq(flash.get_node(flash.focus_neighbor_bottom), hud_size, "...-> REDUCE FLASHES -> HUD SIZE (V11)")
+	assert_eq(hud_size.get_node(hud_size.focus_neighbor_bottom), back, "...-> HUD SIZE -> BACK")
 
 func test_q4_theme_styles_the_sliders() -> void:
 	var theme: Theme = load(THEME_PATH)

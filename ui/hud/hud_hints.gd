@@ -15,7 +15,7 @@ const CHIPS := [
 	["dash", "SHIFT/Q DASH", "RB DASH"],
 	["roll", "CTRL/E ROLL", "B ROLL"],
 ]
-const CHIP_FONT_SIZE := 18
+const CHIP_FONT_SIZE := 20
 ## Inner padding of a chip (px) on top of the HudPanel frame.
 const CHIP_PAD_X := 10.0
 const CHIP_PAD_Y := 3.0

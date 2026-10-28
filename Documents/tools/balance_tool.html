@@ -211,10 +211,9 @@
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="alt" id="s_pD2">Apply D2: growth ×1.5</button>
         <button class="alt" id="s_pD4">Apply D4: Sweeper 15 / Ram 20</button>
-        <button class="alt" id="s_pD13">Apply boss HP: Enforcer 900 / Headliner 2800</button>
         <button class="alt" id="s_reset">Reset to shipped</button>
       </div>
-      <div class="note">Proposal values come from HANDOFF.md §3-D (D2 growth ×1.5, caps unspecified; D4 Sweeper 15 + Ram 20 = one run's Cells; boss HP 900 / 2800). They are <b>not shipped</b>: the .tres hold 20 / 25 and 600 / 1500.</div>
+      <div class="note">Proposal values come from HANDOFF.md §3-D (D2 growth ×1.5, caps unspecified; D4 Sweeper 15 + Ram 20 = one run's Cells). They are <b>not shipped</b>: the .tres hold 20 / 25. The boss-HP proposal (Enforcer 900 / Headliner 2400, Decision D13) <b>is shipped</b>, so its button was removed; the enemy .tres hold 900 / 2400.</div>
     </div>
 
     <div class="panel" style="margin-top:14px">
@@ -276,7 +275,7 @@
           <tr><td class="l">Lives → HP bars</td><td class="l">3 lives = 3 bars</td><td class="l">3 lives = 3 respawns = 4 bars (game_manager.gd:139-160)</td></tr>
           <tr><td class="l">Scrap on a death</td><td class="l">40 % of the fatal encounter</td><td class="l">every kill pays immediately; 100 % banked (editable above)</td></tr>
           <tr><td class="l">Cells costs</td><td class="l">no Cells at all</td><td class="l">Sweeper 20 + Battery Ram 25 = 45 (HANDOFF D4 text says 15 + 20 = 35)</td></tr>
-          <tr><td class="l">Boss HP</td><td class="l">threat rows only</td><td class="l">Enforcer 600, Headliner 1500 (HANDOFF boss-HP text says 900 / 2800)</td></tr>
+          <tr><td class="l">Boss HP</td><td class="l">threat rows only</td><td class="l">Enforcer 900, Headliner 2400 (Decision D13; enforcer_stats.tres / headliner_stats.tres)</td></tr>
           <tr><td class="l">Yield vs tool</td><td class="l">Slice-B scope Scrap 307, full game 556</td><td class="l">full clear 2319 → 7.6× / 4.2×; the HANDOFF “≈3.7×” does not reproduce</td></tr>
         </tbody>
       </table>
@@ -743,7 +742,6 @@ $$("#s_scope button").forEach(b=>b.onclick=()=>{
 });
 $("#s_pD2").onclick=()=>{ $("#s_growth").value=1.5; runAll(); };
 $("#s_pD4").onclick=()=>{ shopItem("swe").cost=15; shopItem("ram").cost=20; buildShop(); runAll(); };
-$("#s_pD13").onclick=()=>{ arch.enforcer.hp=900; arch.headliner.hp=2800; buildArch(); runAll(); };
 $("#s_reset").onclick=()=>{ arch=structuredClone(ARCH_DEF); shop=structuredClone(SHOP_DEF); applyDefaults(); buildArch(); buildShop(); runAll(); };
 
 applyDefaults(); buildArch(); buildShop(); runAll();

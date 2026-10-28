@@ -81,7 +81,7 @@ func test_p4_skyline_towers_are_dark_silhouettes_under_a_lit_horizon() -> void:
 				continue
 			towers += 1
 			assert_eq((n as CSGBox3D).material, dark, "%s/%s uses skyline_dark" % [group, n.name])
-	assert_eq(towers, 10, "Ten tower bodies")
+	assert_eq(towers, 11, "Eleven tower bodies (V1 added Skyline_Z7_9/Tower5 behind Zone 8)")
 	for zone in range(1, 11):
 		var horizon: Color = Atmo.get_atmosphere(zone)["sky_horizon"]
 		assert_lt(dark.albedo_color.get_luminance(), horizon.get_luminance(), "Towers are darker than the Zone %d horizon" % zone)
@@ -210,7 +210,7 @@ func test_p7_bruiser_shield_breaks_once_with_a_steel_rim_that_restores() -> void
 	var hc: HealthComponent = b.get_node("HealthComponent")
 	var visual: CharacterVisual = b.get_node("MeshInstance3D")
 	assert_eq(hc.current_shield, 80.0, "Precondition: 80 shield")
-	assert_eq(visual.get_base_rim_color(), BruiserEnemy.SHIELD_RIM_COLOR, "Shield up: steel-white rim")
+	assert_eq(visual.get_base_rim_color(), BruiserEnemy.SHIELD_RIM_COLOR, "Shield up: magenta-white rim (V4)")
 	assert_almost_eq(visual.get_base_rim_strength(), 3.5, 0.001, "...at strength 3.5")
 	var broken: Array = []
 	SignalBus.shield_broken.connect(func(p: Vector3): broken.append(p))

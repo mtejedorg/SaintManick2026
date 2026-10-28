@@ -2,7 +2,7 @@
 
 ## Project
 Godot **4.6.3** (Forward+), GDScript. 2.5D Action-Roguelite Beat'em up — this is a **3D project** filmed by a constrained camera: `CharacterBody3D`, `Area3D`, `Node3D`. Never `Node2D`/`CharacterBody2D`.
-Vertical slice (Zones 1–10) complete. Player character: Nick. Main scene: `ui/menus/title_screen.tscn`. Two entry points (owner direction 2026-10-27): **START DEMO** → loadout pick → the slice, no shop, nothing banked; **START RUN** → Level One (not built yet; stands in as Karen's Shop → the slice). Mid-term target: public demo first, then a production-quality Level One with the shop. The slice itself is `levels/slice/vertical_slice.tscn`.
+Vertical slice (Zones 1–10) complete, dressed and audited through round 4 (Oct 2026). Player character: Nick. Main scene: `ui/menus/title_screen.tscn`. Two entry points (owner direction 2026-10-27): **START DEMO** → loadout pick → the slice, no shop, nothing banked; **START RUN** → Level One (not built yet; stands in as Karen's Shop → the slice). Mid-term target: public demo first, then a production-quality Level One with the shop. The slice itself is `levels/slice/vertical_slice.tscn`.
 Design source of truth: `Documents/GDD.md`. Full architecture contracts: `Documents/CodeArchitecture.md` — read §7 (Conductor) before touching anything beat-driven.
 
 ## Stack & toolchain
@@ -41,7 +41,7 @@ test -x "$GODOT" || { echo "BINARY MISSING — abort"; exit 1; }
 grep -iE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load|SHADER ERROR|Failed loading resource|No loader found|Blender path|clash|renamed|already in the scene|Load Error" /tmp/imp.log /tmp/smoke_title.log /tmp/smoke.log
 ```
 
-Pass = exit 0, zero grep hits, **tests ≥ 200 and never decreasing** (447 as of 2026-10-27), zero-warning smoke logs apart from the three known exit-time audio-leak lines (`ObjectDB instances leaked`, `resources still in use`, `Lambda capture … freed`) — any new warning is a regression. The Zone 1 encounter now genuinely fires during the slice smoke (the player starts inside its trigger), so a spawner/encounter regression shows up here first.
+Pass = exit 0, zero grep hits, **tests ≥ 200 and never decreasing** (610 as of 2026-10-28), zero-warning smoke logs apart from the three known exit-time audio-leak lines (`ObjectDB instances leaked`, `resources still in use`, `Lambda capture … freed`) — any new warning is a regression. The Zone 1 encounter now genuinely fires during the slice smoke (the player starts inside its trigger), so a spawner/encounter regression shows up here first.
 
 **Visual gate (run after anything that touches scenes, materials, shaders, lights or models):** `"$GODOT" --path "$PROJ" res://tools/capture/capture_scene.tscn -- --out=res://Captures/<name>/` renders every zone at the real drone camera plus HUD, menus and a character lineup (window flashes ~40 s), and READ the PNGs. `tools/capture/probe_meshes.gd` (headless) prints skeleton/tris/bounds for candidate meshes; `tools/capture/mesh_gallery.gd` renders them; `tools/capture/probe_triggers.tscn` (headless) proves the player body trips the slice's triggers. `Captures/` is git-ignored. Touching models/animation? Also grep `track|bone|skeleton|clip|animation` (case-insensitive).
 

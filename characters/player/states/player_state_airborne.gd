@@ -1,5 +1,10 @@
 extends PlayerState
 
+## T4: a touchdown faster than this (m/s of downward speed) plays the "land" crouch clip,
+## fitted to LAND_FIT_SECONDS (the clip is in the library and the controller's map since R).
+const LAND_MIN_FALL_SPEED := 6.0
+const LAND_FIT_SECONDS := 0.2
+
 var is_jumping: bool = false
 
 func _init() -> void:
@@ -45,7 +50,8 @@ func physics_update(delta: float) -> void:
 		if player.has_coyote_time():
 			player.consume_jump_buffer()
 			_ground_jump()
-		elif player.can_double_jump:
+		elif player.can_double_jump and player.is_double_jump_available():
+			# Q3: GameManager (demo mode) or the profile decides the Double Jump.
 			player.consume_jump_buffer()
 			player.velocity.y = player.jump_force
 			player.can_double_jump = false
@@ -55,6 +61,7 @@ func physics_update(delta: float) -> void:
 		transition_requested.emit("StateAttack")
 		return
 		
+	var fall_speed := -player.velocity.y # move_and_slide() zeroes it on touchdown
 	player.move_and_slide()
 	
 	if player.is_on_floor():
@@ -70,3 +77,14 @@ func physics_update(delta: float) -> void:
 			transition_requested.emit("StateRun")
 		else:
 			transition_requested.emit("StateIdle")
+		# The next state's enter() has just started its own clip; the landing crouch plays
+		# over it and the controller hands back to that state's resting clip when done.
+		_play_landing(fall_speed)
+
+## T4: the impact crouch of a hard landing (no-op without the clip or a controller).
+func _play_landing(fall_speed: float) -> void:
+	if fall_speed <= LAND_MIN_FALL_SPEED:
+		return
+	var anim := _anim()
+	if anim and anim.animation_map.has("land"):
+		anim.play_fitted("land", LAND_FIT_SECONDS)

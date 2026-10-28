@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
 [ext_resource type="PackedScene" path="res://Animations/Pro Sword and Shield Pack/nick_body_v2.fbx" id="2_body"]
@@ -7,6 +7,26 @@
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
 albedo_texture = ExtResource("4_tex")
+
+; T6: the bionic arm read -- an emissive cyan sleeve + wrist ring riding the right forearm bone.
+; Sizes are metres / 2.045 (the NickBody scale): capsule r 0.06 h 0.35, ring 0.062-0.078.
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bionic"]
+resource_name = "bionic_arm_emissive_cyan"
+shading_mode = 0
+albedo_color = Color(0.55, 1, 1, 1)
+emission_enabled = true
+emission = Color(0, 0.960784, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_bionic"]
+radius = 0.0293
+height = 0.1711
+
+[sub_resource type="TorusMesh" id="TorusMesh_bionic_ring"]
+inner_radius = 0.0303
+outer_radius = 0.0381
+rings = 24
+ring_segments = 8
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
 script = ExtResource("1_visual")
@@ -20,3 +40,18 @@ surface_material_override/0 = SubResource("StandardMaterial3D_body")
 
 [node name="AnimationPlayer" parent="NickBody" index="1"]
 libraries/ = ExtResource("5_anims")
+
+[node name="BionicArm" type="BoneAttachment3D" parent="NickBody/Skeleton3D"]
+bone_name = "mixamorig_RightForeArm"
+
+[node name="BionicSleeve" type="MeshInstance3D" parent="NickBody/Skeleton3D/BionicArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0719, 0)
+cast_shadow = 0
+mesh = SubResource("CapsuleMesh_bionic")
+surface_material_override/0 = SubResource("StandardMaterial3D_bionic")
+
+[node name="BionicWristRing" type="MeshInstance3D" parent="NickBody/Skeleton3D/BionicArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.138, 0)
+cast_shadow = 0
+mesh = SubResource("TorusMesh_bionic_ring")
+surface_material_override/0 = SubResource("StandardMaterial3D_bionic")

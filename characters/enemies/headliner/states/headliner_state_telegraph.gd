@@ -9,6 +9,11 @@ func enter() -> void:
 		boss.character_visual.lean_forward(HeadlinerBoss.TELEGRAPH_LEAN_DEGREES, 60.0 / maxf(Conductor.bpm, 1.0))
 	boss.velocity.x = 0
 	boss.velocity.z = 0
+	# U2: where the melee strike will land, until the hitbox arms (StateMelee).
+	boss.show_telegraph_zone()
+
+func exit() -> void:
+	boss.hide_telegraph_zone()
 
 func physics_update(delta: float) -> void:
 	boss.apply_gravity(delta)

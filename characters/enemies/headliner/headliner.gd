@@ -18,6 +18,11 @@ extends CharacterBody3D
 
 var combat_comp: Node = null
 var player: Node3D
+## U2: the strike footprint on the floor (amber); U3: the reactive shield bubble.
+const TelegraphZoneScript := preload("res://vfx/telegraph_zone.gd")
+const ShieldBubbleFxScript := preload("res://vfx/shield_bubble_fx.gd")
+var telegraph_zone: Node3D = null
+var _shield_fx = null
 
 var is_active_boss: bool = false
 ## U5: the shield is on/off; the HUD strip reads it as full (SHIELD_STRIP_MAX) or empty.
@@ -83,6 +88,9 @@ func _ready() -> void:
 		hitbox.damage_info.stun = stats.stun
 		hitbox.damage_info.source = self
 		hitbox.is_active = false
+		telegraph_zone = TelegraphZoneScript.attach(self, hitbox, TelegraphZoneScript.COLOR_AMBER)
+	if shield_bubble:
+		_shield_fx = ShieldBubbleFxScript.new(shield_bubble)
 
 	if mesh_instance:
 		_base_scale = mesh_instance.scale
@@ -97,6 +105,7 @@ func _ready() -> void:
 
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.player_respawned.connect(_on_player_respawned)
+	SignalBus.hit_blocked.connect(_on_hit_blocked)
 
 	AudioManager.register_boss_music_players(boss_music_a, boss_music_b)
 
@@ -202,6 +211,9 @@ func _set_gate_visual(gate: Node, shown: bool) -> void:
 		visual.visible = shown
 
 func break_shield() -> void:
+	# U3: flash first - the state change below hides the bubble in the same call.
+	if _shield_fx and is_shield_active:
+		_shield_fx.break_flash()
 	if state_machine and state_machine.current_state and state_machine.current_state.has_method("on_shield_broken"):
 		state_machine.current_state.on_shield_broken()
 
@@ -241,6 +253,7 @@ func _play_phase_2_moment() -> void:
 		ShockRingScript.spawn(get_parent(), feet, PHASE_2_RING_RADIUS, PHASE_2_RING_COLOR, PHASE_2_RING_SECONDS, "PhaseTwoRing")
 
 func _on_died() -> void:
+	hide_telegraph_zone()
 	SignalBus.boss_died.emit()
 	SignalBus.enemy_died.emit(global_position)
 	if stats:
@@ -251,3 +264,22 @@ func _on_died() -> void:
 		Conductor.target_bpm = Conductor.get_resting_bpm()
 	if state_machine:
 		state_machine.transition_to("StateDead")
+
+## U3: a blocked hit (hit_blocked carries the hurtbox position) while this shield is up sends a
+## ripple across the bubble toward where it landed.
+func _on_hit_blocked(position: Vector3) -> void:
+	if _shield_fx == null or not is_shield_active or not shield_bubble or not shield_bubble.visible:
+		return
+	if not _shield_fx.is_hit_in_range(position):
+		return
+	_shield_fx.ripple(position, player.global_position if player else Vector3.ZERO)
+
+## U2: the floor footprint of the strike (vfx/telegraph_zone.gd), shown for the telegraph and
+## hidden when the hitbox arms.
+func show_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.show_telegraph(60.0 / maxf(Conductor.bpm, 1.0))
+
+func hide_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.hide_telegraph()

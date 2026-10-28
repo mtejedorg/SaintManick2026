@@ -8,11 +8,13 @@ Maintained by `artist-3d`. Check this before generating a new mesh — most dupl
 
 | File | Size | used_by | Tris | Accent |
 |---|---|---|---|---|
-| `Characters/Nick/NickProto.fbx` | — | `characters/shared/character_visual.tscn` (Runner, Bruiser — scale 1.0, 1.9 m) | ~171k, 75 bones | dark base + magenta rim (CharacterVisual tint) |
-| `enforcers_ai/clean/Enforcer_Hammer.glb` | 503 KB | `characters/enemies/enforcer/enforcer_visual.tscn` (x1.51 -> 3.0 m, 2026-10-24) | 22,280 — static, unrigged | magenta rim 3.5; body surface's baked full-body pink emission (energy 4) is overridden with dark metal in the scene, pink wire surface kept |
+| `../Animations/Pro Sword and Shield Pack/nick_body_v2.fbx` (rigged, outside 3D_Assets) | — | **INTERIM enemy body (batch R, 2026-10-27):** `characters/shared/enemy_body_visual.tscn` -> Runner (x0.95, ~1.7 m) and Bruiser (1.3/1.22/1.22, ~2.2 m); also Nick via `nick_visual.tscn`. Clips from `characters/player/nick_animations.tres`, driven by `characters/shared/enemy_animator.gd` | 11,756, 33 bones (`mixamorig_*`), Skeleton3D verified by `probe_meshes.gd` | no texture: near-black base + magenta tint/rim on enemies; stands in until generated enemy meshes land |
+| `Characters/Nick/NickProto.fbx` | — | `characters/shared/character_visual.tscn` — **no longer used by Runner/Bruiser** (batch R swapped them to the rigged body, 171,808 -> 11,756 tris each); kept for the CharacterVisual unit tests | 171,808, 75 bones, bind pose only (T-pose at runtime) | dark base + magenta rim (CharacterVisual tint) |
+| `enforcers_ai/clean/Enforcer_Hammer.glb` | 503 KB | `characters/enemies/enforcer/enforcer_visual.tscn` (x1.51 -> 3.0 m, 2026-10-24) | 22,280 — static, unrigged | magenta rim 3.5; body surface's baked full-body pink emission (energy 4) is overridden with dark metal in the scene; the 280-tri pink "Wire" surface 1 is STRIPPED at load (`stripped_surfaces`, batch R4 — the rim overlay drew it as pale bars at the feet), 22,000 tris drawn |
 | `generated/headliner_brutalizer_raw.glb` (+ `_0.png`) | 1.6 MB | `characters/enemies/headliner/headliner_visual.tscn` (rotated upright, x6 -> 6 m, 2026-10-24) | 11,276 — static, unrigged | texture kept; amber rim 4 (magenta in phase 2). Ships WITHOUT normals — CharacterVisual generates them at runtime |
 | `Props_and_Misc/dron fbx 2.fbx` | — | `characters/enemies/sniper/sniper_visual.tscn` (x22 -> ~1.1 m, 2026-10-24) | 2,552 — static, empty "Take 001" clip | dark-metal override, orange rim |
-| `Characters/Nick/nick_body_v2_0.png` | — | `characters/player/nick_visual.tscn` (texture) | n/a | unverified |
+| `Characters/Nick/nick_body_v2_0.png` | 915 KB | `characters/player/nick_visual.tscn` (texture) | n/a | **cyan #00F5FF (batch T6, 2026-10-28):** every pixel with hue 280-340 deg and saturation > 0.35 (164,567 of 1,048,576) hue-shifted to 184 deg, value kept; the rest untouched (pale low-saturation pink highlights remain). Re-import pending (done by the next `--import`). Original magenta kept as `Characters/Nick/nick_body_v2_0_magenta_backup.png` (unreferenced backup) |
+| `Characters/Nick/nick_body_v2_0_magenta_backup.png` | 904 KB | — backup of the pre-T6 magenta texture; not referenced by any scene | n/a | magenta (original) |
 
 ## Characters/ — not currently wired (check before assuming stale)
 

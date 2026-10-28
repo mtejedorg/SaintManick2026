@@ -66,5 +66,6 @@ func _deal_damage() -> void:
 		var damage_info = DamageInfo.new()
 		damage_info.amount = damage
 		damage_info.source = self
+		damage_info.is_environmental = true # Q5: a hazard tick, not an attack
 		player_health.take_damage(damage_info)
 		SignalBus.camera_shake_requested.emit(0.1, 0.2)

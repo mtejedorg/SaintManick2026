@@ -46,6 +46,7 @@ func _ready() -> void:
 		hitbox.damage_info = DamageInfo.new()
 	hitbox.damage_info.amount = damage
 	hitbox.damage_info.source = self
+	hitbox.damage_info.is_environmental = true # Q5: a hazard, never an attack
 	
 	# Create a dummy CollisionShape3D if none exists, so it can detect overlaps in tests
 	var has_shape = false

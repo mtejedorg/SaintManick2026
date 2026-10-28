@@ -21,6 +21,16 @@ enum Faction { PLAYER, ENEMY }
 ## metres at hover_hz. 0 = no hover.
 @export var hover_amplitude: float = 0.0
 @export var hover_hz: float = 1.0
+## R1: auto-play (and LOOP_LINEAR) the model's first clip when no controller drives it.
+## Off for the shared rigged enemy body: its library is Nick's, whose first clip is
+## attack_combo, and the EnemyAnimator owns playback there. Never touches a clip whose
+## owner has a PlayerAnimationController (the library is shared, so a loop mode set here
+## would leak into Nick's one-shot swings).
+@export var auto_play_clip: bool = true
+## R4: surface indices removed from every child mesh at load. A surface override cannot hide
+## geometry from the per-instance rim overlay (material_overlay draws every surface), so
+## stray surfaces (Enforcer_Hammer.glb's 280-tri "Wire" surface 1) are dropped instead.
+@export var stripped_surfaces: PackedInt32Array = PackedInt32Array()
 
 const PLAYER_RIM_COLOR := Color(0.0, 0.960784, 1.0, 1.0)     # #00F5FF cyan
 const ENEMY_RIM_COLOR := Color(1.0, 0.0, 0.666667, 1.0)      # #FF00AA magenta
@@ -69,6 +79,7 @@ func _ready() -> void:
 	skinned_meshes.clear()
 	_find_mesh_instances_recursive(self)
 	for sm in skinned_meshes:
+		_strip_surfaces(sm)
 		_ensure_normals(sm)
 	pivot = get_node_or_null("Pivot") as Node3D
 	if pivot:
@@ -95,22 +106,63 @@ func _ready() -> void:
 		sm.material_overlay = _rim_material_instance
 
 	var anim_player := _find_animation_player_recursive(self)
-	if anim_player:
+	var driven := owner != null and owner.has_node("PlayerAnimationController")
+	if anim_player and auto_play_clip and not driven:
+		# Auto-play the model's own clip only when no controller drives it.
 		var anim_list := anim_player.get_animation_list()
 		if anim_list.size() > 0:
 			var clip_name: String = "Animation" if "Animation" in anim_list else anim_list[0]
 			var anim := anim_player.get_animation(clip_name)
 			if anim:
 				anim.loop_mode = Animation.LOOP_LINEAR
-			if owner == null or not owner.has_node("PlayerAnimationController"):
-				# Auto-play the model's own clip only when no controller drives it.
-				anim_player.play(clip_name)
+			anim_player.play(clip_name)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_release_surface_overrides()
+
+## T3: drop the per-instance surface overrides before the node tree is torn down. Freeing a
+## Nick body and an enemy body on the shared rigged mesh in one go made the dummy (headless)
+## renderer query a material it had already released ("Parameter material is null" x17 in the
+## test log); the real renderer never complained. Children are still alive in PREDELETE.
+func _release_surface_overrides() -> void:
+	for sm in skinned_meshes:
+		if is_instance_valid(sm) and sm.mesh != null:
+			for i in sm.mesh.get_surface_count():
+				if sm.get_surface_override_material(i) != null:
+					sm.set_surface_override_material(i, null)
 
 func _find_mesh_instances_recursive(node: Node) -> void:
 	for child in node.get_children():
-		if child is MeshInstance3D:
+		# T6: a mesh riding a BoneAttachment3D (Nick's emissive bionic arm) is an accessory with
+		# its own look -- no tint override, no rim overlay.
+		if child is MeshInstance3D and not (child.get_parent() is BoneAttachment3D):
 			skinned_meshes.append(child)
 		_find_mesh_instances_recursive(child)
+
+func _strip_surfaces(sm: MeshInstance3D) -> void:
+	var src := sm.mesh
+	if stripped_surfaces.is_empty() or src == null or sm.skin != null:
+		return
+	var keep: Array[int] = []
+	for s in src.get_surface_count():
+		if not stripped_surfaces.has(s):
+			keep.append(s)
+	if keep.size() == src.get_surface_count():
+		return
+	var overrides: Array[Material] = []
+	for s in keep:
+		overrides.append(sm.get_surface_override_material(s))
+	# Per instance on purpose: a statically cached copy outliving its instance made the
+	# dummy (headless) renderer error on free. Only the single Enforcer uses this.
+	var out := ArrayMesh.new()
+	for s in keep:
+		out.add_surface_from_arrays(src.surface_get_primitive_type(s), src.surface_get_arrays(s))
+		out.surface_set_material(out.get_surface_count() - 1, src.surface_get_material(s))
+	sm.mesh = out # set_mesh keeps the override slots below the new count
+	for i in keep.size():
+		if sm.get_surface_override_material(i) != overrides[i]:
+			sm.set_surface_override_material(i, overrides[i])
 
 func _ensure_normals(sm: MeshInstance3D) -> void:
 	var src := sm.mesh
@@ -162,7 +214,7 @@ func flash_rim(color: Color, strength: float, seconds: float, hold_fraction: flo
 	if _rim_material_instance == null:
 		return
 	_kill_rim_tween()
-	_set_rim(color, strength)
+	_set_rim(color, flash_strength_for(color, strength))
 	if not is_inside_tree():
 		return
 	var hold := seconds * clampf(hold_fraction, 0.0, 1.0)
@@ -171,13 +223,26 @@ func flash_rim(color: Color, strength: float, seconds: float, hold_fraction: flo
 	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_color", _base_rim_color, fade).set_delay(hold)
 	_rim_tween.tween_property(_rim_material_instance, "shader_parameter/rim_strength", _base_rim_strength, fade).set_delay(hold)
 
+## T4: the Reduce Flashes accessibility option halves the white-hot flashes (the telegraph
+## and the hit flash) and keeps their colour. Coloured pulses are left alone.
+const REDUCED_FLASH_FACTOR := 0.5
+
+func flash_strength_for(color: Color, strength: float) -> float:
+	if color.is_equal_approx(Color.WHITE) and GameManager.has_method("reduce_flashes") and GameManager.reduce_flashes():
+		return strength * REDUCED_FLASH_FACTOR
+	return strength
+
 ## H4: the telegraph holds white-hot for this share of its beat, so the tell is still at
 ## full strength when the hitbox arms on the next beat.
 const TELEGRAPH_HOLD_FRACTION := 0.9
 
 ## The shared enemy telegraph: white-hot rim for one beat of the world's current tempo.
+## R2: also announces the tell globally (SignalBus.enemy_telegraphed) for audio/HUD cues.
 func flash_telegraph() -> void:
 	flash_rim(TELEGRAPH_RIM_COLOR, TELEGRAPH_RIM_STRENGTH, 60.0 / maxf(Conductor.bpm, 1.0), TELEGRAPH_HOLD_FRACTION)
+	if SignalBus.has_signal("enemy_telegraphed"):
+		var enemy: Node3D = owner as Node3D if owner is Node3D else get_parent() as Node3D
+		SignalBus.emit_signal("enemy_telegraphed", enemy)
 
 ## The authored resting rim: the rim_color export, or the faction colour when unset.
 func get_default_rim_color() -> Color:
@@ -230,8 +295,21 @@ func play_death(seconds: float = 0.25) -> Tween:
 			t.kill()
 	var target: Node3D = pivot if pivot else self
 	var death_tween := create_tween()
+	# R2: an enemy with an EnemyAnimator plays its death clip first (death_anim_seconds),
+	# then shrinks — the owner frees on this tween's finish, so the delay covers both.
+	var anim_delay := _death_anim_seconds()
+	if anim_delay > 0.0:
+		death_tween.tween_interval(anim_delay)
 	death_tween.tween_property(target, "scale", target.scale * DEATH_SCALE_FRACTION, seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	return death_tween
+
+## The owner's EnemyAnimator death clip time (read via has_node; 0 without an animator).
+func _death_anim_seconds() -> float:
+	var host: Node = owner if owner else get_parent()
+	if host == null or not host.has_node("EnemyAnimator"):
+		return 0.0
+	var seconds: Variant = host.get_node("EnemyAnimator").get("death_anim_seconds")
+	return float(seconds) if seconds != null else 0.0
 
 ## Returns the default rim colour for this character's faction.
 func get_faction_rim_color() -> Color:

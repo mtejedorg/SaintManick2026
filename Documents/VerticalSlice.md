@@ -28,48 +28,58 @@
 - **Geometry:** 30 m straight corridor, no hazards. Depth locked. A pair of 12 m tall holo-gates (x −1.5 and x 28) soft-locks the corridor during the encounter and opens on clear with a "GO ->" card.
 - **Enemies:** 3 Runners, one wave each, from two spawn points.
 - **Purpose:** teach Light/Heavy, Jump and Dash/Roll against beat-telegraphed attacks. Control prompts show here until the player's first Zone 2 entry ever (D34).
+- **Batch S dressing:** a sodium-lit street — a back-lane sidewalk with three roll-shutter shopfronts (sodium slats), two sodium street lamps (x 6 and x 20), a parked van silhouette with a red tail strip at x 25, and the neon signs RAMEN 24H and PAWN over the shutters (Label3D Orbitron; the ComfyUI sign art was not generated). Waves now arrive **staged on the beat** (S2): one enemy at a time, half a beat apart (landings quantised to the primary beat, so two per beat), each landing spot ringed in magenta one beat early; side-scroll waves **drop** from 6 m above their marker with a small shake on touchdown, the top-down rims **beam in** (a short magenta column + scale-in). The wave only clears once its last arrival is dead; a respawn cancels every pending arrival.
 
 ### Zone 2 — SECTOR 02 · Piston Gauntlet (2.5D)
 - **Geometry:** 60 m of six disconnected 5 m platforms over a toxic pit, with a short depth dip in the rail; a seventh platform bridges the last gap to Zone 3.
 - **Hazards:** 6 ceiling pistons that cock back on beat 4 and **slam on the downbeat**, cascading one beat apart; the last three accelerate to every two beats as Nick approaches. The pit deals **5 damage per beat** while Nick (or a knocked-in grunt) stands in it; its floor lets him climb back out.
 - **Enemies:** 3 Runners, on platforms 2, 4 and 6 — fight them or juggle them into the pit.
+- **Batch S dressing:** an overhead gantry (y 6.5, x 30–97.5, cyan edge) with an arm down to every piston, sodium/black hazard striping on each platform's front edge, and two green-lit toxic vats on the far side of the pit (x 50, x 72).
 
 ### Zone 3 — SECTOR 03 · Security Lock (top-down)
 - **Geometry:** 25×25 m room. Entering the centre locks both blast doors (red holo gates) and the drone climbs to the top-down view (offset (0, 12, 4.5), cyan ground ring under Nick); depth movement unlocks, jump is suppressed.
 - **Enemies:** wave 1 — 4 Runners from the corners; wave 2 — 3 Runners (the Bruiser's debut moved to Zone 4, D9/D16). Dodge bombs while you fight.
 - **Hazard:** the bomb grid — a 5×5 checkerboard; one set warns for a measure (amber) and ignites on the next downbeat (red), so safe cells alternate **every measure**. Active only while the encounter runs.
 - **Exit:** gates open; the drone returns to 2.5D and depth re-locks.
+- **Batch S dressing (read from above):** a 6 m magenta floor seal round the room centre, three red chevrons on the floor toward each blast door, and four corner wall cameras with red lenses. Both waves beam in from the rim (S2).
 
 ### Zone 4 — SECTOR 04 · Scaffolding & Vista (2.5D)
 - **Geometry:** ~50 m of catwalk (x 122.5–173) with two plank gaps and recovery ledges beneath (plank gaps: Decision D24 deferred), soft-locked by a 12 m tall holo-gate pair (x 130 and x 160) that opens on clear with the GO card. The **Central Tower** and a skyline of neon-strip towers stand in the fog behind.
 - **Enemies:** **one wave** — 3 Runners + 1 Bruiser (the Bruiser's debut) + **2 Snipers on the elevated catwalks**. The Snipers are non-blocking (they do not hold the gate; any left alive are removed silently when the wave clears). Snipers aim at Nick in 3D (beat 3 aim, beat 4 lock, beat 1 fire; 0.6 m live beam = hitbox). *(Composition differs from the original 4R+2S brief by the Bruiser — Decisions D9/D16.)*
+- **Batch S dressing:** X-braces under the sniper catwalks and two sodium work lights hanging from the catwalk edge. The wave drops in on the beat; the catwalk Snipers drop onto their catwalks (S2).
 
 ### Zone 5 — SECTOR 05 · Neon Market (2.5D)
 - **Geometry:** a tiered street descending over two ramps (top tier to lower tier, about 3 m) and an exit ramp down to the plaza level; market stalls and crates (static in the slice). Soft-locked by a 12 m tall holo-gate pair (x 166 and x 202) that opens on clear with the GO card.
 - **Enemies:** **one wave** — 3 Runners + 1 Bruiser. *(Decisions D9/D16.)*
+- **Batch S dressing:** sloped canopies with magenta edges over the back-lane stalls and crates, a sodium lantern string (y 3.5) over the top tier, and three vertical neon signs — KAREN'S, SYNTH and NO EXIT. The wave drops in on the beat (S2).
 
 ### Zone 6 — SECTOR 06 · Plaza Brawl (top-down)
 - **Geometry:** a 30×30 m plaza (sunk 4 m) sealed by cyan holo walls at both ends; four cover pillars.
 - **Enemies:** wave 1 — 8 Runners + 2 Bruisers from ten points around the rim; wave 2 — 3 Snipers. A pure crowd fight for the Sweeper and the roll.
+- **Batch S landmark:** a 6 m amber hologram of the Headliner on a plinth against the north wall (x 225, z −11) — the boss foreshadowed before the player meets him (read-only visual, no hurtbox, no collision). Both waves beam in from the rim (S2).
 
 ### Zone 7 — SECTOR 07 · Enforcer (2.5D)
 - **Geometry:** a 40 m strip (x 240–280) after the plaza, sealed by an entry gate behind Nick once the fight starts and a tall barrier (x 279) that stops him skipping it and opens when the Enforcer dies; 3 Runners guard the approach (they wake with the zone).
 - **Mini-boss:** **The Rhythm Enforcer** — HP 900, 22 per hit, 3-hit beat bursts (GDD §4.3). Drops 300 Scrap + 15 Cells. Its death opens the barrier and arms the escape.
+- **Batch S dressing:** a concert rig — two speaker stacks with magenta grilles at the ends of the back lane, a 34 m truss over them (7 m above the deck), and four beat-pulsed StageLights.
 
 ### Zone 8 — SECTOR 08 · Escape (the Market Purge)
 - **Trigger:** the instant the Enforcer dies, a visible magenta kill wall starts 10 m behind Nick and advances at **5.5 m/s** (15 damage per beat on contact). Nick at full run (8 m/s) outpaces it by roughly 9 s.
 - **Course (~119 m, from the Zone 7 barrier at x 279 to the end trigger at x 398):** two blast doors (x 295 and x 330) that each close every 4 beats for 2 beats (12 damage), the second two beats out of phase; two falling signs (x 310 and x 360) on an 8-beat cycle with a 2-beat flashing warning (15 damage), the second four beats out of phase; a collapsing platform (x 313; shakes 0.5 s, falls, resets after 3 s); two floors (30 m and 90 m) separated by a 5 m gap; and 2 Runners posted at the first door and the gap. Single jump suffices.
 - **Reward:** 10 Cells at the end trigger. *(Decision D10 applied: the course was ~60 m at 3 m/s.)*
+- **Batch S climax (S5):** the last 38 m are no longer empty — a **third blast door at x 378** (4-beat cycle, one beat out of phase, 2 beats shut, 12 damage) and a **third falling sign at x 388** (8-beat cycle, offset 6, 2-beat warning), and the elevator mouth glows magenta ahead (gap light at x 405, energy 3). Margin: the wall (x 275, 5.5 m/s) reaches the end trigger at ~22.4 s; Nick at 8 m/s from x 280 needs ~14.8 s plus at most 1 s per door (~17.8 s), ~4.6 s to spare. Red rotating beacons every 15 m (x 285–390) on posts behind the floor flare on every beat.
 
 ### Zone 9 — SECTOR 09 · Ascent (the elevator)
 - **Geometry:** an 8×6 m freight elevator (entry trigger ~x 407, platform x 409) rising 19 m to the rooftop. Boarding hands Nick the elevator's own rail; once the platform has reached the top **and** both waves are dead, the rail hands him to the rooftop. *(Zones 9–10 moved +60 m east with the longer Zone 8 course.)*
-- **Waves:** 3 Runners · then 2 Bruisers + 2 Runners after a 5 s cooldown, with shield-regen windows between. Dying on the elevator resets it to the bottom.
+- **Waves:** 3 Runners · then 2 Bruisers + 2 Runners after a 1 s breath (Batch S: they drop in during the climb), with shield-regen windows between. Dying on the elevator resets it to the bottom.
 - **Reward:** 10 Cells.
+- **Batch S ride (S4):** the elevator now **stops**: it climbs to y 5 and lurches to a halt (shake + the platform light stutters for 3 beats) while wave 1 is fought, climbs to y 10 as wave 2 **drops in out of the shaft from 8 m above**, and makes the last leg to y 14.5 only once wave 2 is dead (completion, checkpoint and dock handover unchanged; 1 s breath between waves). Two lit floors slide past (window bands at y 2 and y 9) and Orbitron floor numbers B2 / B1 / G / 01 / ROOF mark the climb.
 
 ### Zone 10 — SECTOR 10 · The Headliner
 - **Geometry:** a 25×14 m rooftop dock (centre x 425; dock trigger x 417); a low holo rail on the camera side, a gate that seals behind Nick, beat-animated stage lighting.
 - **Boss:** **The Headliner** — HP 2400, phase 2 at 50 % with the top-down projection storm at 160 BPM, overheating after 24 beats if no shield-breaker lands; Enraged melee finish (GDD §4.4). Drops 1000 Scrap + 1 Data Core.
 - **Victory:** 2.5 s hold → results screen → shop.
+- **Batch S stage (S3):** the dock is a stage — an amber 5 m ring on the boss's phase-2 spot (x 425), a "THE HEADLINER" marquee over the far wall that turns from amber to magenta when phase 2 triggers (back to amber on a boss reset), four speaker stacks at the floor corners with beat-pulsed StageLights, a 25 m truss at y 21 carrying the two volumetric spots (same world positions), the two pillars moved to the symmetric back corners (x 415 / 435, z −5), and a HEADLINER LIVE sign.
 
 ---
 

@@ -1,5 +1,10 @@
 extends PlayerState
 
+## T4: releasing the stick at more than this horizontal speed (m/s) plays the "run_stop"
+## plant, fitted to RUN_STOP_FIT_SECONDS, over the Idle state's own clip.
+const RUN_STOP_MIN_SPEED := 4.0
+const RUN_STOP_FIT_SECONDS := 0.15
+
 func _init() -> void:
 	anim_key = "run"
 
@@ -24,7 +29,9 @@ func physics_update(delta: float) -> void:
 		if player.current_path == null:
 			# H3: top-down release -- start braking z here too (Idle finishes the job).
 			player.velocity.z = move_toward(player.velocity.z, 0, player.friction * delta)
+		var stop_speed := Vector2(player.velocity.x, player.velocity.z).length()
 		transition_requested.emit("StateIdle")
+		_play_run_stop(stop_speed)
 		return
 		
 	player.move_and_slide()
@@ -48,3 +55,11 @@ func physics_update(delta: float) -> void:
 	if player.take_buffered_attack():
 		transition_requested.emit("StateAttack")
 		return
+
+## T4: the plant of a hard stop (no-op without the clip or a controller).
+func _play_run_stop(speed: float) -> void:
+	if speed <= RUN_STOP_MIN_SPEED:
+		return
+	var anim := _anim()
+	if anim and anim.animation_map.has("run_stop"):
+		anim.play_fitted("run_stop", RUN_STOP_FIT_SECONDS)

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RunBooster" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://_core/persistence/run_booster.gd" id="1_booster"]
+
+[resource]
+script = ExtResource("1_booster")
+id = "tempo_shield"
+display_name = "Tempo Shield"
+description = "+50 % shield"
+effect = 0
+value = 1.5

@@ -21,12 +21,19 @@ var shake_offset: Vector3 = Vector3.ZERO
 
 @onready var state_machine: StateMachine = $StateMachine
 
+## U5: the ambient-life emitter (cyan dust / rain / magenta motes per zone) rides the camera.
+const AMBIENT_PARTICLES_PATH := "res://vfx/ambient_particles.tscn"
+
 func _ready() -> void:
 	SignalBus.camera_shift_requested.connect(_on_camera_shift_requested)
 	SignalBus.camera_shake_requested.connect(_on_camera_shake_requested)
 	state_machine.process_priority = -1
 	state_machine.process_physics_priority = -1
 	base_position = global_position
+	if ResourceLoader.exists(AMBIENT_PARTICLES_PATH):
+		var ambient := (load(AMBIENT_PARTICLES_PATH) as PackedScene).instantiate()
+		ambient.name = "AmbientParticles"
+		add_child(ambient)
 
 func _physics_process(delta: float) -> void:
 	if shake_timer > 0.0:
@@ -50,7 +57,12 @@ func _physics_process(delta: float) -> void:
 ## 0.05) never cancels a running stronger one (piston 0.4, Bass Drop 0.3): it only replaces
 ## the shake when it is at least as strong as the current decayed strength; otherwise the
 ## stronger shake keeps going, stretched to the longer remaining time.
+## Q5 (accessibility): every request is scaled by GameManager.shake_multiplier() (the
+## options' screen-shake step) when it exists; 0 = no shake at all.
 func _on_camera_shake_requested(strength: float, duration: float) -> void:
+	strength *= shake_multiplier()
+	if strength <= 0.0:
+		return
 	var current := current_shake_strength()
 	if strength >= current:
 		shake_strength = strength
@@ -62,6 +74,13 @@ func _on_camera_shake_requested(strength: float, duration: float) -> void:
 		shake_strength = current
 		shake_duration = duration
 		shake_timer = duration
+
+## The player's screen-shake setting (1.0 without a GameManager that offers one).
+func shake_multiplier() -> float:
+	var gm := get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("shake_multiplier"):
+		return maxf(0.0, float(gm.shake_multiplier()))
+	return 1.0
 
 ## The decayed amplitude of the running shake (0 when none).
 func current_shake_strength() -> float:
@@ -81,7 +100,7 @@ func snap_to_mode(top_down: bool) -> void:
 	if state_machine.current_state == state_machine.states.get(mode):
 		state_machine.current_state.enter() # already there — re-apply offset/rotation/jump
 	else:
-		state_machine._on_transition_requested(mode)
+		state_machine.transition_to(mode)
 
 ## True while the camera FSM is tweening between modes.
 func is_shifting() -> bool:
@@ -102,5 +121,5 @@ func _on_camera_shift_requested(top_down: bool, target_path: Path3D, transition_
 	var transitioning_state = state_machine.states.get("transitioning")
 	if transitioning_state:
 		transitioning_state.setup_transition(top_down, target_path, transition_time)
-		state_machine._on_transition_requested("Transitioning")
+		state_machine.transition_to("Transitioning")
 

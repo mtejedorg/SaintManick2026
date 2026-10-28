@@ -46,8 +46,8 @@ func physics_update(delta: float) -> void:
 		player.set_dodge_iframes(false) # K8: the vulnerable tail collides with enemies again
 
 	var path_dir = player.get_path_direction(roll_direction)
-	player.velocity.x = path_dir.x * player.roll_speed
-	player.velocity.z = path_dir.z * player.roll_speed
+	player.velocity.x = path_dir.x * player.tuning.roll_speed
+	player.velocity.z = path_dir.z * player.tuning.roll_speed
 
 	player.move_and_slide()
 

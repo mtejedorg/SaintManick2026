@@ -92,24 +92,44 @@ The 2.5D ↔ top-down shift is a first-class state machine, modeled with the sam
 - **States:** `Sidescroll`, `Transitioning`, `TopDown`.
 - **The Pattern:** `drone_camera.gd` hosts a `CameraStateMachine`. Trigger volumes (`Area3D`) in the level emit a request; the machine `Tween`s the camera transform over the transition and, on completion, flips the player's movement-constraint flag (plane-locked ↔ free-roam) and suppresses/enables jump.
 - **Decoupling:** Levels never move the camera directly — they emit a signal the camera FSM responds to.
+- **The handshake (batch H, Oct 2026):** when the shift lands the camera FSM emits `SignalBus.camera_shift_finished(top_down)`. Top-down encounters spawn their first wave and unlock their gates only on that signal (gates lock immediately); a checkpoint taken mid-shift records the *destination* mode. Nothing else may guess "the shift is over" from a timer.
+- **Side-scroll framing (batch P):** the side-scroll state leads the player by 2.5 m in the facing direction and holds the camera height while Nick is airborne (2.5 m dead zone), so the ground never jumps on a hop. Top-down framing is unchanged.
 
 ---
 
 ## 10. Combat Contract: Hitboxes, Hurtboxes & Damage
 Standardize how damage flows so every attacker/victim is interchangeable.
 - **Hurtbox / Hitbox:** Reusable component nodes built on `Area3D`. A `Hitbox` (on an attack) overlaps a `Hurtbox` (on a victim) and calls `hurtbox.take_hit(damage_info)`.
-- **DamageInfo:** A lightweight `Resource` (or `RefCounted`) carrying `amount`, `knockback`, `stun`, `is_shield_breaker`, `source`. No raw ints passed around.
+- **DamageInfo:** A lightweight `RefCounted` carrying `amount`, `knockback`, `stun`, `is_shield_breaker`, `source`, `ignores_iframes`, `is_environmental`. No raw ints passed around.
 - **Death rule lives in one place:** The `HealthComponent` implements the universal rule (shield → HP; HP 0 → lose a life & respawn; 0 HP + 0 lives → permadeath) and emits `SignalBus.player_died` / `player_life_lost`. Hazards and QTE failures route through the *same* component — never a separate code path.
+- **The death sequence (batches J/K/P):** lethal hit → `HealthComponent` emits `player_died`, calls `GameManager.record_lethal_hit(damage_info)` (the killer's name) and `call_deferred`s `GameManager.begin_death_beat()` — the chain must never run inside the physics flush (§13). The death beat holds a 0.9 s real-time slow-motion stop (`DEATH_BEAT_SECONDS`, a banner "DESTROYED BY <killer>") while the player sits in `StateDead` with input locked; then `respawn_or_game_over()` spends a life, emits `player_life_lost`, the respawn banner, teleports to the checkpoint and emits `player_respawned`, or ends the run. Every deferred step carries a token (`_death_beat_token`); `cancel_death_beat()` (new run, abandon) invalidates it. Tests that kill Nick `await` one process frame before asserting.
+- **Three kinds of invulnerability, never merged:** dodge i-frames (`Player.set_dodge_iframes`, which also drops the enemy-body layer from Nick's collision mask for the dodge only — restored on respawn); respawn/fall **grace** (`HealthComponent.grace_invincible`, granted by `GameManager.grant_respawn_grace`, weakref-safe, never touches the mask); and `DamageInfo.ignores_iframes` (a fall off the edge still costs HP through i-frames but not through grace). `DamageInfo.is_environmental` marks hazard ticks (pit) so a zero-knockback, zero-stun *attack* is still an attack.
+- **Shields:** `HealthComponent.max_shield` defaults to 0; shields are explicit (player from GameManager, Bruiser from its stats). A hit fully absorbed by a shield emits `hit_blocked`, not `hit_landed`; the shield crossing to 0 emits `shield_broken(position)` once (steel burst, shake, SFX, rim restores).
+- **Hit feedback is graded by `DamageInfo.amount`** in `HitStop` (light / heavy / finisher / kill), with the merge rule "longer and deeper wins"; a `replace` stop exists only for the death beat.
 
 ---
 
 ## 11. Persistence (SaveManager)
 Meta-progression (Scrap, permanent upgrades, unlocked combos, Run Booster slots) must survive death and quit.
 - **The Pattern:** A `SaveManager.gd` autoload reads/writes a single `save_data.tres` (or JSON) under `user://`.
-- **Rule:** Only the SaveManager touches `user://`. Shop purchases mutate an in-memory `PlayerProfile` resource and request a save; runs read from it on start. The active run's volatile state (current HP, lives, run scrap) is **not** persisted — only meta-progression is.
+- **Rule:** Only the SaveManager touches `user://`. Shop purchases mutate an in-memory `PlayerProfile` resource and request a save; runs read from it on start. The active run's volatile state (current HP, lives, run scrap) is **not** persisted — only meta-progression is. Writes are atomic with a `.bak` (batch H).
+- **Demo mode (batch O, owner direction 2026-10-27):** `GameManager.start_new_run(demo := true)` sets `demo_mode`; a demo run banks nothing and saves nothing except settings (`post_run_scene()` returns the title, the shop otherwise; `_bank_run_currencies` is a no-op; `seen_controls`/hints stay in memory). Every route and Double Jump count as unlocked in a demo. Code that writes the profile must check `demo_mode` first.
+- **Settings** (volumes, fullscreen, accessibility toggles) live in the profile and are applied by `SaveManager.apply_settings()` at autoload `_ready` (the title re-applies idempotently), so a scene launched directly still honours them.
+- **Tests are hermetic:** the test runner swaps `SaveManager.save_path` to a temp profile before the first case and restores it afterwards; a test must never read or write `user://save_data.tres`.
 
 ---
 
 ## 12. Performance: Pooling for Bullet-Hell
 Top-down phases spawn many projectiles; GDScript `instantiate()`/`queue_free()` churn will stutter.
 - **Rule:** Projectiles (and other high-frequency spawns) come from an **object pool** — pre-instantiated, reset and reused, never freed mid-combat. Consider `MultiMeshInstance3D` for dense, identical bullet visuals.
+
+---
+
+## 13. The Physics-Flush Rule, Layers and Deferred Work (added Oct 2026 — every bite is in HANDOFF §4)
+- **Never mutate physics state inside a physics callback.** `Area3D` `area_entered`/`body_entered` handlers (hitboxes, triggers, pools) must not `add_child`, free, or flip `monitoring`/`monitorable`/`use_collision` directly — use `set_deferred` / `call_deferred`. The lethal-hit → respawn chain is deferred for this reason (§10); `ObjectPool` and `ZoneEncounter` gates use `set_deferred`.
+- **Every deferred spawn carries a generation token** (`ZoneEncounter._generation`, the elevator start, the death beat, onboarding prompts, staggered wave entries): a respawn or a new run bumps the generation and the stale callback returns early. No "is this still valid?" guessing by node state.
+- **Physics layers:** world 1 · player body 2 · enemy bodies 3 (mask world + player + enemies) · hitboxes/hurtboxes 10–14. Any `Area3D` that must detect Nick's *body* masks layer 2; hitboxes mask the hurtbox layers only. `tools/capture/probe_triggers.tscn` proves the slice's triggers fire.
+- **Timers are pause-safe and time-scale-safe by intent:** gameplay timers pause with the tree; the death beat, focus grace and hit-stop use real seconds (`ignore_time_scale`) so a hit-stop can never stretch them.
+- **Rails:** `player.current_path` is a setter that eases Nick onto the rail; top-down passes `null`; rail ends must overlap the next trigger (`test_rail_reachability`). Gates and barriers stand at least 11.5 m above the floor (the double jump reaches ~11 m; `test_level_fixes` probes every gate).
+- **Tuning is data:** player numbers live in `characters/player/player_tuning.tres` (`PlayerTuning`), enemy numbers in `*_stats.tres`, combos in `ComboDef` resources, run boosters in `_core/persistence/run_boosters/`. Tests assert invariants against the shipped resources, never hand-copied values; `Documents/tools/balance_tool.html` mirrors the resources and `test_balance_tool_parity` keeps it honest.
+- **Global signals added since §5 was written:** `camera_shift_finished`, `banner_requested`, `boss_shield_changed`, `beat_dodge_landed`, `shield_broken`, `screen_flash_requested`, `enemy_telegraphed`. Each has a single emitter and documented listeners; a parent↔child concern never goes on the bus.

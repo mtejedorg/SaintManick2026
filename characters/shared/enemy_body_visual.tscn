@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://characters/shared/character_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://Animations/Pro Sword and Shield Pack/nick_body_v2.fbx" id="2_body"]
+[ext_resource type="AnimationLibrary" path="res://characters/player/nick_animations.tres" id="3_anims"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_enemy_body"]
+resource_name = "enemy_body_near_black"
+albedo_color = Color(0.05, 0.05, 0.07, 1)
+roughness = 0.55
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+script = ExtResource("1_visual")
+auto_play_clip = false
+
+[node name="Body" parent="." instance=ExtResource("2_body")]
+transform = Transform3D(2.045, 0, 0, 0, 2.045, 0, 0, 0, 2.045, 0, -0.95, 0)
+
+[node name="Mesh_0" parent="Body/Skeleton3D" index="0"]
+surface_material_override/0 = SubResource("StandardMaterial3D_enemy_body")
+
+[node name="AnimationPlayer" parent="Body" index="1"]
+libraries/ = ExtResource("3_anims")

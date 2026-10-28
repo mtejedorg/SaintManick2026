@@ -322,7 +322,7 @@ func test_p10_the_shock_ring_is_hdr_and_fades_out() -> void:
 	await get_tree().create_timer(0.1).timeout
 	assert_almost_eq(mat.albedo_color.a, 1.0, 0.0001, "No fade during the first 60 %")
 	await get_tree().create_timer(0.16).timeout
-	assert_lt(mat.albedo_color.a, 0.6, "Fading over the last 40 % (a %.2f)" % mat.albedo_color.a)
+	assert_lt(mat.albedo_color.a, 0.6, "Fading over the last 40 %% (a %.2f)" % mat.albedo_color.a)
 	await get_tree().create_timer(0.15).timeout
 	assert_false(is_instance_valid(ring), "The ring frees itself")
 

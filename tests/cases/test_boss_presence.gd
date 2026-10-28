@@ -24,11 +24,13 @@ func test_enforcer_wire_surface_is_hidden() -> void:
 	var visual: Node3D = load("res://characters/enemies/enforcer/enforcer_visual.tscn").instantiate()
 	add_child(visual)
 	var body: MeshInstance3D = visual.get_node("Pivot/EnforcerHammer/Enforcer_Hammer")
-	var wire := body.get_surface_override_material(1) as StandardMaterial3D
-	assert_not_null(wire, "The pink wire surface has an override")
-	if wire:
-		assert_eq(wire.transparency, BaseMaterial3D.TRANSPARENCY_ALPHA, "The override is alpha-blended")
-		assert_almost_eq(wire.albedo_color.a, 0.0, 0.001, "The override is fully transparent")
+	# R4: a transparent override still let the rim overlay draw the wires (the pale bars at
+	# the feet), so the Wire surface (index 1) is stripped from the mesh instead.
+	assert_eq(body.mesh.get_surface_count(), 1, "The pink wire surface is stripped")
+	var source: Node = load("res://3D_Assets/enforcers_ai/clean/Enforcer_Hammer.glb").instantiate()
+	var source_mesh := (source.get_node("Enforcer_Hammer") as MeshInstance3D).mesh
+	assert_eq(body.mesh.surface_get_array_len(0), source_mesh.surface_get_array_len(0), "...and the body surface is intact")
+	source.free()
 	visual.queue_free()
 
 func test_enforcer_eases_its_yaw_toward_nick_and_never_pitches() -> void:

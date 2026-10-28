@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RunBooster" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://_core/persistence/run_booster.gd" id="1_booster"]
+
+[resource]
+script = ExtResource("1_booster")
+id = "adrenaline"
+display_name = "Adrenaline"
+description = "+20 % move speed"
+effect = 1
+value = 1.2

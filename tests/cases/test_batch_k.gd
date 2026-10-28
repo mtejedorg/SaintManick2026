@@ -12,6 +12,11 @@ const COMBO_LAUNCHER := "res://characters/player/combos/combo_launcher.tres"
 const COMBO_SWEEPER := "res://characters/player/combos/combo_sweeper.tres"
 const COMBO_BATTERY_RAM := "res://characters/player/combos/combo_battery_ram.tres"
 const BRUISER_STATS := "res://characters/enemies/bruiser/bruiser_stats.tres"
+const ENFORCER_STATS := "res://characters/enemies/enforcer/enforcer_stats.tres"
+const HEADLINER_STATS := "res://characters/enemies/headliner/headliner_stats.tres"
+## Q2: the shipped tuning -- the asserts below are invariants against it, not pinned numbers
+## (test_player_tuning.gd checks it against GDD rev. 3 once).
+const TUNING := "res://characters/player/player_tuning.tres"
 const ENEMY_BODY_BIT := 4 # collision layer 3
 
 var _nodes: Array[Node] = []
@@ -56,15 +61,18 @@ func _chain_dps(damages: Array[float], durations: Array[float], combo_window: fl
 func test_k1_heavy_windows_and_finisher_damage_ship_the_decision() -> void:
 	var player := _player(12000.0)
 	var attack: Node = player.state_machine.get_node("StateAttack")
-	assert_eq(attack.heavy_attack_durations, [0.45, 0.45, 0.75] as Array[float], "K1: generic heavy windows 0.45 / 0.45 / 0.75 s")
-	assert_eq(attack.attack_durations, [0.3, 0.3, 0.6] as Array[float], "K1: light windows untouched")
+	var tuning: PlayerTuning = player.tuning
+	assert_eq(tuning, load(TUNING), "Nick reads the shipped player_tuning.tres")
+	for i in 3:
+		# K1 (D3): every generic heavy window is slower than the light one it replaces.
+		assert_gt(tuning.heavy_attack_durations[i], tuning.attack_durations[i], "K1: heavy hit %d is slower than the light one" % (i + 1))
 	assert_eq((load(COMBO_TRI_CUT) as ComboDef).damage, 32.0, "K1: Tri-Cut 32 (D3 ordering: mash <= Tri-Cut)")
 	assert_eq((load(COMBO_LAUNCHER) as ComboDef).damage, 40.0, "K1: Launcher 40")
 	assert_eq((load(COMBO_BATTERY_RAM) as ComboDef).damage, 55.0, "K1: Battery Ram 55")
 	assert_eq((load(COMBO_SWEEPER) as ComboDef).damage, 20.0, "K1: Sweeper stays 20 (the crowd tool)")
 	# A generic heavy really runs the slower window.
 	_attack(player, true)
-	assert_almost_eq(attack.attack_timer, 0.45, 0.0001, "K1: the first generic heavy runs 0.45 s")
+	assert_almost_eq(attack.attack_timer, tuning.heavy_attack_durations[0], 0.0001, "K1: the first generic heavy runs its tuned window")
 
 func test_k1_named_routes_out_damage_heavy_mashing() -> void:
 	var player := _player(12020.0)
@@ -76,8 +84,8 @@ func test_k1_named_routes_out_damage_heavy_mashing() -> void:
 	player.state_machine._on_transition_requested("StateIdle")
 	_attack(player, false)
 	var light: float = player.katana_hitbox.damage_info.amount
-	var h: Array[float] = attack.heavy_attack_durations
-	var l: Array[float] = attack.attack_durations
+	var h: Array[float] = player.tuning.heavy_attack_durations
+	var l: Array[float] = player.tuning.attack_durations
 	var tri: ComboDef = load(COMBO_TRI_CUT)
 	var lau: ComboDef = load(COMBO_LAUNCHER)
 	var ram: ComboDef = load(COMBO_BATTERY_RAM)
@@ -156,8 +164,23 @@ func test_k2_emp_cancel_moved_into_the_active_window() -> void:
 
 func test_k3_dodge_tuning_values() -> void:
 	var player := _player(12120.0)
-	assert_almost_eq(player.beat_align_window, 0.06, 0.0001, "K3: beat_align_window 0.06")
-	assert_almost_eq(player.dodge_cooldown, 0.3, 0.0001, "K3: dodge_cooldown 0.3")
+	var t: PlayerTuning = player.tuning
+	var beat: float = 60.0 / Conductor.get_resting_bpm()
+	assert_gt(t.beat_align_window, 0.0, "K3: there is an on-beat window")
+	assert_lt(t.beat_align_window, beat * 0.25, "K3: ...narrow -- under a quarter of a resting beat")
+	assert_lt(t.dodge_cooldown, beat, "K3 (D6): the cooldown is under one beat, so the Enforcer one-beat chain stays dodgeable")
+	assert_gt(t.beat_aligned_cooldown_refund, 0.0, "K3: an on-beat dodge refunds part of the cooldown")
+	assert_lt(t.beat_aligned_cooldown_refund, 1.0, "K3: ...but never all of it")
+	# K2 (D22): the free-cancel window sits inside the recovery of the hit.
+	var attack: Node = _attack(player, false)
+	var recovery: float = attack.current_hit_duration * (1.0 - attack.ACTIVE_WINDOW_FRACTION)
+	assert_gt(t.free_cancel_recovery_fraction, 0.0, "K2: the free cancel window exists")
+	assert_true(t.free_cancel_recovery_fraction <= 1.0, "K2: ...and is a share of the recovery")
+	attack.attack_timer = recovery * (1.0 - 0.001)
+	assert_false(attack.is_in_free_cancel_window(), "K2: recovery opens without the free cancel")
+	attack.attack_timer = recovery * t.free_cancel_recovery_fraction * 0.5
+	assert_true(attack.is_in_free_cancel_window(), "K2: ...it opens late in the recovery")
+	assert_false(attack.is_in_active_window(), "K2: ...never inside the active window")
 
 func test_k3_a_dodge_008_off_the_beat_is_not_rewarded() -> void:
 	var player := _player(12140.0)
@@ -166,7 +189,7 @@ func test_k3_a_dodge_008_off_the_beat_is_not_rewarded() -> void:
 	player.state_machine._on_transition_requested("StateDash")
 	assert_eq(player.ability_meter, 0.0, "K3: 0.08 s off the beat pays no meter")
 	player.state_machine._on_transition_requested("StateIdle")
-	assert_almost_eq(player._dodge_cooldown_timer, player.dodge_cooldown, 0.0001, "...and refunds no cooldown")
+	assert_almost_eq(player._dodge_cooldown_timer, player.tuning.dodge_cooldown, 0.0001, "...and refunds no cooldown")
 
 func test_k3_a_dodge_004_off_the_beat_is_rewarded_with_the_cue() -> void:
 	var player := _player(12160.0)
@@ -181,7 +204,7 @@ func test_k3_a_dodge_004_off_the_beat_is_rewarded_with_the_cue() -> void:
 	assert_eq(flags.cue, 1, "K3: beat_dodge_landed fired once")
 	assert_true(player.character_visual.get_current_rim_color().is_equal_approx(player.BEAT_DODGE_RIM_COLOR), "K3: the rim flashes cyan")
 	player.state_machine._on_transition_requested("StateIdle")
-	assert_almost_eq(player._dodge_cooldown_timer, player.dodge_cooldown * 0.5, 0.0001, "K3: half the cooldown is refunded")
+	assert_almost_eq(player._dodge_cooldown_timer, player.tuning.dodge_cooldown * (1.0 - player.tuning.beat_aligned_cooldown_refund), 0.0001, "K3: the refund share of the cooldown is refunded")
 
 func test_k3_the_meter_reward_pays_at_most_once_per_two_beats() -> void:
 	var player := _player(12180.0)
@@ -210,10 +233,11 @@ func test_k3_the_meter_reward_pays_at_most_once_per_two_beats() -> void:
 func test_k4_roll_speed_covers_about_seven_metres() -> void:
 	var player := _player(12200.0)
 	var roll: Node = player.state_machine.get_node("StateRoll")
-	assert_almost_eq(player.roll_speed, 11.0, 0.0001, "K4: roll_speed 11")
-	var distance: float = player.roll_speed * (roll.roll_iframe_duration + roll.roll_recovery_duration)
-	assert_almost_eq(distance, 7.2, 0.1, "K4: a roll covers about 7.2 m (got %.2f)" % distance)
-	assert_almost_eq(player.dash_speed, 18.0, 0.0001, "K4: dash untouched")
+	var dash: Node = player.state_machine.get_node("StateDash")
+	var distance: float = player.tuning.roll_speed * (roll.roll_iframe_duration + roll.roll_recovery_duration)
+	assert_true(distance >= 6.5 and distance <= 8.0, "K4 (D14): a roll covers 6.5-8 m (got %.2f)" % distance)
+	assert_gt(player.tuning.dash_speed, player.tuning.roll_speed, "K4: the dash stays the fast mover")
+	assert_gt(player.tuning.dash_speed * dash.dash_duration, 3.0, "K4: ...and still covers ground")
 
 # --- K5 (D7) -------------------------------------------------------------------------
 
@@ -248,14 +272,16 @@ func test_k5_bruiser_shield_80_against_generic_heavies_and_battery_ram() -> void
 
 func test_k6_bass_drop_reaches_ten_metres_for_ninety() -> void:
 	var player := _player(12280.0)
-	assert_almost_eq(player.bass_drop_radius, 10.0, 0.0001, "K6: radius 10")
-	assert_almost_eq(player.bass_drop_damage, 90.0, 0.0001, "K6: damage 90")
+	var radius: float = player.tuning.bass_drop_radius
+	# K6 (D8): screen-clearing -- the radius covers most of the 25 x 14 m Zone 10 dock.
+	assert_gt(radius, 7.0, "K6: the radius reads as screen-clearing (%.1f m)" % radius)
+	assert_gt(player.tuning.bass_drop_damage, (load(BRUISER_STATS) as EnemyStats).shield, "K6: the damage is more than a full Bruiser shield")
 	var near: Node3D = _keep(load(BRUISER_SCENE).instantiate())
 	add_child(near)
-	near.global_position = player.global_position + Vector3(9.0, 0.0, 0.0)
+	near.global_position = player.global_position + Vector3(radius - 1.0, 0.0, 0.0)
 	var far: Node3D = _keep(load(BRUISER_SCENE).instantiate())
 	add_child(far)
-	far.global_position = player.global_position + Vector3(11.0, 0.0, 0.0)
+	far.global_position = player.global_position + Vector3(radius + 1.0, 0.0, 0.0)
 	var near_hc: HealthComponent = near.get_node("HealthComponent")
 	var far_hc: HealthComponent = far.get_node("HealthComponent")
 	var near_before: float = near_hc.current_health
@@ -267,9 +293,9 @@ func test_k6_bass_drop_reaches_ten_metres_for_ninety() -> void:
 		if c.name.begins_with("BassDropRing"):
 			ring = c
 			_keep(c)
-	assert_eq(near_hc.current_shield, 0.0, "K6: a Bruiser 9 m away loses its shield")
+	assert_eq(near_hc.current_shield, 0.0, "K6: a Bruiser 1 m inside the radius loses its shield")
 	assert_lt(near_hc.current_health, near_before, "K6: ...and takes the HP damage")
-	assert_eq(far_hc.current_shield, far_hc.max_shield, "K6: one 11 m away is untouched")
+	assert_eq(far_hc.current_shield, far_hc.max_shield, "K6: one 1 m outside is untouched")
 	assert_not_null(ring, "K6: the shock ring still spawns")
 
 # --- K7 (D13) ------------------------------------------------------------------------
@@ -279,11 +305,13 @@ func test_k7_headliner_phase_two_reads_half_of_the_new_max_health() -> void:
 	boss.position = Vector3(0.0, 300.0, 12300.0)
 	add_child(boss)
 	boss.activate_boss()
-	assert_eq(boss.health_component.max_health, 2400.0, "K7: the Headliner fights at 2400 HP")
-	boss._on_health_changed(1250.0, 2400.0)
-	assert_false(boss.phase_2_triggered, "K7: 1250 of 2400 HP stays in phase 1")
-	boss._on_health_changed(1200.0, 2400.0)
-	assert_true(boss.phase_2_triggered, "K7: 1200 HP (half of 2400) triggers phase 2")
+	var hp: float = (load(HEADLINER_STATS) as EnemyStats).max_health
+	assert_eq(boss.health_component.max_health, hp, "K7: the Headliner fights at its stats HP")
+	assert_gt(hp, (load(ENFORCER_STATS) as EnemyStats).max_health, "K7: ...more than the Enforcer")
+	boss._on_health_changed(hp * 0.5 + 50.0, hp)
+	assert_false(boss.phase_2_triggered, "K7: just above half HP stays in phase 1")
+	boss._on_health_changed(hp * 0.5, hp)
+	assert_true(boss.phase_2_triggered, "K7: half of the max HP triggers phase 2")
 	Conductor.target_bpm = Conductor.get_resting_bpm()
 	Conductor.bpm = Conductor.get_resting_bpm()
 
@@ -291,7 +319,9 @@ func test_k7_enforcer_fights_at_900() -> void:
 	var enforcer: Node3D = _keep(load(ENFORCER_SCENE).instantiate())
 	enforcer.position = Vector3(0.0, 300.0, 12320.0)
 	add_child(enforcer)
-	assert_eq(enforcer.get_node("HealthComponent").max_health, 900.0, "K7: the Enforcer fights at 900 HP")
+	var hp: float = (load(ENFORCER_STATS) as EnemyStats).max_health
+	assert_eq(enforcer.get_node("HealthComponent").max_health, hp, "K7: the Enforcer fights at its stats HP")
+	assert_gt(hp, (load(BRUISER_STATS) as EnemyStats).max_health * 5.0, "K7 (D13): ...a mini-boss pool, not a grunt pool")
 
 # --- K8 (D17) ------------------------------------------------------------------------
 

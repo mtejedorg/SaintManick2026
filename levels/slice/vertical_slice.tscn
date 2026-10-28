@@ -1,4 +1,4 @@
-[gd_scene load_steps=85 format=3]
+[gd_scene load_steps=97 format=3]
 
 [ext_resource type="Script" path="res://vfx/vfx_manager.gd" id="30_vfx_manager"]
 [ext_resource type="PackedScene" path="res://vfx/combo_flash.tscn" id="31_combo_flash"]
@@ -40,6 +40,12 @@
 [ext_resource type="Script" path="res://levels/components/onboarding_prompts.gd" id="58_onboarding_prompts"]
 [ext_resource type="Shader" path="res://assets/shaders/holo_gate.gdshader" id="59_holo_gate_shader"]
 [ext_resource type="Material" path="res://assets/materials/skyline_dark.tres" id="60_skyline_dark"]
+[ext_resource type="Material" path="res://assets/materials/trim_red.tres" id="61_trim_red"]
+[ext_resource type="PackedScene" path="res://characters/enemies/headliner/headliner_visual.tscn" id="62_headliner_visual"]
+[ext_resource type="FontFile" path="res://assets/fonts/Orbitron-Variable.ttf" id="63_orbitron"]
+[ext_resource type="Script" path="res://levels/components/beacon_light.gd" id="64_beacon_light"]
+[ext_resource type="Script" path="res://levels/components/holo_statue.gd" id="65_holo_statue"]
+[ext_resource type="Script" path="res://levels/components/headliner_marquee.gd" id="66_headliner_marquee"]
 
 
 ; --- Curve 3D Resources ---
@@ -80,14 +86,17 @@ enemies = [ExtResource("3_runner")]
 [sub_resource type="Resource" id="Resource_z3_w1"]
 script = ExtResource("8_wave_def")
 enemies = [ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner")]
+entry = "beam"
 
 [sub_resource type="Resource" id="Resource_z3_w2"]
 script = ExtResource("8_wave_def")
 enemies = [ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner")]
+entry = "beam"
 
 [sub_resource type="Resource" id="Resource_z6_w1"]
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("3_runner"), ExtResource("4_bruiser"), ExtResource("4_bruiser")])
+entry = "beam"
 
 ; --- Collision Shapes ---
 [sub_resource type="BoxShape3D" id="BoxShape3D_z1_trig"]
@@ -130,6 +139,7 @@ enemies = Array[PackedScene]([ExtResource("3_runner"), ExtResource("3_runner"), 
 [sub_resource type="Resource" id="Resource_z9_w2"]
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("4_bruiser"), ExtResource("4_bruiser"), ExtResource("3_runner"), ExtResource("3_runner")])
+drop_height = 8.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_kill_wall"]
 size = Vector3(2, 10, 10)
@@ -192,6 +202,7 @@ size = Vector3(6, 4, 5)
 [sub_resource type="Resource" id="Resource_z6_w2"]
 script = ExtResource("8_wave_def")
 enemies = Array[PackedScene]([ExtResource("5_sniper"), ExtResource("5_sniper"), ExtResource("5_sniper")])
+entry = "beam"
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_toxic_edge"]
 albedo_color = Color(0, 0, 0, 1)
@@ -232,6 +243,45 @@ albedo_color = Color(0, 0, 0, 1)
 emission_enabled = true
 emission = Color(1, 0.690196, 0, 1)
 emission_energy_multiplier = 2.0
+
+[sub_resource type="Gradient" id="Gradient_hazard_stripe"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.5)
+colors = PackedColorArray(1, 0.603922, 0.235294, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_hazard_stripe"]
+gradient = SubResource("Gradient_hazard_stripe")
+width = 16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hazard_stripe"]
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 1.2
+emission_texture = SubResource("GradientTexture1D_hazard_stripe")
+uv1_scale = Vector3(1.666667, 1.666667, 1.666667)
+uv1_triplanar = true
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stage_amber"]
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+emission = Color(1, 0.55, 0.1, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_window_fill"]
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+emission = Color(0, 0.94902, 1, 1)
+emission_energy_multiplier = 0.06
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_holo_statue"]
+shader = ExtResource("59_holo_gate_shader")
+shader_parameter/rim_color = Color(1, 0.55, 0.1, 1)
+shader_parameter/base_alpha = 0.2
+shader_parameter/fresnel_weight = 0.6
+shader_parameter/scan_weight = 0.25
+shader_parameter/intensity = 1.0
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_void"]
 sky_top_color = Color(0.02, 0.02, 0.06, 1)
@@ -651,6 +701,7 @@ shape = SubResource("BoxShape3D_z1_trig")
 
 [node name="Z1_Spawner" parent="Z1_Encounter" instance=ExtResource("9_spawner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+staged_entries = true
 
 [node name="SpawnPoint1" type="Marker3D" parent="Z1_Encounter/Z1_Spawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, 0)
@@ -838,6 +889,7 @@ gates = [NodePath("../Z3_Room/WallEntrance"), NodePath("../Z3_Room/WallExit")]
 shape = SubResource("BoxShape3D_z3_trig")
 
 [node name="Z3_Spawner" parent="Z3_Encounter" instance=ExtResource("9_spawner")]
+staged_entries = true
 
 [node name="SpawnPoint1" type="Marker3D" parent="Z3_Encounter/Z3_Spawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -8)
@@ -1160,6 +1212,7 @@ shape = SubResource("BoxShape3D_z4_trig")
 
 [node name="Z4_Spawner" parent="Z4_Encounter" unique_id=410000017 instance=ExtResource("9_spawner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
+staged_entries = true
 
 [node name="SpawnPoint4" type="Marker3D" parent="Z4_Encounter/Z4_Spawner" unique_id=410000018]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1, -2)
@@ -1272,6 +1325,7 @@ shape = SubResource("BoxShape3D_z5_trig")
 
 [node name="Z5_Spawner" parent="Z5_Encounter" unique_id=410000037 instance=ExtResource("9_spawner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+staged_entries = true
 
 [node name="SpawnPoint4" type="Marker3D" parent="Z5_Encounter/Z5_Spawner" unique_id=410000038]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1, -1.5)
@@ -1367,6 +1421,7 @@ gates = [NodePath("../Z6_Plaza/WallEntrance"), NodePath("../Z6_Plaza/WallExit")]
 shape = SubResource("BoxShape3D_z6_trig")
 
 [node name="Z6_Spawner" parent="Z6_Encounter" instance=ExtResource("9_spawner")]
+staged_entries = true
 
 [node name="SpawnPoint1" type="Marker3D" parent="Z6_Encounter/Z6_Spawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, -10)
@@ -1565,6 +1620,28 @@ script = ExtResource("20_hitbox_3d")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeDoorHazard2/DoorBody/Hitbox3D"]
 shape = SubResource("BoxShape3D_door_hitbox")
 
+[node name="EscapeDoorHazard3" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 378, 1, 0)
+script = ExtResource("16_door_hazard")
+close_beat_interval = 4
+cycle_offset = 1
+closed_duration_beats = 2
+damage = 12.0
+slide_distance = 3.0
+
+[node name="DoorBody" type="CSGBox3D" parent="EscapeDoorHazard3"]
+use_collision = true
+size = Vector3(1, 4, 4)
+material = ExtResource("55_hazard_orange")
+
+[node name="Hitbox3D" type="Area3D" parent="EscapeDoorHazard3/DoorBody"]
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("20_hitbox_3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeDoorHazard3/DoorBody/Hitbox3D"]
+shape = SubResource("BoxShape3D_door_hitbox")
+
 [node name="EscapeFallingHazard" type="Node3D" parent="." node_paths=PackedStringArray("warning_mesh")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 310, 6, 0)
 script = ExtResource("17_falling_hazard")
@@ -1617,6 +1694,35 @@ script = ExtResource("20_hitbox_3d")
 shape = SubResource("BoxShape3D_falling_hitbox")
 
 [node name="Warning" type="MeshInstance3D" parent="EscapeFallingHazard2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.95, 0)
+visible = false
+mesh = SubResource("BoxMesh_warning")
+surface_material_override/0 = SubResource("StandardMaterial3D_warning")
+
+[node name="EscapeFallingHazard3" type="Node3D" parent="." node_paths=PackedStringArray("warning_mesh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 388, 6, 0)
+script = ExtResource("17_falling_hazard")
+beat_interval = 8
+cycle_offset = 6
+telegraph_beats = 2
+warning_mesh = NodePath("Warning")
+fall_distance = 9.0
+damage = 15.0
+
+[node name="HazardBody" type="CSGBox3D" parent="EscapeFallingHazard3"]
+use_collision = true
+size = Vector3(2, 2, 2)
+material = ExtResource("55_hazard_orange")
+
+[node name="Hitbox3D" type="Area3D" parent="EscapeFallingHazard3/HazardBody"]
+collision_layer = 8192
+collision_mask = 1024
+script = ExtResource("20_hitbox_3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EscapeFallingHazard3/HazardBody/Hitbox3D"]
+shape = SubResource("BoxShape3D_falling_hitbox")
+
+[node name="Warning" type="MeshInstance3D" parent="EscapeFallingHazard3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.95, 0)
 visible = false
 mesh = SubResource("BoxMesh_warning")
@@ -1685,6 +1791,7 @@ curve = SubResource("Curve3D_z9")
 
 [node name="ElevatorSpawner" parent="ElevatorPlatform" instance=ExtResource("9_spawner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+staged_entries = true
 
 [node name="SpawnPoint1" type="Marker3D" parent="ElevatorPlatform/ElevatorSpawner"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, -2)
@@ -1748,7 +1855,7 @@ size = Vector3(8, 0.12, 0.12)
 material = ExtResource("53_trim_magenta")
 cast_shadow = 0
 
-[node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path", "exit_path")]
+[node name="ElevatorEncounter" type="Node3D" parent="." node_paths=PackedStringArray("platform", "spawner", "entry_trigger", "target_path", "exit_path", "ride_light")]
 script = ExtResource("19_elevator_encounter")
 platform = NodePath("../ElevatorPlatform")
 spawner = NodePath("../ElevatorPlatform/ElevatorSpawner")
@@ -1757,8 +1864,9 @@ target_path = NodePath("../ElevatorPlatform/Path_Z9")
 exit_path = NodePath("../Path_Z10")
 target_y = 14.5
 speed = 2.0
-wave_cooldown = 5.0
+wave_cooldown = 1.0
 waves = [SubResource("Resource_z9_w1"), SubResource("Resource_z9_w2")]
+ride_light = NodePath("../ElevatorPlatform/Z9_ElevatorLight")
 
 [node name="ElevatorEntryTrigger" type="Area3D" parent="ElevatorEncounter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 407, -4.0, 0)
@@ -1795,13 +1903,13 @@ size = Vector3(0.5, 4, 14)
 material = ExtResource("51_wall_dark")
 
 [node name="Pillar1" type="CSGBox3D" parent="Zone10_Dock" unique_id=410000055]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.75, -5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1.75, -5)
 use_collision = true
 size = Vector3(1, 2.5, 1)
 material = ExtResource("51_wall_dark")
 
 [node name="Pillar2" type="CSGBox3D" parent="Zone10_Dock" unique_id=410000056]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.75, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.75, -5)
 use_collision = true
 size = Vector3(1, 2.5, 1)
 material = ExtResource("51_wall_dark")
@@ -2284,9 +2392,9 @@ omni_range = 24
 
 [node name="Z9_GapLight" type="OmniLight3D" parent="ZoneLights"]
 light_volumetric_fog_energy = 2.5
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 319, 6, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405, -2, 0)
 light_color = Color(1, 0, 0.666667, 1)
-light_energy = 2
+light_energy = 3
 omni_range = 20
 
 [node name="Z10_StageLight" type="OmniLight3D" parent="ZoneLights"]
@@ -2297,21 +2405,1471 @@ light_energy = 2.0
 omni_range = 30.0
 script = ExtResource("35_stage_light")
 
-[node name="Z10_SpotL" type="SpotLight3D" parent="ZoneLights"]
-transform = Transform3D(-0.287348, -0.0913252, -0.953463, 0, 0.995444, -0.0953463, 0.957826, -0.0273975, -0.286039, 415, 14, -3)
+; ================= Batch S1 zone dressing: no collision, trims cast no shadow, nothing > 0.3 m within 0.8 m of a rail =================
+[node name="Z1_Dressing" type="Node3D" parent="."]
+
+[node name="Sidewalk" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, -0.05, -4)
+size = Vector3(32, 0.2, 3)
+material = ExtResource("51_wall_dark")
+
+[node name="Shopfront1" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.55, -4)
+size = Vector3(4, 3, 0.2)
+material = ExtResource("51_wall_dark")
+
+[node name="Shopfront1Slat1" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront1Slat2" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront1Slat3" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront1Slat4" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront1Slat5" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront2" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 1.55, -4)
+size = Vector3(4, 3, 0.2)
+material = ExtResource("51_wall_dark")
+
+[node name="Shopfront2Slat1" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront2Slat2" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 1.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront2Slat3" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 1.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront2Slat4" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 2.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront2Slat5" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 2.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront3" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 1.55, -4)
+size = Vector3(4, 3, 0.2)
+material = ExtResource("51_wall_dark")
+
+[node name="Shopfront3Slat1" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 0.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront3Slat2" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 1.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront3Slat3" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 1.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront3Slat4" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 2.05, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Shopfront3Slat5" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 2.55, -3.88)
+size = Vector3(3.8, 0.08, 0.04)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lamp1Pole" type="CSGCylinder3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.5, -3)
+radius = 0.08
+height = 5
+sides = 8
+material = ExtResource("51_wall_dark")
+
+[node name="Lamp1Head" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 5, -3)
+size = Vector3(1.2, 0.1, 0.3)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lamp1Light" type="OmniLight3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4.7, -2.7)
+light_color = Color(1, 0.701961, 0.278431, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Lamp2Pole" type="CSGCylinder3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, -3)
+radius = 0.08
+height = 5
+sides = 8
+material = ExtResource("51_wall_dark")
+
+[node name="Lamp2Head" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 5, -3)
+size = Vector3(1.2, 0.1, 0.3)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lamp2Light" type="OmniLight3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 4.7, -2.7)
+light_color = Color(1, 0.701961, 0.278431, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="VanBody" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 1.05, -4.5)
+size = Vector3(4, 2, 2)
+material = ExtResource("51_wall_dark")
+
+[node name="VanCab" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.75, 0.8, -4.5)
+size = Vector3(1.5, 1.5, 2)
+material = ExtResource("51_wall_dark")
+
+[node name="VanTailStrip" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.12, 1.4, -3.48)
+size = Vector3(0.1, 0.9, 0.04)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="SignBackingRamen" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 3.6, -3.98)
+size = Vector3(4, 0.9, 0.06)
+material = ExtResource("51_wall_dark")
+
+[node name="SignRamen" type="Label3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 3.6, -3.9)
+pixel_size = 0.008594
+modulate = Color(2.5, 0, 1.666667, 1)
+outline_modulate = Color(0.3, 0, 0.2, 1)
+text = "RAMEN 24H"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="SignBackingPawn" type="CSGBox3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 3.6, -3.98)
+size = Vector3(2.6, 0.9, 0.06)
+material = ExtResource("51_wall_dark")
+
+[node name="SignPawn" type="Label3D" parent="Z1_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 3.6, -3.9)
+pixel_size = 0.009375
+modulate = Color(0, 2.37255, 2.5, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "PAWN"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="Z2_Dressing" type="Node3D" parent="."]
+
+[node name="Gantry" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.75, 6.5, -3)
+size = Vector3(67.5, 0.6, 0.6)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryTrim" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.75, 6.17, -2.68)
+size = Vector3(67.5, 0.06, 0.06)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="GantryArm1" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 6.65, -1.5)
+size = Vector3(0.3, 0.3, 3.3)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryArm2" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 6.65, -2.5)
+size = Vector3(0.3, 0.3, 1.3)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryArm3" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 6.65, -3.25)
+size = Vector3(0.3, 0.3, 0.8)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryArm4" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 6.65, -3.25)
+size = Vector3(0.3, 0.3, 0.8)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryArm5" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 6.65, -2.5)
+size = Vector3(0.3, 0.3, 1.3)
+material = ExtResource("51_wall_dark")
+
+[node name="GantryArm6" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 6.65, -1.5)
+size = Vector3(0.3, 0.3, 3.3)
+material = ExtResource("51_wall_dark")
+
+[node name="HazardStripe1" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0.06, 2.44)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe2" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0.06, 0.44)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe3" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 0.06, -1.06)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe4" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 0.06, -1.06)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe5" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 0.06, 0.44)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe6" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0.06, 2.44)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="HazardStripe7" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 92.5, 0.06, 2.44)
+size = Vector3(5, 0.12, 0.12)
+material = SubResource("StandardMaterial3D_hazard_stripe")
+cast_shadow = 0
+
+[node name="Vat1" type="CSGCylinder3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 0, -7)
+radius = 1.5
+height = 3
+sides = 24
+material = ExtResource("51_wall_dark")
+
+[node name="Vat1Rim" type="CSGTorus3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 1.5, -7)
+inner_radius = 1.4
+outer_radius = 1.56
+sides = 32
+ring_sides = 6
+material = SubResource("StandardMaterial3D_toxic_edge")
+cast_shadow = 0
+
+[node name="Vat1Gauge" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 0, -5.48)
+size = Vector3(0.25, 2.2, 0.04)
+material = SubResource("StandardMaterial3D_toxic_edge")
+cast_shadow = 0
+
+[node name="Vat1Light" type="OmniLight3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 2.2, -5.8)
+light_color = Color(0.3, 1, 0.5, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Vat2" type="CSGCylinder3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, -7)
+radius = 1.5
+height = 3
+sides = 24
+material = ExtResource("51_wall_dark")
+
+[node name="Vat2Rim" type="CSGTorus3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 1.5, -7)
+inner_radius = 1.4
+outer_radius = 1.56
+sides = 32
+ring_sides = 6
+material = SubResource("StandardMaterial3D_toxic_edge")
+cast_shadow = 0
+
+[node name="Vat2Gauge" type="CSGBox3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, -5.48)
+size = Vector3(0.25, 2.2, 0.04)
+material = SubResource("StandardMaterial3D_toxic_edge")
+cast_shadow = 0
+
+[node name="Vat2Light" type="OmniLight3D" parent="Z2_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 2.2, -5.8)
+light_color = Color(0.3, 1, 0.5, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Z3_Dressing" type="Node3D" parent="."]
+
+[node name="FloorSeal" type="CSGTorus3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 0.25, 0, 0, 0, 1, 110, 0.11, 0)
+inner_radius = 5.8
+outer_radius = 6
+sides = 96
+ring_sides = 6
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="ChevronExit1A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 117.217157, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronExit1B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 117.217157, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronExit2A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 118.717157, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronExit2B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 118.717157, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronExit3A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 120.217157, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronExit3B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 120.217157, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry1A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 102.782843, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry1B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 102.782843, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry2A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 101.282843, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry2B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 101.282843, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry3A" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 99.782843, 0.11, -0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="ChevronEntry3B" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 99.782843, 0.11, 0.282843)
+size = Vector3(0.8, 0.02, 0.2)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="WallCam1" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.4, 4.3, -11.8)
+size = Vector3(0.3, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="WallCam1Lens" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.58, 4.25, -11.62)
+size = Vector3(0.12, 0.12, 0.12)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="WallCam1Light" type="OmniLight3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.58, 4.1, -11.62)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 0.8
+light_volumetric_fog_energy = 0
+omni_range = 3
+
+[node name="WallCam2" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.6, 4.3, -11.8)
+size = Vector3(0.3, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="WallCam2Lens" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.42, 4.25, -11.62)
+size = Vector3(0.12, 0.12, 0.12)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="WallCam2Light" type="OmniLight3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.42, 4.1, -11.62)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 0.8
+light_volumetric_fog_energy = 0
+omni_range = 3
+
+[node name="WallCam3" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.4, 4.3, 11.8)
+size = Vector3(0.3, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="WallCam3Lens" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.58, 4.25, 11.62)
+size = Vector3(0.12, 0.12, 0.12)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="WallCam3Light" type="OmniLight3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.58, 4.1, 11.62)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 0.8
+light_volumetric_fog_energy = 0
+omni_range = 3
+
+[node name="WallCam4" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.6, 4.3, 11.8)
+size = Vector3(0.3, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="WallCam4Lens" type="CSGBox3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.42, 4.25, 11.62)
+size = Vector3(0.12, 0.12, 0.12)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="WallCam4Light" type="OmniLight3D" parent="Z3_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 121.42, 4.1, 11.62)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 0.8
+light_volumetric_fog_energy = 0
+omni_range = 3
+
+[node name="Z4_Dressing" type="Node3D" parent="."]
+
+[node name="XBrace1A" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, -0.642788, 0, 0.642788, 0.766044, 0, 0, 0, 1, 141, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="XBrace1B" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 0, 0, 1, 141, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="XBrace2A" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, -0.642788, 0, 0.642788, 0.766044, 0, 0, 0, 1, 147.5, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="XBrace2B" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 0, 0, 1, 147.5, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="XBrace3A" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, -0.642788, 0, 0.642788, 0.766044, 0, 0, 0, 1, 154, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="XBrace3B" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 0, 0, 1, 154, 1.95, -5.5)
+size = Vector3(0.12, 6, 0.12)
+material = ExtResource("51_wall_dark")
+
+[node name="WorkLight1Cable" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 139, 3.55, -3.6)
+size = Vector3(0.03, 0.9, 0.03)
+material = ExtResource("51_wall_dark")
+
+[node name="WorkLight1Head" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 139, 3, -3.6)
+size = Vector3(0.6, 0.15, 0.3)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="WorkLight1" type="OmniLight3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 139, 2.7, -3.3)
+light_color = Color(1, 0.603922, 0.235294, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 5
+
+[node name="WorkLight2Cable" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 152.5, 3.55, -3.6)
+size = Vector3(0.03, 0.9, 0.03)
+material = ExtResource("51_wall_dark")
+
+[node name="WorkLight2Head" type="CSGBox3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 152.5, 3, -3.6)
+size = Vector3(0.6, 0.15, 0.3)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="WorkLight2" type="OmniLight3D" parent="Z4_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 152.5, 2.7, -3.3)
+light_color = Color(1, 0.603922, 0.235294, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 5
+
+[node name="Z5_Dressing" type="Node3D" parent="."]
+
+[node name="Canopy1" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 171, 2.2, -2.4)
+size = Vector3(2.5, 0.1, 1.8)
+material = ExtResource("51_wall_dark")
+
+[node name="Canopy1Edge" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 171, 1.967063, -1.530667)
+size = Vector3(2.5, 0.06, 0.06)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Canopy2" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 175, 2.2, -2.4)
+size = Vector3(2.5, 0.1, 1.8)
+material = ExtResource("51_wall_dark")
+
+[node name="Canopy2Edge" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, 1.967063, -1.530667)
+size = Vector3(2.5, 0.06, 0.06)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Canopy3" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 186, 0.7, -2.3)
+size = Vector3(2.5, 0.1, 1.8)
+material = ExtResource("51_wall_dark")
+
+[node name="Canopy3Edge" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 186, 0.467063, -1.430667)
+size = Vector3(2.5, 0.06, 0.06)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="Canopy4" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 191, 0.7, -2.3)
+size = Vector3(2.5, 0.1, 1.8)
+material = ExtResource("51_wall_dark")
+
+[node name="Canopy4Edge" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 191, 0.467063, -1.430667)
+size = Vector3(2.5, 0.06, 0.06)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="LanternWire" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, 3.64, -2.5)
+size = Vector3(14.4, 0.02, 0.02)
+material = ExtResource("51_wall_dark")
+
+[node name="Lantern1" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 168, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern2" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 170, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern3" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 172, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern4" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 174, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern5" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 176, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern6" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 178, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern7" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 180, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="Lantern8" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 182, 3.5, -2.5)
+size = Vector3(0.25, 0.25, 0.25)
+material = ExtResource("54_trim_sodium")
+cast_shadow = 0
+
+[node name="SignBackingSynth" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 188.5, 2.4, -4.56)
+size = Vector3(0.9, 3.4, 0.06)
+material = ExtResource("51_wall_dark")
+
+[node name="SignSynth" type="Label3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 188.5, 2.4, -4.5)
+pixel_size = 0.007812
+line_spacing = 2.0
+modulate = Color(0, 2.37255, 2.5, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "S\nY\nN\nT\nH"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="SignBackingKarens" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 179.5, 2.9, -4.56)
+size = Vector3(0.9, 4.64, 0.06)
+material = ExtResource("51_wall_dark")
+
+[node name="SignKarens" type="Label3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 179.5, 2.9, -4.5)
+pixel_size = 0.007812
+line_spacing = 2.0
+modulate = Color(2.5, 0, 1.666667, 1)
+outline_modulate = Color(0.3, 0, 0.2, 1)
+text = "K\nA\nR\nE\nN\n'\nS"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="SignBackingNoExit" type="CSGBox3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 196.5, 0.1, -4.56)
+size = Vector3(0.9, 4.64, 0.06)
+material = ExtResource("51_wall_dark")
+
+[node name="SignNoExit" type="Label3D" parent="Z5_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 196.5, 0.1, -4.5)
+pixel_size = 0.007812
+line_spacing = 2.0
+modulate = Color(0, 2.37255, 2.5, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "N\nO\n\nE\nX\nI\nT"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="Z6_Dressing" type="Node3D" parent="."]
+
+[node name="StatuePlinth" type="CSGBox3D" parent="Z6_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -3.5, -11)
+size = Vector3(2.6, 1, 2.6)
+material = ExtResource("51_wall_dark")
+
+[node name="StatuePlinthEdge" type="CSGBox3D" parent="Z6_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -3.02, -9.68)
+size = Vector3(2.6, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_stage_amber")
+cast_shadow = 0
+
+[node name="HeadlinerStatue" type="Node3D" parent="Z6_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -3, -11)
+script = ExtResource("65_holo_statue")
+holo_material = SubResource("ShaderMaterial_holo_statue")
+target_height = 6.0
+
+[node name="Figure" parent="Z6_Dressing/HeadlinerStatue" instance=ExtResource("62_headliner_visual")]
+
+[node name="StatueUplight" type="OmniLight3D" parent="Z6_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 225, -2.2, -8.8)
+light_color = Color(1, 0.55, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 7
+
+[node name="Z7_Dressing" type="Node3D" parent="."]
+
+[node name="SpeakerStack1" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, -2.5, -4.2)
+size = Vector3(1.5, 3, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerStack1Grille1" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, -3.3, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack1Grille2" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, -2.5, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack1Grille3" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, -1.7, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack1TrussLeg" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, 1, -4.2)
+size = Vector3(0.3, 4, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerStack1StageLight" type="OmniLight3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 243, -0.4, -3.6)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 8
+script = ExtResource("35_stage_light")
+base_energy = 1.2
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="SpeakerStack2" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, -2.5, -4.2)
+size = Vector3(1.5, 3, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerStack2Grille1" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, -3.3, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack2Grille2" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, -2.5, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack2Grille3" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, -1.7, -3.43)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerStack2TrussLeg" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, 1, -4.2)
+size = Vector3(0.3, 4, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerStack2StageLight" type="OmniLight3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 277, -0.4, -3.6)
+light_color = Color(1, 0, 0.666667, 1)
+light_energy = 1.2
+light_volumetric_fog_energy = 1
+omni_range = 8
+script = ExtResource("35_stage_light")
+base_energy = 1.2
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="Truss" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, 3, -4.2)
+size = Vector3(34.3, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="TrussTrim" type="CSGBox3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 260, 2.83, -4.03)
+size = Vector3(34.3, 0.04, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="TrussStageLight1" type="OmniLight3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252, 2.5, -3.6)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 9
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(0, 0.94902, 1, 1), Color(1, 0, 0.666667, 1)])
+
+[node name="TrussStageLight2" type="OmniLight3D" parent="Z7_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 268, 2.5, -3.6)
+light_color = Color(0, 0.94902, 1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 9
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(0, 0.94902, 1, 1), Color(1, 0, 0.666667, 1)])
+
+[node name="Z8_Dressing" type="Node3D" parent="."]
+
+[node name="Beacon1" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon1/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon2" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 300, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon2/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon3" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 315, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon3/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon4" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 330, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon4/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon5" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 345, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon5/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon6" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 360, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon6/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon7" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 375, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon7/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Beacon8" type="Node3D" parent="Z8_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 390, -2.6, -3.2)
+script = ExtResource("64_beacon_light")
+
+[node name="Post" type="CSGBox3D" parent="Z8_Dressing/Beacon8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+size = Vector3(0.15, 3, 0.15)
+material = ExtResource("51_wall_dark")
+
+[node name="Housing" type="CSGCylinder3D" parent="Z8_Dressing/Beacon8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.2
+height = 0.3
+sides = 12
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Vane" type="Node3D" parent="Z8_Dressing/Beacon8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="Reflector" type="CSGBox3D" parent="Z8_Dressing/Beacon8/Vane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0, 0)
+size = Vector3(0.04, 0.24, 0.42)
+material = ExtResource("61_trim_red")
+cast_shadow = 0
+
+[node name="Glow" type="OmniLight3D" parent="Z8_Dressing/Beacon8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.4)
+light_color = Color(1, 0.1, 0.1, 1)
+light_energy = 1.5
+light_volumetric_fog_energy = 1
+omni_range = 6
+
+[node name="Z9_Dressing" type="Node3D" parent="."]
+
+[node name="WindowBand1" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 2, -3.575)
+size = Vector3(8, 3, 0.03)
+material = SubResource("StandardMaterial3D_window_fill")
+cast_shadow = 0
+
+[node name="WindowBand1Top" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 3.5, -3.55)
+size = Vector3(8, 0.08, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand1Bottom" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 0.5, -3.55)
+size = Vector3(8, 0.08, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand1Mullion1" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 407, 2, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand1Mullion2" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 2, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand1Mullion3" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 411, 2, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand2" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 9, -3.575)
+size = Vector3(8, 3, 0.03)
+material = SubResource("StandardMaterial3D_window_fill")
+cast_shadow = 0
+
+[node name="WindowBand2Top" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 10.5, -3.55)
+size = Vector3(8, 0.08, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand2Bottom" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 7.5, -3.55)
+size = Vector3(8, 0.08, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand2Mullion1" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 407, 9, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand2Mullion2" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409, 9, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="WindowBand2Mullion3" type="CSGBox3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 411, 9, -3.55)
+size = Vector3(0.06, 3, 0.04)
+material = ExtResource("52_trim_cyan")
+cast_shadow = 0
+
+[node name="FloorB2" type="Label3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405.6, -2.2, -3.45)
+pixel_size = 0.011719
+modulate = Color(0, 1.233726, 1.3, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "B2"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 8
+
+[node name="FloorB1" type="Label3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405.6, 2, -3.45)
+pixel_size = 0.011719
+modulate = Color(0, 1.233726, 1.3, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "B1"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 8
+
+[node name="FloorG" type="Label3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405.6, 6.3, -3.45)
+pixel_size = 0.011719
+modulate = Color(0, 1.233726, 1.3, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "G"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 8
+
+[node name="Floor01" type="Label3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405.6, 11, -3.45)
+pixel_size = 0.011719
+modulate = Color(0, 1.233726, 1.3, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "01"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 8
+
+[node name="FloorRoof" type="Label3D" parent="Z9_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 405.6, 15.3, -3.45)
+pixel_size = 0.011719
+modulate = Color(0, 1.233726, 1.3, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "ROOF"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 8
+
+; ================= Batch S3: the Headliner's stage =================
+[node name="Z10_Dressing" type="Node3D" parent="."]
+
+[node name="StageRing" type="CSGTorus3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 425, 15, 0)
+inner_radius = 4.925
+outer_radius = 5.075
+sides = 96
+ring_sides = 8
+material = SubResource("StandardMaterial3D_stage_amber")
+cast_shadow = 0
+
+[node name="Marquee" type="Label3D" parent="Z10_Dressing" node_paths=PackedStringArray("headliner")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 425, 18.6, -6.7)
+pixel_size = 0.01875
+script = ExtResource("66_headliner_marquee")
+headliner = NodePath("../../Headliner")
+calm_color = Color(1, 0.16, 0, 1)
+glow_boost = 4.0
+modulate = Color(4, 0.64, 0, 1)
+outline_modulate = Color(0.35, 0.056, 0, 1)
+text = "THE HEADLINER"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 12
+
+[node name="SignHeadlinerLive" type="Label3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 431, 16.35, -6.7)
+pixel_size = 0.0125
+modulate = Color(0, 2.37255, 2.5, 1)
+outline_modulate = Color(0, 0.284706, 0.3, 1)
+text = "HEADLINER LIVE"
+font = ExtResource("63_orbitron")
+font_size = 64
+outline_size = 10
+
+[node name="SpeakerBackL" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 16.5, -6)
+size = Vector3(1.5, 3, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerBackLGrille1" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 15.75, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackLGrille2" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 16.5, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackLGrille3" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 17.25, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackLLight" type="OmniLight3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 18.3, -5.4)
+light_color = Color(1, 0.55, 0.1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 7
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0.55, 0.1, 1), Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="SpeakerBackR" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 16.5, -6)
+size = Vector3(1.5, 3, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerBackRGrille1" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 15.75, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackRGrille2" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 16.5, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackRGrille3" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 17.25, -5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerBackRLight" type="OmniLight3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 18.3, -5.4)
+light_color = Color(1, 0.55, 0.1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 7
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0.55, 0.1, 1), Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="SpeakerFrontL" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 15.5, 6)
+size = Vector3(1.5, 1, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerFrontLGrille1" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 15.333333, 5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerFrontLGrille2" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 15.666667, 5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerFrontLLight" type="OmniLight3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 413.6, 16.3, 5.4)
+light_color = Color(1, 0.55, 0.1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 7
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0.55, 0.1, 1), Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="SpeakerFrontR" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 15.5, 6)
+size = Vector3(1.5, 1, 1.5)
+material = ExtResource("51_wall_dark")
+
+[node name="SpeakerFrontRGrille1" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 15.333333, 5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerFrontRGrille2" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 15.666667, 5.23)
+size = Vector3(1.2, 0.06, 0.04)
+material = ExtResource("53_trim_magenta")
+cast_shadow = 0
+
+[node name="SpeakerFrontRLight" type="OmniLight3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 436.4, 16.3, 5.4)
+light_color = Color(1, 0.55, 0.1, 1)
+light_energy = 1
+light_volumetric_fog_energy = 1
+omni_range = 7
+script = ExtResource("35_stage_light")
+base_energy = 1
+beat_energy_boost = 1
+downbeat_energy_boost = 2
+palette = Array[Color]([Color(1, 0.55, 0.1, 1), Color(1, 0, 0.666667, 1), Color(0, 0.94902, 1, 1)])
+
+[node name="TrussLegL" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 412.75, 18, -6.9)
+size = Vector3(0.3, 6, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="TrussLegR" type="CSGBox3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 437.25, 18, -6.9)
+size = Vector3(0.3, 6, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="Truss" type="Node3D" parent="Z10_Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 425, 21, -6)
+
+[node name="Bar" type="CSGBox3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+size = Vector3(25, 0.3, 0.3)
+material = ExtResource("51_wall_dark")
+
+[node name="BarTrim" type="CSGBox3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.17, 0.17)
+size = Vector3(25, 0.04, 0.04)
+material = SubResource("StandardMaterial3D_stage_amber")
+cast_shadow = 0
+
+[node name="SpotCanL" type="CSGCylinder3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -0.3, 0.1)
+radius = 0.18
+height = 0.4
+sides = 10
+material = ExtResource("51_wall_dark")
+
+[node name="SpotCanR" type="CSGCylinder3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, -0.3, 0.1)
+radius = 0.18
+height = 0.4
+sides = 10
+material = ExtResource("51_wall_dark")
+
+[node name="Z10_SpotL" type="SpotLight3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(-0.287348, -0.0913252, -0.953463, 0, 0.995444, -0.0953463, 0.957826, -0.0273975, -0.286039, -10, -7, 3)
 light_color = Color(0, 0.94902, 1, 1)
 light_energy = 6.0
 light_volumetric_fog_energy = 4.0
 spot_range = 32.0
 spot_angle = 16.0
 
-[node name="Z10_SpotR" type="SpotLight3D" parent="ZoneLights"]
-transform = Transform3D(-0.287348, 0.0913252, 0.953463, 0, 0.995444, -0.0953463, -0.957826, -0.0273975, -0.286039, 435, 14, -3)
+[node name="Z10_SpotR" type="SpotLight3D" parent="Z10_Dressing/Truss"]
+transform = Transform3D(-0.287348, 0.0913252, 0.953463, 0, 0.995444, -0.0953463, -0.957826, -0.0273975, -0.286039, 10, -7, 3)
 light_color = Color(1, 0, 0.666667, 1)
 light_energy = 6.0
 light_volumetric_fog_energy = 4.0
 spot_range = 32.0
 spot_angle = 16.0
+
 
 [connection signal="body_entered" from="Zone10_Trigger" to="Headliner" method="activate_boss"]
 

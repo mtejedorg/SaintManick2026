@@ -44,7 +44,7 @@ func test_beat_aligned_dodge_grants_meter_and_halves_cooldown() -> void:
 	dash_state.exit()
 	# K3 (D6): the aligned dodge refunds HALF the cooldown, not all of it.
 	assert_false(player.can_dodge(), "K3: a beat-aligned dash still starts a (shortened) cooldown")
-	assert_almost_eq(player._dodge_cooldown_timer, player.dodge_cooldown * 0.5, 0.0001, "K3: half the cooldown is refunded")
+	assert_almost_eq(player._dodge_cooldown_timer, player.tuning.dodge_cooldown * (1.0 - player.tuning.beat_aligned_cooldown_refund), 0.0001, "K3: half the cooldown is refunded")
 
 func test_emp_dash_cancel_still_works_with_cooldown_active() -> void:
 	player.start_dodge_cooldown()

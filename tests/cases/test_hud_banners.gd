@@ -3,6 +3,8 @@ extends "res://tests/framework/test_case.gd"
 # Batch H (UI) U1/U5/U6/U7: the life-lost banner survives the respawn zone card and shows
 # on the last spare life, banner_requested reaches the card, the boss bar shows a shield
 # strip, lives above the art cap get an "xN" tag, and the LAST LIFE tag pulses on the beat.
+# Q4b: the life-lost card is GameManager's (banner_requested right after player_life_lost);
+# _life_lost() replays that pair of emissions.
 
 const HUD_SCENE := preload("res://ui/hud/hud.tscn")
 const ZONE_07 := "SECTOR 07 — ENFORCER"
@@ -30,8 +32,13 @@ func after_each() -> void:
 func _card_text() -> String:
 	return hud.zone_title_card.label.text
 
+## What GameManager.respawn_or_game_over() emits for a respawn (no checkpoint zone here).
+func _life_lost(lives: int) -> void:
+	SignalBus.player_life_lost.emit(lives)
+	SignalBus.banner_requested.emit(GameManager.respawn_banner_text(lives, ""), GameManager.RESPAWN_BANNER_HOLD)
+
 func test_life_lost_banner_survives_the_respawn_zone_card() -> void:
-	SignalBus.player_life_lost.emit(1)
+	_life_lost(1)
 	await get_tree().process_frame
 	SignalBus.zone_entered.emit(ZONE_07)
 	assert_eq(_card_text(), "LIFE LOST — 1 LEFT", "The respawn zone_entered must not replace the life-lost banner")
@@ -40,13 +47,13 @@ func test_life_lost_banner_survives_the_respawn_zone_card() -> void:
 func test_already_announced_zone_is_dropped_during_a_priority_card() -> void:
 	SignalBus.zone_entered.emit(ZONE_07)
 	assert_eq(_card_text(), ZONE_07, "A plain zone_entered still shows the zone card")
-	SignalBus.player_life_lost.emit(2)
+	_life_lost(2)
 	SignalBus.zone_entered.emit(ZONE_07)
 	assert_eq(_card_text(), "LIFE LOST — 2 LEFT", "Banner stays up")
 	assert_eq(hud.zone_title_card._queued_zone, "", "A zone already announced is dropped, not replayed")
 
 func test_queued_zone_plays_after_the_priority_card() -> void:
-	SignalBus.player_life_lost.emit(1)
+	_life_lost(1)
 	SignalBus.zone_entered.emit(ZONE_07)
 	hud.zone_title_card._on_card_finished() # the priority card slide-out ended
 	assert_eq(_card_text(), ZONE_07, "The queued zone plays once the priority card is done")
@@ -54,7 +61,7 @@ func test_queued_zone_plays_after_the_priority_card() -> void:
 
 func test_spending_the_last_spare_life_shows_last_life() -> void:
 	GameManager.run_ended = false
-	SignalBus.player_life_lost.emit(0)
+	_life_lost(0)
 	assert_eq(_card_text(), "LAST LIFE", "0 spare lives with the run still live -> LAST LIFE banner")
 	assert_true(hud.zone_title_card.visible, "The banner is on screen")
 
@@ -62,6 +69,9 @@ func test_game_over_emission_stays_quiet() -> void:
 	GameManager.run_ended = true
 	SignalBus.player_life_lost.emit(0)
 	assert_false(hud.zone_title_card.visible, "The terminal emission (run_ended) shows no banner")
+	GameManager.run_ended = false
+	SignalBus.player_life_lost.emit(2)
+	assert_false(hud.zone_title_card.visible, "Q4b: the HUD builds no life-lost card of its own")
 
 func test_banner_requested_reaches_the_zone_card() -> void:
 	SignalBus.banner_requested.emit("PROJECTION STORM — SURVIVE", 2.0)

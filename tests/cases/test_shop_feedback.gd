@@ -7,21 +7,11 @@ extends "res://tests/framework/test_case.gd"
 const SHOP_SCENE := preload("res://ui/shop/karens_shop.tscn")
 const UPGRADES := "res://_core/persistence/shop_upgrades/"
 
-var _saved: Dictionary = {}
 var shop: Control
 
 func before_each() -> void:
+	# Q1: the runner hands every test a fresh profile on a temp path (no backup needed).
 	var p: PlayerProfile = SaveManager.profile
-	_saved = {
-		"scrap": p.scrap, "cells": p.cells, "cores": p.cores,
-		"unlocked_combos": p.unlocked_combos.duplicate(),
-		"booster_slots": p.booster_slots,
-		"equipped_run_boosters": p.equipped_run_boosters.duplicate(),
-		"double_jump_unlocked": p.double_jump_unlocked,
-		"max_hp_upgrades": p.max_hp_upgrades,
-		"shield_upgrades": p.shield_upgrades,
-		"max_lives_upgrades": p.max_lives_upgrades,
-	}
 	p.scrap = 0
 	p.cells = 0
 	p.cores = 0
@@ -37,18 +27,6 @@ func before_each() -> void:
 func after_each() -> void:
 	if is_instance_valid(shop):
 		shop.queue_free()
-	var p: PlayerProfile = SaveManager.profile
-	p.scrap = _saved["scrap"]
-	p.cells = _saved["cells"]
-	p.cores = _saved["cores"]
-	p.unlocked_combos.assign(_saved["unlocked_combos"])
-	p.booster_slots = _saved["booster_slots"]
-	p.equipped_run_boosters.assign(_saved["equipped_run_boosters"])
-	p.double_jump_unlocked = _saved["double_jump_unlocked"]
-	p.max_hp_upgrades = _saved["max_hp_upgrades"]
-	p.shield_upgrades = _saved["shield_upgrades"]
-	p.max_lives_upgrades = _saved["max_lives_upgrades"]
-	SaveManager.save_profile()
 	GameManager.start_new_run() # no upgrade maxima leak into later tests
 	super.after_each()
 

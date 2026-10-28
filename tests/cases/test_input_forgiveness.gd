@@ -136,3 +136,23 @@ func test_dodge_buffer_expires() -> void:
 	player._tick_input_buffers(0.16)
 	assert_eq(player.take_buffered_dodge(), "", "A dodge press older than 0.15 s is dropped")
 	player.queue_free()
+
+## Q4: Q is a second DASH key and E a second ROLL key (Shift / Ctrl stay); one vocabulary --
+## DASH and ROLL -- in the pause controls grid and the HUD hint chips.
+func _keys(action: String) -> Array[int]:
+	var keys: Array[int] = []
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			keys.append(int((ev as InputEventKey).physical_keycode))
+	return keys
+
+func test_dash_and_roll_have_alternate_q_and_e_keys() -> void:
+	assert_true(_keys("dash").has(KEY_SHIFT) and _keys("dash").has(KEY_Q), "DASH: Shift and Q (%s)" % str(_keys("dash")))
+	assert_true(_keys("roll").has(KEY_CTRL) and _keys("roll").has(KEY_E), "ROLL: Ctrl and E (%s)" % str(_keys("roll")))
+	for action in ["jump", "attack_light", "attack_heavy", "ability_ultimate", "move_left", "move_right", "move_up", "move_down"]:
+		assert_false(_keys(action).has(KEY_Q) or _keys(action).has(KEY_E), "%s does not also claim Q/E" % action)
+	var pause: Node = load("res://ui/menus/pause_menu.tscn").instantiate()
+	var grid: Node = pause.get_node("Root/MenuPanel/PanelVBox/ControlsBlock/ControlsGrid")
+	assert_true((grid.get_node("ControlDash") as Label).text.begins_with("DASH") and (grid.get_node("ControlDash") as Label).text.contains("Q"), "Pause grid: DASH ... Q")
+	assert_true((grid.get_node("ControlRoll") as Label).text.begins_with("ROLL") and (grid.get_node("ControlRoll") as Label).text.contains("E"), "Pause grid: ROLL ... E")
+	pause.free()

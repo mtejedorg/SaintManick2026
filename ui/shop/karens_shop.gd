@@ -22,7 +22,8 @@ const COMBO_UPGRADE_PATHS: Array[String] = [
 	"res://_core/persistence/shop_upgrades/combo_unlock_battery_ram.tres",
 ]
 
-const BOOSTERS = ["None", "Tempo Shield", "Adrenaline", "Scrap Magnet"]
+const SceneTransition = preload("res://ui/transition/scene_transition.gd")
+const SLICE_SCENE := "res://levels/slice/vertical_slice.tscn"
 
 const TITLE_SCENE := "res://ui/menus/title_screen.tscn"
 
@@ -64,7 +65,7 @@ const SHAKE_STEP_TIME := 0.05
 var _extra_booster_buttons: Array[Button] = []
 
 ## Scene-change hook (path) -> void. A seam so tests can observe navigation without leaving
-## the test scene; defaults to SceneTree.change_scene_to_file.
+## the test scene; defaults to the SceneTransition fade (Q7).
 var change_scene: Callable
 
 func _ready() -> void:
@@ -91,7 +92,14 @@ func _on_back_to_title() -> void:
 	change_scene.call(TITLE_SCENE)
 
 func _change_scene_to(path: String) -> void:
-	get_tree().change_scene_to_file(path)
+	SceneTransition.go(get_tree(), path)
+
+## Q2: the booster cycle -- "None", then GameManager.RUN_BOOSTERS in catalog order.
+static func booster_names() -> Array[String]:
+	var names: Array[String] = ["None"]
+	for booster in GameManager.RUN_BOOSTERS:
+		names.append(booster.display_name)
+	return names
 
 ## I8: "<NAME> — " in cyan, then the dim description, right under the two lists.
 func _show_description(item_name: String, text: String) -> void:
@@ -407,10 +415,11 @@ func _cycle_booster_slot(slot: int) -> void:
 		return
 	var equipped: Array[String] = p.get_active_run_boosters()
 	var current: String = equipped[slot] if slot < equipped.size() else "None"
-	var idx: int = maxi(BOOSTERS.find(current), 0)
+	var names := booster_names()
+	var idx: int = maxi(names.find(current), 0)
 	var next: String = "None"
-	for step in range(1, BOOSTERS.size() + 1):
-		var candidate: String = BOOSTERS[(idx + step) % BOOSTERS.size()]
+	for step in range(1, names.size() + 1):
+		var candidate: String = names[(idx + step) % names.size()]
 		if candidate == "None" or not equipped.has(candidate):
 			next = candidate
 			break
@@ -428,4 +437,4 @@ func _cycle_booster_slot(slot: int) -> void:
 func _on_start_run() -> void:
 	if GameManager:
 		GameManager.start_new_run()
-	get_tree().change_scene_to_file("res://levels/slice/vertical_slice.tscn")
+	change_scene.call(SLICE_SCENE)

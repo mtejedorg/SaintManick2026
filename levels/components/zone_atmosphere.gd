@@ -30,19 +30,26 @@ const SUN_SODIUM := Color(1.0, 0.55, 0.2)
 const SUN_MAGENTA := Color(0.9, 0.2, 0.7)
 const RIM_CYAN := Color(0.0, 0.960784, 1.0)
 
+## U5: the ambient-life emitter (vfx/ambient_particles.tscn, parented to the drone camera) per
+## district: cyan dust (Zones 1-3), falling rain streaks (4-5), magenta motes (6-10). Counts stay
+## inside the budget (<= 80 live ambient particles).
+const AMBIENT_DUST_CYAN := Color(0.0, 0.85, 1.0)
+const AMBIENT_RAIN := Color(0.6, 0.8, 1.0)
+const AMBIENT_MOTE_MAGENTA := Color(1.0, 0.0, 0.667)
+
 ## zone number -> { ambient, fog (albedo), density, sky_horizon, sun_color, sun_energy,
-## rim_color, rim_energy }
+## rim_color, rim_energy, ambient_color, ambient_amount, ambient_style ("dust"/"rain"/"mote") }
 const TABLE := {
-	1: {"ambient": Color("#1B120C"), "fog": Color("#3A2410"), "density": 0.04, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15},
-	2: {"ambient": Color("#0A1B0F"), "fog": Color("#0E3A18"), "density": 0.048, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15},
-	3: {"ambient": Color("#180C0C"), "fog": Color("#3A0F0A"), "density": 0.032, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15},
-	4: {"ambient": Color("#1B0F1E"), "fog": Color("#5C1F6E"), "density": 0.019, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15},
-	5: {"ambient": Color("#120F24"), "fog": Color("#2A1A5A"), "density": 0.048, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
-	6: {"ambient": Color("#0F1227"), "fog": Color("#103A5A"), "density": 0.029, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
-	7: {"ambient": Color("#1E0C1E"), "fog": Color("#4A0A3A"), "density": 0.04, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
-	8: {"ambient": Color("#1E0918"), "fog": Color("#5A0A28"), "density": 0.032, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
-	9: {"ambient": Color("#090F1E"), "fog": Color("#1A2A5A"), "density": 0.019, "sky_horizon": HORIZON_VIOLET, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
-	10: {"ambient": Color("#0F091E"), "fog": Color("#301040"), "density": 0.056, "sky_horizon": HORIZON_VIOLET, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25},
+	1: {"ambient": Color("#1B120C"), "fog": Color("#3A2410"), "density": 0.04, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15, "ambient_color": AMBIENT_DUST_CYAN, "ambient_amount": 40, "ambient_style": "dust"},
+	2: {"ambient": Color("#0A1B0F"), "fog": Color("#0E3A18"), "density": 0.048, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15, "ambient_color": AMBIENT_DUST_CYAN, "ambient_amount": 40, "ambient_style": "dust"},
+	3: {"ambient": Color("#180C0C"), "fog": Color("#3A0F0A"), "density": 0.032, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15, "ambient_color": AMBIENT_DUST_CYAN, "ambient_amount": 40, "ambient_style": "dust"},
+	4: {"ambient": Color("#1B0F1E"), "fog": Color("#5C1F6E"), "density": 0.019, "sky_horizon": HORIZON_SODIUM, "sun_color": SUN_SODIUM, "sun_energy": 0.9, "rim_color": RIM_CYAN, "rim_energy": 0.15, "ambient_color": AMBIENT_RAIN, "ambient_amount": 60, "ambient_style": "rain"},
+	5: {"ambient": Color("#120F24"), "fog": Color("#2A1A5A"), "density": 0.048, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_RAIN, "ambient_amount": 60, "ambient_style": "rain"},
+	6: {"ambient": Color("#0F1227"), "fog": Color("#103A5A"), "density": 0.029, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_MOTE_MAGENTA, "ambient_amount": 40, "ambient_style": "mote"},
+	7: {"ambient": Color("#1E0C1E"), "fog": Color("#4A0A3A"), "density": 0.04, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_MOTE_MAGENTA, "ambient_amount": 40, "ambient_style": "mote"},
+	8: {"ambient": Color("#1E0918"), "fog": Color("#5A0A28"), "density": 0.032, "sky_horizon": HORIZON_MAGENTA, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_MOTE_MAGENTA, "ambient_amount": 40, "ambient_style": "mote"},
+	9: {"ambient": Color("#090F1E"), "fog": Color("#1A2A5A"), "density": 0.019, "sky_horizon": HORIZON_VIOLET, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_MOTE_MAGENTA, "ambient_amount": 40, "ambient_style": "mote"},
+	10: {"ambient": Color("#0F091E"), "fog": Color("#301040"), "density": 0.056, "sky_horizon": HORIZON_VIOLET, "sun_color": SUN_MAGENTA, "sun_energy": 0.7, "rim_color": RIM_CYAN, "rim_energy": 0.25, "ambient_color": AMBIENT_MOTE_MAGENTA, "ambient_amount": 40, "ambient_style": "mote"},
 }
 
 ## The WorldEnvironment whose Environment is driven. Defaults to this node's parent.
@@ -92,7 +99,8 @@ static func parse_zone_number(zone_name: String) -> int:
 	return int(digits) if digits != "" else -1
 
 ## Table lookup: { ambient, fog_albedo, fog_emission, density, sky_horizon, ground_horizon,
-## sun_color, sun_energy, rim_color, rim_energy }, or {} for an unknown zone.
+## sun_color, sun_energy, rim_color, rim_energy, ambient_color, ambient_amount, ambient_style },
+## or {} for an unknown zone.
 static func get_atmosphere(zone: int) -> Dictionary:
 	if not TABLE.has(zone):
 		return {}
@@ -110,6 +118,9 @@ static func get_atmosphere(zone: int) -> Dictionary:
 		"sun_energy": row["sun_energy"],
 		"rim_color": row["rim_color"],
 		"rim_energy": row["rim_energy"],
+		"ambient_color": row["ambient_color"],
+		"ambient_amount": row["ambient_amount"],
+		"ambient_style": row["ambient_style"],
 	}
 
 func _on_zone_entered(zone_name: String) -> void:

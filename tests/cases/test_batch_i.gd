@@ -175,53 +175,32 @@ func test_sniper_hitbox_matches_the_live_beam_width() -> void:
 
 # --- I5 ------------------------------------------------------------------------------
 
+# Q6: the three Zone 1 control cards moved to the HUD's action-gated hint strip; the
+# onboarding node keeps only its once-per-run and one-shot cards.
 func test_zone_one_prompts_once_per_run() -> void:
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()
-	prompts.first_delay = 0.0
-	prompts.spacing = 0.05
 	add_child(prompts)
 	_extra.append(prompts)
 	var got: Array[String] = []
 	var on_banner := func(text: String, _hold: float): got.append(text)
 	SignalBus.banner_requested.connect(on_banner)
-	var seen_before: bool = SaveManager.profile.seen_controls
-	SaveManager.profile.seen_controls = false
-
+	SignalBus.zone_entered.emit(zone_1)
 	SignalBus.zone_entered.emit(zone_2)
-	assert_eq(got.size(), 0, "Other zones show no prompts")
-	# L6: a Zone 2 entry marks the controls as seen for good; this test wants a fresh profile.
-	SaveManager.profile.seen_controls = false
-	SignalBus.zone_entered.emit(zone_1)
-	assert_eq(got.size(), 1, "The first card fires on entry")
-	if got.size() > 0:
-		assert_true(got[0].begins_with("ATTACK"), "...the ATTACK line (J5: first)")
-		assert_true(got[0].contains("J/X"), "...with the real bindings")
 	await get_tree().create_timer(0.2).timeout
-	assert_eq(got.size(), 3, "All three cards play")
-	if got.size() == 3:
-		assert_true(got[1].begins_with("JUMP") and got[1].contains("DODGE"), "JUMP / DODGE card")
-		assert_true(got[2].begins_with("MOVE") and got[2].contains("A/D"), "MOVE card")
-
-	SignalBus.zone_entered.emit(zone_1) # a respawn re-entry
-	await get_tree().create_timer(0.2).timeout
-	assert_eq(got.size(), 3, "Re-entering Zone 1 does not re-fire")
-
-	SignalBus.run_started.emit()
-	SignalBus.zone_entered.emit(zone_1)
-	assert_eq(got.size(), 4, "run_started resets it")
+	assert_eq(got.size(), 0, "No zone entry plays a control card any more (%s)" % str(got))
+	assert_false("PROMPTS" in (load(ONBOARDING_SCRIPT) as Script).get_script_constant_map(), "The PROMPTS card list is gone")
+	assert_false(SaveManager.profile.seen_controls, "...and a Zone 2 entry no longer marks the controls seen")
 	SignalBus.banner_requested.disconnect(on_banner)
-	SaveManager.profile.seen_controls = seen_before
 
 func test_zone_one_prompts_drop_pending_cards_on_life_lost() -> void:
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()
-	prompts.first_delay = 0.05
-	prompts.spacing = 0.05
+	prompts.top_down_delay = 0.05
 	add_child(prompts)
 	_extra.append(prompts)
 	var got: Array[String] = []
 	var on_banner := func(text: String, _hold: float): got.append(text)
 	SignalBus.banner_requested.connect(on_banner)
-	SignalBus.zone_entered.emit(zone_1)
+	SignalBus.camera_shift_finished.emit(true)
 	SignalBus.player_life_lost.emit(2)
 	await get_tree().create_timer(0.25).timeout
 	assert_eq(got.size(), 0, "A LIFE LOST card is never cut by a pending prompt")

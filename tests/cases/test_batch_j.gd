@@ -284,8 +284,9 @@ func test_zero_stun_hit_while_running_flinches_fast_then_runs() -> void:
 	var anim: AnimationPlayer = player.animation_controller.anim_player
 	player.health_component.take_damage(_zero_stun_hit(player.global_position + Vector3(2.0, 0.0, 0.0)))
 	assert_eq(String(anim.current_animation), "hit_react", "Run: the flinch plays")
-	var length: float = anim.get_animation("hit_react").length
-	assert_almost_eq(anim.get_playing_speed(), length / PlayerController.FLINCH_SECONDS, 0.01, "...fitted to 0.22 s")
+	# R3: hit_react plays its recoil window (PlayerAnimationController.SEGMENTS), not the whole clip.
+	var window: Array = PlayerAnimationController.SEGMENTS["hit_react"]
+	assert_almost_eq(anim.get_playing_speed(), (window[1] - window[0]) / PlayerController.FLINCH_SECONDS, 0.01, "...fitted to 0.22 s")
 	anim.animation_finished.emit(&"hit_react")
 	assert_eq(String(anim.current_animation), "run", "...then back to the run clip")
 
@@ -301,7 +302,7 @@ func test_fall_during_a_dash_still_costs_the_fall_damage() -> void:
 	assert_true(hc.is_invincible, "Precondition: dash i-frames are on")
 	player.fall_back_to_safe_ground() # what _physics_process runs below FALL_KILL_Y
 	assert_lt(player.global_position.distance_to(safe), 0.01, "Back on the last safe ground")
-	assert_almost_eq(100.0 - hc.current_health, player.fall_damage, 0.001, "The dash does not skip the 20 HP")
+	assert_almost_eq(100.0 - hc.current_health, player.tuning.fall_damage, 0.001, "The dash does not skip the 20 HP")
 	assert_true(banners.has("SIGNAL LOST  -20 HP"), "The fall cue plays (%s)" % str(banners))
 
 func test_survivable_fall_grants_a_short_grace_and_never_double_charges() -> void:
@@ -331,52 +332,37 @@ func test_lethal_fall_leaves_the_grace_to_the_life_loss_respawn() -> void:
 
 # --- J5 ------------------------------------------------------------------------------
 
-func _prompts(first: float, replay: float, gap: float) -> Node:
-	# L6: these cards only play on a profile that has not reached Zone 2 yet.
-	SaveManager.profile.seen_controls = false
+## Q6: the Zone 1 control cards (and their first/replay/spacing delays) are gone; the args
+## are kept so the callers read the same.
+func _prompts(_first: float, _replay: float, _gap: float) -> Node:
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()
-	prompts.first_delay = first
-	prompts.replay_delay = replay
-	prompts.spacing = gap
 	prompts.top_down_delay = 0.05
 	add_child(prompts)
 	_keep(prompts)
 	return prompts
 
+# Q6: the ATTACK / JUMP-DODGE / MOVE cards are the HUD hint strip now (test_batch_q_ui).
 func test_onboarding_attack_card_comes_first() -> void:
-	var defaults: Node = load(ONBOARDING_SCRIPT).new()
-	assert_almost_eq(defaults.first_delay, 1.5, 0.0001, "ATTACK lands 1.5 s after the zone entry")
-	defaults.free()
 	_prompts(0.0, 0.0, 0.05)
 	var got := _collect_banners()
 	SignalBus.zone_entered.emit(zone_1)
-	assert_eq(got.size(), 1, "First card on entry")
-	if got.size() > 0:
-		assert_true(got[0].begins_with("ATTACK"), "...ATTACK first (%s)" % got[0])
 	await get_tree().create_timer(0.2).timeout
-	assert_eq(got.size(), 3, "All three cards")
-	if got.size() == 3:
-		assert_true(got[1].begins_with("JUMP") and got[1].contains("DODGE"), "Then JUMP / DODGE")
-		assert_true(got[2].begins_with("MOVE") and got[2].contains("A/D"), "Then MOVE")
+	assert_eq(got.size(), 0, "Zone 1 plays no control card any more (%s)" % str(got))
+	var hints: Node = load("res://ui/hud/hud_hints.tscn").instantiate()
+	_keep(hints)
+	add_child(hints)
+	assert_eq(hints.CHIPS[0][0], "attack_light", "ATTACK is still taught first -- the first hint chip")
 
 func test_onboarding_replays_unplayed_cards_after_a_life_lost() -> void:
 	_prompts(0.0, 0.0, 0.1)
 	var got := _collect_banners()
-	SignalBus.zone_entered.emit(zone_1)
-	assert_eq(got.size(), 1, "ATTACK played")
-	SignalBus.player_life_lost.emit(2) # before JUMP/DODGE and MOVE
-	await get_tree().create_timer(0.25).timeout
-	assert_eq(got.size(), 1, "The pending cards were dropped")
-	SignalBus.zone_entered.emit(zone_1) # the respawn re-entry
-	await get_tree().create_timer(0.25).timeout
-	assert_eq(got.size(), 3, "The two unplayed cards replay (%s)" % str(got))
-	if got.size() == 3:
-		assert_true(got[1].begins_with("JUMP"), "...from where it stopped")
-		assert_true(got[2].begins_with("MOVE"), "...to the end")
-	SignalBus.player_life_lost.emit(1)
-	SignalBus.zone_entered.emit(zone_1)
-	await get_tree().create_timer(0.25).timeout
-	assert_eq(got.size(), 3, "Nothing replays once every card has played")
+	SignalBus.camera_shift_finished.emit(true) # top-down card pending (0.05 s)
+	SignalBus.player_life_lost.emit(2)
+	await get_tree().create_timer(0.15).timeout
+	assert_eq(got.size(), 0, "A life lost drops the pending card")
+	SignalBus.camera_shift_finished.emit(true) # the respawn lands the shift again
+	await get_tree().create_timer(0.15).timeout
+	assert_eq(got.size(), 1, "...which plays on the next landed shift (%s)" % str(got))
 
 func test_top_down_card_fires_once_after_the_shift_lands() -> void:
 	_prompts(0.0, 0.0, 0.05)
@@ -592,7 +578,7 @@ func test_focus_grace_counts_real_seconds() -> void:
 	_keep(button)
 	Engine.time_scale = 0.05
 	FocusGrace.arm(button, 0.1)
-	assert_true(button.disabled, "Armed")
+	assert_true(FocusGrace.is_held(button), "Armed")
 	await _wait_real(0.25)
 	Engine.time_scale = 1.0
-	assert_false(button.disabled, "A 0.05 time_scale does not stretch the 0.1 s grace")
+	assert_false(FocusGrace.is_held(button), "A 0.05 time_scale does not stretch the 0.1 s grace")

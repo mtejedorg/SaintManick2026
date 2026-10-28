@@ -11,7 +11,14 @@ extends CharacterBody3D
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 @onready var character_visual: CharacterVisual = $MeshInstance3D
+## R2: clip driver of the rigged body (idle/run, telegraph hold, strike, hit react, death) —
+## characters/shared/enemy_animator.gd. Untyped: the global class cache only refreshes on an
+## editor scan.
+@onready var animator = get_node_or_null("EnemyAnimator")
 var combat_comp: Node = null
+## U2: the attack footprint on the floor (null until _ready).
+const TelegraphZoneScript := preload("res://vfx/telegraph_zone.gd")
+var telegraph_zone: Node3D = null
 
 ## F2: facing turn rate (per physics tick, same weight as PlayerController.face_direction)
 ## and the speed below which the grunt faces the player instead of its velocity.
@@ -34,6 +41,8 @@ func _ready() -> void:
 		combat_comp.name = "EnemyCombatComponent"
 		add_child(combat_comp)
 		combat_comp.connect("stun_started", _on_stun_started)
+		if animator:
+			combat_comp.connect("stun_started", Callable(animator, "on_stun_started"))
 
 	if not stats:
 		stats = load("res://characters/enemies/runner/runner_stats.tres")
@@ -49,6 +58,7 @@ func _ready() -> void:
 	hitbox.damage_info.stun = stats.stun
 	hitbox.damage_info.source = self
 	hitbox.is_active = false
+	telegraph_zone = TelegraphZoneScript.attach(self, hitbox, TelegraphZoneScript.COLOR_MAGENTA)
 
 	player = get_tree().current_scene.get_node_or_null("Player")
 	_feet_offset = EnemyStats.feet_offset_of(self)
@@ -99,10 +109,12 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		return
 	if combat_comp.is_stunned():
 		return
-		
+	var previous_step := attack_step
+
 	if attack_step == 1:
 		attack_step = 2
 		hitbox.is_active = true
+		_hide_telegraph_zone()
 		if player:
 			var dir = (player.global_position - global_position).normalized()
 			dir.y = 0
@@ -120,6 +132,9 @@ func _on_beat(layer: String, beat_index: int) -> void:
 			attack_step = 1
 			# White-hot rim for the telegraph beat; it fades back on its own.
 			character_visual.flash_telegraph()
+			_show_telegraph_zone()
+	if animator and attack_step != previous_step:
+		animator.on_attack_step(attack_step)
 
 ## F2: the NickProto body faces +Z, so yaw the visual root toward the move direction (or
 ## toward the player while planted), like PlayerController.face_direction. Dormant and
@@ -141,6 +156,7 @@ func _update_facing() -> void:
 func _on_stun_started() -> void:
 	attack_step = 0
 	hitbox.is_active = false
+	_hide_telegraph_zone()
 	character_visual.update_rim_color(character_visual.get_default_rim_color())
 
 ## Cheap per-beat aggro check: once the player is within aggro_range the grunt wakes up
@@ -169,11 +185,24 @@ func _on_health_changed(_current: float, _max_health: float) -> void:
 	pass
 
 func _on_died() -> void:
+	_hide_telegraph_zone()
 	GameManager.add_scrap(stats.scrap)
 	SignalBus.enemy_died.emit(global_position)
-	# F3: flash + shrink, then free (scrap/enemy_died above stay immediate).
+	# F3: flash + shrink, then free (scrap/enemy_died above stay immediate). R2: the death
+	# clip plays first; CharacterVisual.play_death delays the shrink by its length.
+	if animator:
+		animator.on_died()
 	if combat_comp:
 		combat_comp.play_death_and_free(character_visual)
 	else:
 		queue_free()
 
+## U2: the floor footprint of the attack (vfx/telegraph_zone.gd): shown for the telegraph beat
+## (fading in across one beat), hidden when the hitbox arms, on a stun and on death.
+func _show_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.show_telegraph(60.0 / maxf(Conductor.bpm, 1.0))
+
+func _hide_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.hide_telegraph()

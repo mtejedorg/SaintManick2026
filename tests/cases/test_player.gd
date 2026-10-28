@@ -15,7 +15,6 @@ func test_fall_returns_to_safe_position_and_costs_hp() -> void:
 	player.health_component.current_shield = 0.0
 	player.health_component.max_health = 120.0
 	player.health_component.current_health = 120.0
-	player.fall_damage = 20.0
 
 	player.current_path = null
 	var safe := Vector3(10.0, 1.0, 0.0)

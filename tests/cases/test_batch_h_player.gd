@@ -85,12 +85,12 @@ func test_idle_brakes_residual_z_velocity_in_top_down() -> void:
 func test_dodge_exit_clears_residual_z_in_top_down() -> void:
 	var player: PlayerController = await _grounded_player(Vector3(0.0, 0.0, 7040.0))
 	player.state_machine._on_transition_requested("StateDash")
-	player.velocity.z = player.dash_speed
+	player.velocity.z = player.tuning.dash_speed
 	player.state_machine._on_transition_requested("StateIdle")
 	assert_eq(player.velocity.z, 0.0, "Leaving a top-down dash leaves no z slide")
 	player._dodge_cooldown_timer = 0.0
 	player.state_machine._on_transition_requested("StateRoll")
-	player.velocity.z = -player.roll_speed
+	player.velocity.z = -player.tuning.roll_speed
 	player.state_machine._on_transition_requested("StateIdle")
 	assert_eq(player.velocity.z, 0.0, "...same for a roll")
 	player.queue_free()

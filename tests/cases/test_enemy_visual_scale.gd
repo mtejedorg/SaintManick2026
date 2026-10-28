@@ -4,6 +4,14 @@ extends "res://tests/framework/test_case.gd"
 ## the capsule bottom — the shared NickProto visual used to render ~0.84 m tall.
 
 func _visual_bounds(visual: Node3D) -> AABB:
+	# R1: a skinned body (the rigged enemy body) is measured from its posed skeleton — the
+	# mesh AABB of a Mixamo skin is in bind space, not where the body actually stands.
+	var sk := visual.find_child("Skeleton3D", true, false) as Skeleton3D
+	if sk:
+		var box := AABB(sk.global_transform * sk.get_bone_global_pose(0).origin, Vector3.ZERO)
+		for i in sk.get_bone_count():
+			box = box.expand(sk.global_transform * sk.get_bone_global_pose(i).origin)
+		return box
 	var merged := AABB()
 	var first := true
 	for mi in visual.find_children("*", "MeshInstance3D", true, false):

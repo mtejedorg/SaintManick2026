@@ -18,6 +18,16 @@ signal encounter_completed
 ## Rare Scrap ("cells" in code, GDD §5.1) awarded for clearing the Zone 9 elevator
 ## endurance encounter.
 @export var cells_reward: int = 10
+## S4: the ride stops. Wave i is fought with the platform parked at stop_heights[i] (it climbs
+## there, lurches to a halt and waits until the wave is dead); once every wave is beaten the
+## last leg runs to target_y. Heights past target_y are clamped to it; no entry = target_y.
+@export var stop_heights: Array[float] = [5.0, 10.0, 14.5]
+## Flickers for `flicker_beats` beats each time the platform lurches to a stop (optional).
+@export var ride_light: OmniLight3D
+@export var flicker_beats: int = 3
+const LURCH_SHAKE_STRENGTH := 0.2
+const LURCH_SHAKE_DURATION := 0.3
+const FLICKER_LOW := 0.15
 
 var current_wave_index: int = 0
 var is_active: bool = false
@@ -30,6 +40,11 @@ var cooldown_timer: float = 0.0
 ## Bumped on every respawn: a deferred start_encounter scheduled under an older generation
 ## is stale (a respawn reset landed in the same frame) and no-ops.
 var _generation: int = 0
+## S4: index of the stop the platform last lurched into (-1 = none yet this ride).
+var _halted_stop: int = -1
+var _flicker_left: int = 0
+var _light_energy: float = 0.0
+var _flicker_tween: Tween = null
 
 func _ready() -> void:
 	if platform:
@@ -39,6 +54,8 @@ func _ready() -> void:
 	if entry_trigger:
 		entry_trigger.body_entered.connect(_on_entry_trigger_entered)
 	SignalBus.player_respawned.connect(_on_player_respawned)
+	if ride_light:
+		_light_energy = ride_light.light_energy
 
 ## The player lost a life mid-ride: despawn the wave silently, drop the platform back to
 ## the bottom and re-arm the entry trigger so he can board and fight it again from wave 1.
@@ -55,6 +72,8 @@ func _on_player_respawned() -> void:
 	is_cooldown = false
 	cooldown_timer = 0.0
 	is_active = false
+	_halted_stop = -1
+	_stop_flicker()
 	if entry_trigger:
 		entry_trigger.set_deferred("monitoring", true)
 
@@ -83,6 +102,7 @@ func start_encounter(generation: int = -1) -> void:
 	completed = false
 	is_cooldown = false
 	current_wave_index = 0
+	_halted_stop = -1
 	_spawn_current_wave()
 
 func _physics_process(delta: float) -> void:
@@ -97,11 +117,61 @@ func _physics_process(delta: float) -> void:
 			
 	if platform:
 		var current_y = platform.position.y
-		if current_y < target_y:
-			current_y = min(target_y, current_y + speed * delta)
+		var leg_top := current_leg_height()
+		if current_y < leg_top:
+			current_y = min(leg_top, current_y + speed * delta)
 			platform.position.y = current_y
+			if current_y >= leg_top and current_wave_index < waves.size() and _halted_stop != current_wave_index:
+				_lurch_to_stop(current_wave_index)
 			
 	_check_completion()
+
+## S4: how high the platform may climb right now -- the current wave's stop while it is
+## being fought, target_y once every wave is beaten.
+func current_leg_height() -> float:
+	if current_wave_index < waves.size() and current_wave_index < stop_heights.size():
+		return minf(stop_heights[current_wave_index], target_y)
+	return target_y
+
+## S4: the platform has climbed into a stop with its wave still alive -- jolt and flicker.
+func _lurch_to_stop(stop_index: int) -> void:
+	_halted_stop = stop_index
+	SignalBus.camera_shake_requested.emit(LURCH_SHAKE_STRENGTH, LURCH_SHAKE_DURATION)
+	if ride_light == null or flicker_beats <= 0:
+		return
+	_flicker_left = flicker_beats
+	if not SignalBus.beat.is_connected(_on_flicker_beat):
+		SignalBus.beat.connect(_on_flicker_beat)
+	_flicker_once()
+
+func _on_flicker_beat(layer: String, _beat_index: int) -> void:
+	if layer != "primary" or _flicker_left <= 0:
+		return
+	_flicker_left -= 1
+	if _flicker_left <= 0:
+		_stop_flicker()
+		return
+	_flicker_once()
+
+## One stutter of the ride light: off, on, half, on within ~0.25 s.
+func _flicker_once() -> void:
+	if ride_light == null or not ride_light.is_inside_tree():
+		return
+	if _flicker_tween:
+		_flicker_tween.kill()
+	ride_light.light_energy = _light_energy * FLICKER_LOW
+	_flicker_tween = ride_light.create_tween()
+	_flicker_tween.tween_property(ride_light, "light_energy", _light_energy, 0.06)
+	_flicker_tween.tween_property(ride_light, "light_energy", _light_energy * 0.4, 0.05)
+	_flicker_tween.tween_property(ride_light, "light_energy", _light_energy, 0.12)
+
+func _stop_flicker() -> void:
+	_flicker_left = 0
+	if _flicker_tween:
+		_flicker_tween.kill()
+		_flicker_tween = null
+	if ride_light and is_instance_valid(ride_light):
+		ride_light.light_energy = _light_energy
 
 func _spawn_current_wave() -> void:
 	if current_wave_index < waves.size():

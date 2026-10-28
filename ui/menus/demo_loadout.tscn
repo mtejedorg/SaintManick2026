@@ -46,7 +46,14 @@ horizontal_alignment = 1
 [node name="BoosterButton" type="Button" parent="Panel/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "RUN BOOSTER: NONE"
+text = "< RUN BOOSTER: NONE >"
+
+[node name="HintLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+theme_override_font_sizes/font_size = 16
+text = "LEFT / RIGHT TO CHANGE"
+horizontal_alignment = 1
 
 [node name="DescriptionLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2

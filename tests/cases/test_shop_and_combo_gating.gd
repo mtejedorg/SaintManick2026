@@ -1,22 +1,9 @@
 extends "res://tests/framework/test_case.gd"
 
-var original_profile_state: Dictionary
-
 func before_each() -> void:
+	# Q1: the runner hands every test a fresh profile on a temp path (no backup needed).
 	if SaveManager and SaveManager.profile:
 		var p = SaveManager.profile
-		original_profile_state = {
-			"scrap": p.scrap,
-			"cells": p.cells,
-			"cores": p.cores,
-			"unlocked_combos": p.unlocked_combos.duplicate(),
-			"booster_slots": p.booster_slots,
-			"equipped_run_boosters": p.equipped_run_boosters.duplicate(),
-			"double_jump_unlocked": p.double_jump_unlocked,
-			"max_hp_upgrades": p.max_hp_upgrades,
-			"shield_upgrades": p.shield_upgrades,
-			"max_lives_upgrades": p.max_lives_upgrades,
-		}
 		p.scrap = 0
 		p.cells = 0
 		p.cores = 0
@@ -27,21 +14,6 @@ func before_each() -> void:
 		p.max_hp_upgrades = 0
 		p.shield_upgrades = 0
 		p.max_lives_upgrades = 0
-
-func after_each() -> void:
-	if SaveManager and SaveManager.profile and not original_profile_state.is_empty():
-		var p = SaveManager.profile
-		p.scrap = original_profile_state["scrap"]
-		p.cells = original_profile_state["cells"]
-		p.cores = original_profile_state["cores"]
-		p.unlocked_combos = original_profile_state["unlocked_combos"]
-		p.booster_slots = original_profile_state["booster_slots"]
-		p.equipped_run_boosters.assign(original_profile_state["equipped_run_boosters"])
-		p.double_jump_unlocked = original_profile_state["double_jump_unlocked"]
-		p.max_hp_upgrades = original_profile_state["max_hp_upgrades"]
-		p.shield_upgrades = original_profile_state["shield_upgrades"]
-		p.max_lives_upgrades = original_profile_state["max_lives_upgrades"]
-		SaveManager.save_profile()
 
 func test_tri_cut_and_launcher_free_and_available_by_default() -> void:
 	var tri_cut: ShopUpgrade = load("res://_core/persistence/shop_upgrades/combo_unlock_tri_cut.tres")

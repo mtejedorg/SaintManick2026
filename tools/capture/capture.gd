@@ -100,6 +100,9 @@ func _run() -> void:
 	SignalBus.boss_spawned.emit("Headliner")
 	SignalBus.boss_health_changed.emit(900, 1500)
 	SignalBus.boss_shield_changed.emit(1.0, 1.0)
+	# boss_spawned plays the priority card (it slides in from off-screen): let the slide-in
+	# finish so the shot shows the card's text, not an empty band mid-slide (batch T1).
+	await get_tree().create_timer(0.6).timeout
 	await _frames(3)
 	_save("hud_full_state")
 	SignalBus.boss_reset.emit()

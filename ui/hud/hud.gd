@@ -3,41 +3,62 @@ extends CanvasLayer
 ## D11 (batch M): the HUD cluster is drawn from Controls styled by the theme's Hud* type
 ## variations (ui/theme/neon_theme.tres) — no raster art. The battery is a framed 12-segment
 ## bar; the low-HP pulse tweens this whole bar's modulate.
-@onready var battery_bar: PanelContainer = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar
-@onready var battery_segments: HBoxContainer = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments
+@onready var battery_bar: PanelContainer = $SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar
+@onready var battery_segments: HBoxContainer = $SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments
 ## Numeric "HP 120/120" readout right of the battery.
-@onready var hp_label: Label = $MarginContainer/VBoxContainer/StatusContainer/HpLabel
+@onready var hp_label: Label = $SafeArea/MarginContainer/VBoxContainer/StatusContainer/HpLabel
 ## GAP-8 fix (M12) / D11: the shield is a thin pale-cyan strip directly under the battery
 ## (GDD §6.1), filling left-to-right, hidden while the shield is down.
-@onready var shield_bar: ProgressBar = $MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
+@onready var shield_bar: ProgressBar = $SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/ShieldBar
 ## One cyan diamond per spare life, up to LIVES_GLYPH_MAX.
 # ART: optional 24x24 Nick head glyph (cyan line art on transparent, PNG) to sit as the first
 # child of LivesRow so the diamonds read as "Nick's lives" at a glance; the row works without it.
-@onready var lives_row: HBoxContainer = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow
+@onready var lives_row: HBoxContainer = $SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow
 ## Magenta "LAST LIFE" tag under the lives glyphs, shown when no spare lives remain.
-@onready var last_life_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LastLifeLabel
+@onready var last_life_label: Label = $SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LastLifeLabel
 ## U6: "xN" tag after the glyphs when there are more lives than glyphs.
-@onready var lives_count_label: Label = $MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/LivesCountLabel
+@onready var lives_count_label: Label = $SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/LivesCountLabel
 @onready var zone_title_card: Control = $ZoneTitleCard
 @onready var beat_pulse_node: Control = $BeatPulse
 @onready var combo_label: Label = $ComboLabel
-@onready var boss_bar_container: PanelContainer = $BossBarContainer
-@onready var boss_name_label: Label = $BossBarContainer/BossBarVBox/BossNameLabel
-@onready var boss_health_bar: ProgressBar = $BossBarContainer/BossBarVBox/BossHealthBar
+@onready var boss_bar_container: PanelContainer = $SafeArea/BossBarMargin/BossBarContainer
+@onready var boss_name_label: Label = $SafeArea/BossBarMargin/BossBarContainer/BossBarVBox/BossNameLabel
+@onready var boss_health_bar: ProgressBar = $SafeArea/BossBarMargin/BossBarContainer/BossBarVBox/BossHealthBar
 ## U5: thin cyan strip along the boss bar's top edge, same treatment as the player shield.
-@onready var boss_shield_strip: TextureProgressBar = $BossBarContainer/BossBarVBox/BossHealthBar/BossShieldStrip
+@onready var boss_shield_strip: TextureProgressBar = $SafeArea/BossBarMargin/BossBarContainer/BossBarVBox/BossHealthBar/BossShieldStrip
 
-@onready var scrap_label: Label = $ScrapLabel
-@onready var cells_label: Label = $CellsLabel
-@onready var cores_label: Label = $CoresLabel
+@onready var scrap_label: Label = $SafeArea/Currencies/ScrapLabel
+@onready var cells_label: Label = $SafeArea/Currencies/CellsLabel
+@onready var cores_label: Label = $SafeArea/Currencies/CoresLabel
+## Q5: "SECTOR 03 / 10 + boosters" under the currencies, set on zone_entered.
+@onready var zone_tag: Label = $SafeArea/Currencies/HudZoneTag
+## Q8: every corner element lives in this MarginContainer, clamped to a centred 16:9 rect.
+@onready var safe_area: MarginContainer = $SafeArea
+## Q6: the action-gated control hints, bottom-left.
+@onready var hud_hints: HBoxContainer = $SafeArea/HudHints
+## Q8: full-screen magenta edge glow at low HP (ui/hud/low_hp_vignette.gdshader).
+@onready var low_hp_vignette: ColorRect = $LowHpVignette
 
 const COMBO_CYAN := Color(0.0, 0.961, 1.0, 1.0)
 ## Below this fraction of max HP the battery pulses magenta on every beat.
 const LOW_HP_RATIO := 0.25
 const LOW_HP_MAGENTA := Color(1.0, 0.0, 0.667, 1.0)
 const LOW_HP_PULSE_TIME := 0.15
-## How long the "LIFE LOST — N LEFT" banner rests on screen.
-const LIFE_LOST_HOLD := 1.2
+## Q8: the HUD corners sit inside a centred 16:9 rect plus this margin (px, 1080p canvas).
+const SAFE_ASPECT := 16.0 / 9.0
+const SAFE_MARGIN := 20.0
+## Q5: the slice's zone count for the zone tag ("SECTOR 03 / 10").
+const ZONE_COUNT := 10
+## Q5: the boss entrance card ("LIVE ON AIR" over the boss name), then the bar fades in.
+const BOSS_EYEBROW := "LIVE ON AIR"
+const BOSS_BAR_FADE_TIME := 0.4
+## Q8: low-HP vignette -- fully off above VIGNETTE_START_RATIO of max HP, full at
+## VIGNETTE_FULL_RATIO and below; beat pulse decay and the player_damaged flash.
+const VIGNETTE_START_RATIO := 0.35
+const VIGNETTE_FULL_RATIO := 0.1
+const VIGNETTE_PULSE_TIME := 0.3
+const VIGNETTE_FLASH_PEAK := 0.5
+const VIGNETTE_FLASH_TIME := 0.15
 ## Battery segment count, and how many of the last cells to drain turn magenta at low HP.
 const BATTERY_SEGMENTS := 12
 const BATTERY_DANGER_SEGMENTS := 3
@@ -58,13 +79,22 @@ var combo_tween: Tween
 var low_hp_tween: Tween
 var last_life_tween: Tween
 var _low_hp: bool = false
+## Q5: seconds the boss card holds before it slides out (tests shorten it).
+var boss_card_hold: float = 1.8
+var _boss_bar_tween: Tween
+var _vignette_material: ShaderMaterial
+var _vignette_intensity: float = 0.0
+var _vignette_flash: float = 0.0
+var _vignette_pulse_tween: Tween
+var _vignette_flash_tween: Tween
 
 func _ready() -> void:
 	# Subscriptions
 	SignalBus.player_health_changed.connect(_on_player_health_changed)
 	SignalBus.player_shield_changed.connect(_on_player_shield_changed)
 	GameManager.lives_changed.connect(_on_lives_changed)
-	SignalBus.player_life_lost.connect(_on_player_life_lost)
+	SignalBus.player_damaged.connect(_on_player_damaged)
+	SignalBus.zone_entered.connect(_on_zone_entered)
 	SignalBus.beat.connect(_on_beat)
 	SignalBus.downbeat.connect(_on_downbeat)
 	SignalBus.combo_increased.connect(_on_combo_increased)
@@ -80,8 +110,14 @@ func _ready() -> void:
 	GameManager.cores_changed.connect(_on_cores_changed)
 
 	# Initial UI Setup
+	# Each HUD owns its vignette material (the scene's sub-resource is shared between instances).
+	_vignette_material = (low_hp_vignette.material as ShaderMaterial).duplicate() as ShaderMaterial
+	low_hp_vignette.material = _vignette_material
+	get_viewport().size_changed.connect(_update_safe_area)
+	_update_safe_area()
 	_setup_boss_shield_strip()
 	_update_battery_ui(GameManager.current_hp, GameManager.max_hp)
+	_update_vignette(GameManager.current_hp, GameManager.max_hp)
 	_update_shield_ui(GameManager.current_shield, GameManager.max_shield)
 	_update_lives_ui(GameManager.current_lives)
 	scrap_label.text = "SCRAP  %d" % GameManager.scrap
@@ -108,6 +144,7 @@ func _setup_boss_shield_strip() -> void:
 
 func _on_player_health_changed(new_health: float, max_health: float) -> void:
 	_update_battery_ui(new_health, max_health)
+	_update_vignette(new_health, max_health)
 
 func _on_player_shield_changed(new_shield: float, max_shield: float) -> void:
 	_update_shield_ui(new_shield, max_shield)
@@ -115,23 +152,94 @@ func _on_player_shield_changed(new_shield: float, max_shield: float) -> void:
 func _on_lives_changed(new_amount: int) -> void:
 	_update_lives_ui(new_amount)
 
-## A life was spent: reuse the zone card as a short PRIORITY banner (the respawn's own
-## zone_entered must not cut it). The death that spends the last spare life emits 0 with the
-## run still live -> "LAST LIFE"; the terminal emission (run_ended already set) is the
-## game-over path and is handled by the game-over screen.
-## GameManager.last_killer is recorded before player_life_lost fires, so the banner names the
-## cause (" · DESTROYED BY RUNNER") like the Game Over screen does.
-func _on_player_life_lost(current_lives: int) -> void:
-	var text := ""
-	if current_lives > 0:
-		text = "LIFE LOST — %d LEFT" % current_lives
-	elif not GameManager.run_ended:
-		text = "LAST LIFE"
-	else:
+## Q4b: the life-lost card ("LIFE LOST — N LEFT — RESUMING SECTOR NN" / "LAST LIFE") and the
+## death-beat "DESTROYED BY X" card come from GameManager through banner_requested; the HUD no
+## longer builds its own (the two collided on the same frame). The LAST LIFE tag and its beat
+## pulse still follow lives_changed (_update_lives_ui).
+
+## Q8: margins that keep the corners inside a centred 16:9 rect (+ SAFE_MARGIN) on any window.
+func _update_safe_area() -> void:
+	var rect := get_viewport().get_visible_rect().size
+	if rect.x <= 0.0 or rect.y <= 0.0:
 		return
-	if GameManager.last_killer != "":
-		text += " · DESTROYED BY %s" % GameManager.last_killer
-	zone_title_card.call("show_text", text, LIFE_LOST_HOLD, true)
+	var margin_x := SAFE_MARGIN
+	var margin_y := SAFE_MARGIN
+	var aspect := rect.x / rect.y
+	if aspect > SAFE_ASPECT:
+		margin_x += (rect.x - rect.y * SAFE_ASPECT) / 2.0
+	elif aspect < SAFE_ASPECT:
+		margin_y += (rect.y - rect.x / SAFE_ASPECT) / 2.0
+	safe_area.add_theme_constant_override("margin_left", roundi(margin_x))
+	safe_area.add_theme_constant_override("margin_right", roundi(margin_x))
+	safe_area.add_theme_constant_override("margin_top", roundi(margin_y))
+	safe_area.add_theme_constant_override("margin_bottom", roundi(margin_y))
+
+## Q5: the first integer of a zone name ("SECTOR 03 — ..." -> 3), the audio parser's rule;
+## 0 when there is none.
+static func zone_number(zone_name: String) -> int:
+	for part in zone_name.split(" "):
+		var n := part.to_int()
+		if n > 0:
+			return n
+	return 0
+
+## Q5: "SECTOR 03 / 10", plus " · ADRENALINE" for each run booster.
+static func zone_tag_text(zone_name: String, boosters: Array[String]) -> String:
+	var n := zone_number(zone_name)
+	if n <= 0:
+		return ""
+	var text := "SECTOR %02d / %d" % [n, ZONE_COUNT]
+	for booster in boosters:
+		text += " \u00b7 %s" % booster.to_upper()
+	return text
+
+func _on_zone_entered(zone_name: String) -> void:
+	var text := zone_tag_text(zone_name, GameManager.run_boosters())
+	if text == "":
+		return
+	zone_tag.text = text
+	zone_tag.visible = true
+
+## Q8: the vignette's base alpha for an HP ratio (0 above 35 %, 1 at 10 % and below).
+static func vignette_alpha_for(ratio: float) -> float:
+	return 1.0 - smoothstep(VIGNETTE_FULL_RATIO, VIGNETTE_START_RATIO, ratio)
+
+## The vignette's current base alpha (0 = off).
+func vignette_alpha() -> float:
+	return _vignette_intensity
+
+func _update_vignette(current: float, max_val: float) -> void:
+	var ratio: float = current / max_val if max_val > 0.0 else 1.0
+	_vignette_intensity = 0.0 if GameManager.reduce_flashes() else vignette_alpha_for(ratio)
+	_vignette_material.set_shader_parameter("intensity", _vignette_intensity)
+	_sync_vignette_visible()
+
+func _sync_vignette_visible() -> void:
+	low_hp_vignette.visible = _vignette_intensity > 0.0 or _vignette_flash > 0.0
+
+func _set_vignette_pulse(value: float) -> void:
+	_vignette_material.set_shader_parameter("pulse", value)
+
+func _set_vignette_flash(value: float) -> void:
+	_vignette_flash = value
+	_vignette_material.set_shader_parameter("flash", value)
+	_sync_vignette_visible()
+
+func _pulse_vignette() -> void:
+	if _vignette_intensity <= 0.0:
+		return
+	if _vignette_pulse_tween:
+		_vignette_pulse_tween.kill()
+	_vignette_pulse_tween = create_tween()
+	_vignette_pulse_tween.tween_method(_set_vignette_pulse, 1.0, 0.0, VIGNETTE_PULSE_TIME)
+
+func _on_player_damaged(_damage_info: DamageInfo) -> void:
+	if GameManager.reduce_flashes():
+		return
+	if _vignette_flash_tween:
+		_vignette_flash_tween.kill()
+	_vignette_flash_tween = create_tween()
+	_vignette_flash_tween.tween_method(_set_vignette_flash, VIGNETTE_FLASH_PEAK, 0.0, VIGNETTE_FLASH_TIME)
 
 ## Lights round(ratio * 12) cells (never 0 while Nick is alive). At <= 25 % HP the lit cells,
 ## the last three to drain, switch to the magenta danger style and the readout turns magenta.
@@ -220,6 +328,7 @@ func _on_beat(layer: String, _beat_index: int) -> void:
 
 	_pulse_low_hp()
 	_pulse_last_life()
+	_pulse_vignette()
 
 	if beat_tween:
 		beat_tween.kill()
@@ -276,11 +385,32 @@ func _on_combo_capped() -> void:
 	combo_tween.parallel().tween_property(combo_label, "modulate", Color(1, 1, 1, 1), 0.25)
 	SignalBus.camera_shake_requested.emit(0.15, 0.3)
 
+## Q5: the boss moment -- a priority card ("LIVE ON AIR" over the boss name) on the zone
+## card, then the boss bar fades in as the card slides out. The hint strip makes room for it.
 func _on_boss_spawned(boss_name: String) -> void:
 	boss_name_label.text = boss_name.to_upper()
-	boss_bar_container.visible = true
 	# The boss reports its shield right after spawning; never inherit the previous fight's.
 	boss_shield_strip.visible = false
+	zone_title_card.call("show_text", boss_name.to_upper(), boss_card_hold, true, BOSS_EYEBROW)
+	hud_hints.set_suppressed(true)
+	_kill_boss_bar_tween()
+	boss_bar_container.visible = true
+	boss_bar_container.modulate.a = 0.0
+	_boss_bar_tween = create_tween()
+	_boss_bar_tween.tween_interval(float(zone_title_card.call("time_until_slide_out", boss_card_hold)))
+	_boss_bar_tween.tween_property(boss_bar_container, "modulate:a", 1.0, BOSS_BAR_FADE_TIME)
+
+func _kill_boss_bar_tween() -> void:
+	if _boss_bar_tween:
+		_boss_bar_tween.kill()
+		_boss_bar_tween = null
+
+func _hide_boss_bar() -> void:
+	_kill_boss_bar_tween()
+	boss_bar_container.visible = false
+	boss_bar_container.modulate.a = 1.0
+	boss_shield_strip.visible = false
+	hud_hints.set_suppressed(false)
 
 func _on_boss_health_changed(current: int, maximum: int) -> void:
 	boss_health_bar.max_value = maximum
@@ -293,14 +423,12 @@ func _on_boss_shield_changed(current: float, max_shield: float) -> void:
 	boss_shield_strip.visible = current > 0.0
 
 func _on_boss_died() -> void:
-	boss_bar_container.visible = false
-	boss_shield_strip.visible = false
+	_hide_boss_bar()
 
 ## T3: a checkpoint respawn returned the boss to dormant — clear the bar without any
 ## victory side effects.
 func _on_boss_reset() -> void:
-	boss_bar_container.visible = false
-	boss_shield_strip.visible = false
+	_hide_boss_bar()
 
 func _on_scrap_changed(new_amount: int) -> void:
 	scrap_label.text = "SCRAP  %d" % new_amount

@@ -22,29 +22,17 @@ var zone_2: String = "SECTOR 02 " + String.chr(0x2014) + " PISTON GAUNTLET"
 
 var _slice: Node3D
 var _extra: Array[Node] = []
-var _profile_backup: Dictionary = {}
 var _run_ended_before: bool = false
 
 func before_each() -> void:
 	GameManager.is_test = true
 	_run_ended_before = GameManager.run_ended
-	var p: PlayerProfile = SaveManager.profile
-	_profile_backup = {
-		"seen_controls": p.seen_controls,
-		"master_volume": p.master_volume,
-		"music_volume": p.music_volume,
-		"sfx_volume": p.sfx_volume,
-		"fullscreen": p.fullscreen,
-	}
+	# Q1: the runner hands every test a fresh profile on a temp path and re-applies its mix.
 
 func after_each() -> void:
 	super.after_each()
 	get_tree().paused = false
 	GameManager.run_ended = _run_ended_before
-	var p: PlayerProfile = SaveManager.profile
-	for key in _profile_backup.keys():
-		p.set(key, _profile_backup[key])
-	SaveManager.apply_settings()
 	for n in _extra:
 		if is_instance_valid(n):
 			n.free()
@@ -291,20 +279,21 @@ func test_l5_top_down_completion_shows_no_go_cue() -> void:
 
 func _prompts() -> Node:
 	var prompts: Node = load(ONBOARDING_SCRIPT).new()
-	prompts.first_delay = 0.0
-	prompts.replay_delay = 0.0
-	prompts.spacing = 0.02
 	prompts.top_down_delay = 0.0
 	add_child(prompts)
 	return _keep(prompts)
 
+## Q6: seen_controls now gates the HUD hint strip (the Zone 1 cards are gone).
 func test_l6_seen_controls_skips_the_zone_one_cards() -> void:
 	SaveManager.profile.seen_controls = true
 	_prompts()
 	var got := _collect_banners()
+	var hints: Control = _keep(load("res://ui/hud/hud_hints.tscn").instantiate()) as Control
+	add_child(hints)
+	assert_false(hints.visible, "Controls already seen -> no hint strip")
 	SignalBus.zone_entered.emit(zone_1)
 	await get_tree().create_timer(0.15).timeout
-	assert_eq(got.size(), 0, "No Zone 1 card once the controls were seen (%s)" % str(got))
+	assert_eq(got.size(), 0, "No Zone 1 card (%s)" % str(got))
 	# The once-per-run extra cards are not gated by the flag.
 	SignalBus.camera_shift_finished.emit(true)
 	SignalBus.ability_meter_changed.emit(100.0, 100.0)
@@ -313,18 +302,16 @@ func test_l6_seen_controls_skips_the_zone_one_cards() -> void:
 func test_l6_first_zone_two_entry_marks_the_controls_seen() -> void:
 	SaveManager.profile.seen_controls = false
 	assert_false(PlayerProfile.new().seen_controls, "A fresh profile has not seen the controls")
+	GameManager.start_new_run() # a normal (saving) run
 	_prompts()
-	var got := _collect_banners()
-	SignalBus.zone_entered.emit(zone_1)
-	await get_tree().create_timer(0.15).timeout
-	assert_eq(got.size(), 3, "A fresh profile plays the three Zone 1 cards")
-	assert_false(SaveManager.profile.seen_controls, "Zone 1 alone does not mark them seen")
+	var hints: Control = _keep(load("res://ui/hud/hud_hints.tscn").instantiate()) as Control
+	add_child(hints)
+	assert_true(hints.visible, "A fresh profile shows the hint strip")
 	SignalBus.zone_entered.emit(zone_2)
-	assert_true(SaveManager.profile.seen_controls, "The first Zone 2 entry marks the controls as seen")
-	SignalBus.run_started.emit()
-	SignalBus.zone_entered.emit(zone_1)
-	await get_tree().create_timer(0.15).timeout
-	assert_eq(got.size(), 3, "The next run skips them")
+	assert_false(SaveManager.profile.seen_controls, "Reaching Zone 2 no longer marks them seen (Q6)")
+	for spec in hints.CHIPS:
+		hints.fire(spec[0])
+	assert_true(SaveManager.profile.seen_controls, "Every chip fired -> the controls are seen for good")
 
 # --- L7 ------------------------------------------------------------------------------
 

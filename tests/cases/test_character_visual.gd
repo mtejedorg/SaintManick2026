@@ -89,7 +89,9 @@ func test_runner_death_disarms_then_frees_after_the_tween() -> void:
 	assert_true(is_instance_valid(runner), "The runner stays for its death tween")
 	assert_false(hurtbox.is_in_group("enemy_hurtbox"), "A dying runner is no longer an AoE target")
 	assert_false(runner.hitbox.is_active, "A dying runner's hitbox is off")
-	await get_tree().create_timer(EnemyCombatComponentScript.DEATH_SECONDS + 0.15).timeout
+	# R2: the Runner's EnemyAnimator death clip plays before the shrink.
+	var anim_seconds: float = runner.get_node("EnemyAnimator").death_anim_seconds
+	await get_tree().create_timer(EnemyCombatComponentScript.DEATH_SECONDS + anim_seconds + 0.15).timeout
 	assert_false(is_instance_valid(runner), "The runner frees once the death tween ends")
 	SignalBus.enemy_died.disconnect(on_died)
 

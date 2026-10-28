@@ -82,6 +82,13 @@ autowrap_mode = 3
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
+[node name="RetryButton" type="Button" parent="Root/CenterBox"]
+visible = false
+custom_minimum_size = Vector2(320, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "RETRY"
+
 [node name="ReturnButton" type="Button" parent="Root/CenterBox"]
 custom_minimum_size = Vector2(320, 60)
 layout_mode = 2

@@ -119,13 +119,13 @@ text = "HEAVY   K · Y"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"DimLabel"
-text = "DASH   Shift · RB"
+text = "DASH   Shift · Q · RB"
 
 [node name="ControlRoll" type="Label" parent="Root/MenuPanel/PanelVBox/ControlsBlock/ControlsGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"DimLabel"
-text = "ROLL   Ctrl · B"
+text = "ROLL   Ctrl · E · B"
 
 [node name="ControlUltimate" type="Label" parent="Root/MenuPanel/PanelVBox/ControlsBlock/ControlsGrid"]
 layout_mode = 2

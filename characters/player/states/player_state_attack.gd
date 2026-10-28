@@ -19,9 +19,9 @@ const EMP_DASH_CANCEL_COST: float = 25.0
 ## Fraction of the current hit's total duration considered "active" (hitbox live). The
 ## remainder is recovery.
 const ACTIVE_WINDOW_FRACTION: float = 0.6
-## K2 (D22): the free dodge cancel -- the last this-much of the RECOVERY window, once the
-## current hit connected (player.hit_connected), a dash/roll press cancels for no meter.
-const FREE_CANCEL_RECOVERY_FRACTION: float = 0.4
+## K2 (D22): the free dodge cancel -- the last player.tuning.free_cancel_recovery_fraction
+## of the RECOVERY window, once the current hit connected (player.hit_connected), a dash/roll
+## press cancels for no meter.
 
 ## T2: generic (unmatched/mashed) heavy hits pressure a shield at this multiple of their
 ## base amount instead of shattering it outright — only Battery Ram (ComboDef.is_shield_breaker)
@@ -32,12 +32,15 @@ var attack_timer: float = 0.0
 var current_hit_duration: float = 0.0
 var combo_step: int = 0
 var max_combo_step: int = 2
-## Generic (unmatched) hit windows, first / second / third hit. Light hits use
-## attack_durations; K1 (D3): generic heavies are slower (heavy_attack_durations) so the
-## named routes out-damage heavy mashing. Matched routes use their ComboDef.duration.
-var attack_durations: Array[float] = [0.3, 0.3, 0.6]
-@export var heavy_attack_durations: Array[float] = [0.45, 0.45, 0.75]
+## Generic (unmatched) hit windows, first / second / third hit, live in player.tuning (Q2):
+## light hits use attack_durations; K1 (D3): generic heavies are slower
+## (heavy_attack_durations) so the named routes out-damage heavy mashing. Matched routes use
+## their ComboDef.duration.
 const COMBO_WINDOW: float = 0.15
+## Q4: the running hit's step-in toward the facing (player.tuning.attack_step_in /
+## attack_step_in_seconds) -- seconds left and its speed.
+var _step_in_timer: float = 0.0
+var _step_in_speed: float = 0.0
 
 # Presses landed before the combo window opens are buffered and consumed when
 # it does — mashing chains combos instead of whiffing between windows.
@@ -63,7 +66,12 @@ func _ensure_combo_defs_loaded() -> void:
 ## no-prerequisite entries in the tree (see combo_unlock_tri_cut.tres/combo_unlock_launcher
 ## .tres) — SaveManager grants them to every profile on first load (see save_manager.gd)
 ## so a fresh save can still throw the two basic chains without a shop visit.
+## Q3: GameManager.is_combo_unlocked() decides when it exists (a demo run unlocks every
+## route without touching the profile); the profile read is the fallback.
 func _is_combo_unlocked(seq: String) -> bool:
+	var gm = player.get_node_or_null("/root/GameManager") if player else null
+	if gm and gm.has_method("is_combo_unlocked"):
+		return gm.is_combo_unlocked(seq)
 	var sm = player.get_node_or_null("/root/SaveManager") if player else null
 	if not sm or not sm.profile:
 		return false
@@ -73,7 +81,7 @@ func enter() -> void:
 	_ensure_combo_defs_loaded()
 	combo_step = 0
 	# A matched route caps the chain (see _start_attack); every fresh attack starts uncapped.
-	max_combo_step = attack_durations.size() - 1
+	max_combo_step = player.tuning.attack_durations.size() - 1
 	current_sequence.clear()
 	buffered_attack = false
 	buffered_heavy = false
@@ -108,7 +116,7 @@ func _start_attack(is_heavy: bool) -> void:
 	if combo_def and current_sequence.size() == combo_def.input_chain.size():
 		max_combo_step = combo_step
 
-	var generic_durations: Array[float] = heavy_attack_durations if is_heavy else attack_durations
+	var generic_durations: Array[float] = player.tuning.heavy_attack_durations if is_heavy else player.tuning.attack_durations
 	attack_timer = combo_def.duration if combo_def else generic_durations[combo_step]
 	current_hit_duration = attack_timer
 	# K2: a new hit has not connected yet (the free dodge cancel waits for it).
@@ -122,6 +130,11 @@ func _start_attack(is_heavy: bool) -> void:
 
 	player.velocity.x = 0
 	player.velocity.z = 0
+	# Q4: a short step toward the facing so the previous hit's knockback cannot carry the
+	# target out of this hit's reach.
+	var step_ins: Array[float] = player.tuning.attack_step_in
+	_step_in_speed = step_ins[mini(combo_step, step_ins.size() - 1)] if not step_ins.is_empty() else 0.0
+	_step_in_timer = player.tuning.attack_step_in_seconds
 
 	var anim_ctrl := _anim()
 	if anim_ctrl:
@@ -160,6 +173,9 @@ func _start_attack(is_heavy: bool) -> void:
 		active_hitbox.damage_info.is_guard_breaking = false
 
 	active_hitbox.damage_info.source = player
+	# Q4: a hit the chain can still follow up only flinches the target (reduced knockback in
+	# EnemyCombatComponent); the finisher -- the capped last hit -- knocks back in full.
+	active_hitbox.damage_info.is_chain_opener = combo_step < max_combo_step
 	inactive_hitbox.is_active = false
 	_hitbox_token += 1
 	if combo_step == 0:
@@ -180,6 +196,7 @@ func _rearm_hitbox_next_physics_frame(hitbox: Area3D, token: int) -> void:
 
 func exit() -> void:
 	_hitbox_token += 1
+	_step_in_timer = 0.0
 	player.katana_hitbox.is_active = false
 	player.bionic_arm_hitbox.is_active = false
 	if player.combo_component:
@@ -201,14 +218,14 @@ func _try_emp_dash_cancel() -> bool:
 func is_in_active_window() -> bool:
 	return attack_timer > current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
 
-## K2: true in the last FREE_CANCEL_RECOVERY_FRACTION of the recovery window.
+## K2: true in the last tuning.free_cancel_recovery_fraction of the recovery window.
 func is_in_free_cancel_window() -> bool:
 	var recovery := current_hit_duration * (1.0 - ACTIVE_WINDOW_FRACTION)
-	return attack_timer <= recovery * FREE_CANCEL_RECOVERY_FRACTION
+	return attack_timer <= recovery * player.tuning.free_cancel_recovery_fraction
 
 ## K2 (D22): the attack's dodge cancels. `dash_pressed` = a dash press this frame.
 ## - EMP Dash-Cancel: a dash press in the ACTIVE window spends EMP_DASH_CANCEL_COST.
-## - Free cancel: in the last FREE_CANCEL_RECOVERY_FRACTION of recovery, once this hit
+## - Free cancel: in the last tuning.free_cancel_recovery_fraction of recovery, once this hit
 ##   connected, the buffered dash/roll (this frame's press included, dodge cooldown
 ##   respected) fires for no meter.
 ## Returns true when it left the attack state.
@@ -222,8 +239,23 @@ func _try_dodge_cancel(dash_pressed: bool) -> bool:
 			return true
 	return false
 
+## Q4: drives the step-in toward the facing for its first attack_step_in_seconds, then
+## stops Nick again (the hit itself is planted).
+func _apply_step_in(delta: float) -> void:
+	if _step_in_timer <= 0.0:
+		return
+	_step_in_timer -= delta
+	if _step_in_timer <= 0.0 or _step_in_speed <= 0.0:
+		player.velocity.x = 0.0
+		player.velocity.z = 0.0
+		return
+	var dir: Vector3 = player.get_path_direction(Vector2(1.0 if player.is_facing_right else -1.0, 0.0))
+	player.velocity.x = dir.x * _step_in_speed
+	player.velocity.z = dir.z * _step_in_speed
+
 func physics_update(delta: float) -> void:
 	player.apply_gravity(delta)
+	_apply_step_in(delta)
 	player.move_and_slide()
 
 	attack_timer -= delta

@@ -17,7 +17,14 @@ enum AttackStep { IDLE, TELEGRAPH, ACTIVE, RECOVERY }
 @onready var hitbox: Hitbox3D = $Hitbox3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 @onready var character_visual: CharacterVisual = $MeshInstance3D
+## R2: clip driver of the rigged body (idle/run, telegraph hold, strike, hit react, death) —
+## characters/shared/enemy_animator.gd. Untyped: the global class cache only refreshes on an
+## editor scan.
+@onready var animator = get_node_or_null("EnemyAnimator")
 var combat_comp: Node = null
+## U2: the attack footprint on the floor (null until _ready).
+const TelegraphZoneScript := preload("res://vfx/telegraph_zone.gd")
+var telegraph_zone: Node3D = null
 
 ## F2: facing turn rate (per physics tick, same weight as PlayerController.face_direction)
 ## and the speed below which the grunt faces the player instead of its velocity.
@@ -53,6 +60,8 @@ func _ready() -> void:
 		combat_comp.name = "EnemyCombatComponent"
 		add_child(combat_comp)
 		combat_comp.connect("stun_started", _on_stun_started)
+		if animator:
+			combat_comp.connect("stun_started", Callable(animator, "on_stun_started"))
 
 	if not stats:
 		stats = load("res://characters/enemies/bruiser/bruiser_stats.tres")
@@ -73,6 +82,7 @@ func _ready() -> void:
 	# Hitbox-clarity fix (M6b): no more permanent contact damage. It switches on only
 	# during the active step, gated by the beat.
 	hitbox.is_active = false
+	telegraph_zone = TelegraphZoneScript.attach(self, hitbox, TelegraphZoneScript.COLOR_MAGENTA)
 	_base_scale = mesh_instance.scale
 	_default_rim_strength = character_visual.get_base_rim_strength()
 	_on_shield_changed(health_component.current_shield, health_component.max_shield)
@@ -136,6 +146,7 @@ func _on_beat(layer: String, beat_index: int) -> void:
 
 	var layer_data = Conductor.layers.get(layer)
 	var bpm_count = layer_data.beats_per_measure if layer_data else 4
+	var previous_step := attack_step
 
 	# One beat before the downbeat -> arm the telegraph (skip if already mid-sequence).
 	if attack_step == AttackStep.IDLE and beat_index == bpm_count:
@@ -143,6 +154,7 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		if dist <= stats.melee_range * 1.5:
 			attack_step = AttackStep.TELEGRAPH
 			character_visual.flash_telegraph()
+			_show_telegraph_zone()
 	elif attack_step == AttackStep.ACTIVE:
 		# T4: the swing lands ON the downbeat and lasts exactly ONE beat — the very next
 		# primary beat (beat 2) switches the hitbox off. This transition used to live in
@@ -153,6 +165,8 @@ func _on_beat(layer: String, beat_index: int) -> void:
 		hitbox.is_active = false
 	elif attack_step == AttackStep.RECOVERY:
 		attack_step = AttackStep.IDLE
+	if animator and attack_step != previous_step:
+		animator.on_attack_step(attack_step)
 
 func _on_downbeat(layer: String, _measure_index: int) -> void:
 	if layer != "primary":
@@ -165,6 +179,9 @@ func _on_downbeat(layer: String, _measure_index: int) -> void:
 	if attack_step == AttackStep.TELEGRAPH:
 		attack_step = AttackStep.ACTIVE
 		hitbox.is_active = true
+		_hide_telegraph_zone()
+		if animator:
+			animator.on_attack_step(attack_step)
 
 ## F2: the NickProto body faces +Z, so yaw the visual root toward the move direction (or
 ## toward the player while planted), like PlayerController.face_direction. Dormant and
@@ -186,6 +203,7 @@ func _update_facing() -> void:
 func _on_stun_started() -> void:
 	attack_step = AttackStep.IDLE
 	hitbox.is_active = false
+	_hide_telegraph_zone()
 	character_visual.update_rim_color(resting_rim_color())
 
 ## The rim the Bruiser rests at: steel-white while its shield holds, magenta otherwise.
@@ -233,10 +251,24 @@ func _on_health_changed(_current: float, _max_health: float) -> void:
 	pass
 
 func _on_died() -> void:
+	_hide_telegraph_zone()
 	GameManager.add_scrap(stats.scrap)
 	SignalBus.enemy_died.emit(global_position)
-	# F3: flash + shrink, then free (scrap/enemy_died above stay immediate).
+	# F3: flash + shrink, then free (scrap/enemy_died above stay immediate). R2: the death
+	# clip plays first; CharacterVisual.play_death delays the shrink by its length.
+	if animator:
+		animator.on_died()
 	if combat_comp:
 		combat_comp.play_death_and_free(character_visual)
 	else:
 		queue_free()
+
+## U2: the floor footprint of the attack (vfx/telegraph_zone.gd): shown for the telegraph beat
+## (fading in across one beat), hidden when the hitbox arms, on a stun and on death.
+func _show_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.show_telegraph(60.0 / maxf(Conductor.bpm, 1.0))
+
+func _hide_telegraph_zone() -> void:
+	if telegraph_zone:
+		telegraph_zone.hide_telegraph()

@@ -6,24 +6,14 @@ extends CharacterBody3D
 @export var friction: float = 60.0
 @export var jump_force: float = 18.0
 @export var gravity_multiplier: float = 3.0
-@export var dash_speed: float = 18.0
-## K4 (D14): ~7.2 m over the 0.65 s roll (dash stays the long, fast mover).
-@export var roll_speed: float = 11.0
 
-## T1: shared dash/roll cooldown, started when a dodge state EXITS. Prevents chaining
-## dash->roll->dash into permanent i-frames (the defense economy the GDD's "read the
-## heartbeat" pillar depends on). The EMP Dash-Cancel bypasses the can_dodge() check
-## (it transitions straight from StateAttack, never through Idle/Run) but still starts
-## this cooldown on its own StateDash exit.
-## K3 (D6): 0.3 s so the Enforcer one-beat chain stays dodgeable with the narrow window.
-@export var dodge_cooldown: float = 0.3
-## Reward-only beat alignment window (GDD §3.3): a dash/roll started within this many
-## seconds of a primary-layer beat edge refunds part of its cooldown and grants meter.
-## Never a gate — the player is never beat-validated, only ever rewarded.
-@export var beat_align_window: float = 0.06
+## Q2: dodge / attack / Bass Drop / fall / death-beat tuning (player_tuning.tres; the states
+## read player.tuning.*). T1: the shared dash/roll cooldown (tuning.dodge_cooldown) starts
+## when a dodge state EXITS, so dash->roll->dash cannot chain into permanent i-frames; the
+## EMP Dash-Cancel bypasses can_dodge() but still starts it on its own StateDash exit. The
+## beat alignment (tuning.beat_align_window) is reward-only, never a gate.
+@export var tuning: PlayerTuning = preload("res://characters/player/player_tuning.tres")
 @export var beat_aligned_dodge_meter: float = 4.0
-## K3 (D6): share of dodge_cooldown an aligned dodge refunds (0.5 = half, not all).
-@export var beat_aligned_cooldown_refund: float = 0.5
 ## K3 (D6): the aligned-dodge meter reward fires at most once per this many primary beats.
 const BEAT_DODGE_METER_EVERY_BEATS := 2
 ## K3 (D6): the aligned-dodge cue -- a short cyan rim flash (plus SignalBus.beat_dodge_landed
@@ -89,11 +79,8 @@ const FALL_KILL_Y: float = -15.0
 ## F14: floors that must never become the fall-return point (the Zone 8 collapsing
 ## platform drops away — returning Nick over the void would chain fall damage).
 const UNSAFE_FLOOR_GROUP := &"unsafe_floor"
-## HP cost paid when falling out of the world (shield absorbs first, per the universal rule).
-@export var fall_damage: float = 20.0
-## J4: the fall cue and the short grace after a survivable fall (the life-loss respawn
-## grants its own, longer one).
-const FALL_GRACE := 0.5
+## J4: the fall cue. Its HP cost and the short grace after a survivable fall (the life-loss
+## respawn grants its own, longer one) are tuning.fall_damage / tuning.fall_grace.
 const FALL_BANNER := "SIGNAL LOST  -%d HP"
 const FALL_BANNER_HOLD := 1.0
 ## J3: a zero-stun hit's flinch -- hit_react (0.77 s) fitted to this, resting states only.
@@ -123,9 +110,8 @@ var last_safe_position: Vector3 = Vector3.ZERO
 ## Bass Drop (M5b, GDD §3.3 full-bar ultimate): a screen-clearing AoE that detonates on
 ## the next downbeat once armed. Meter must be completely full to arm; input action is
 ## a temporary binding (see signal_bus.gd _register_input) until M9 lands a real input map.
-## K6 (D8): 10 m / 90 damage (the ring grows to the radius; the Zone 10 dock is 25 x 14 m).
-@export var bass_drop_radius: float = 10.0
-@export var bass_drop_damage: float = 90.0
+## K6 (D8): radius / damage are tuning.bass_drop_radius / bass_drop_damage (the ring grows
+## to the radius; the Zone 10 dock is 25 x 14 m).
 @export var bass_drop_knockback: float = 16.0
 @export var bass_drop_stun: float = 1.0
 var bass_drop_armed: bool = false
@@ -147,7 +133,7 @@ const LOW_HP_PULSE_COLOR := Color(1.0, 0.0, 0.666667)
 const LOW_HP_PULSE_STRENGTH := 4.0
 const LOW_HP_PULSE_SECONDS := 0.25
 ## F9: Bass Drop cue — rim held white-hot while armed; detonation hit-stop and a magenta
-## shock ring that grows from ShockRing.START_SCALE to bass_drop_radius at Nick's feet.
+## shock ring that grows from ShockRing.START_SCALE to tuning.bass_drop_radius at Nick's feet.
 const BASS_DROP_ARMED_RIM_STRENGTH := 5.0
 const BASS_DROP_HIT_STOP_DURATION := 0.12
 const BASS_DROP_HIT_STOP_SCALE := 0.05
@@ -162,7 +148,7 @@ const FEET_OFFSET := 1.0
 ## K10 (D21): the subtle cyan ring under Nick, shown only off-rail (top-down).
 const GROUND_RING_NODE := "TopDownRing"
 
-@onready var state_machine: Node = $StateMachine
+@onready var state_machine: StateMachine = $StateMachine
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var katana_hitbox: Area3D = $MeshInstance3D/KatanaHitbox
 @onready var bionic_arm_hitbox: Area3D = $MeshInstance3D/BionicArmHitbox
@@ -176,9 +162,11 @@ var _rest_rim_key: String = ""
 func _ready() -> void:
 	# Lookup handle for systems outside the slice root (e.g. ElevatorEncounter's checkpoint).
 	add_to_group("player")
-	var sm = get_node_or_null("/root/SaveManager")
-	if sm and sm.profile:
-		double_jump_unlocked = sm.profile.double_jump_unlocked
+	if tuning == null:
+		push_error("PlayerController: no PlayerTuning assigned (characters/player/player_tuning.tres).")
+	else:
+		tuning.validate()
+	double_jump_unlocked = is_double_jump_available()
 	can_double_jump = double_jump_unlocked
 	var combo_script = load("res://characters/player/player_combo_component.gd")
 	if combo_script:
@@ -245,11 +233,11 @@ func add_ability_meter(amount: float) -> void:
 func can_dodge() -> bool:
 	return _dodge_cooldown_timer <= 0.0
 
-## K3: `beat_aligned` = the dodge landed on the beat, so beat_aligned_cooldown_refund of
+## K3: `beat_aligned` = the dodge landed on the beat, so tuning.beat_aligned_cooldown_refund of
 ## the cooldown is refunded.
 func start_dodge_cooldown(beat_aligned: bool = false) -> void:
-	var share: float = (1.0 - beat_aligned_cooldown_refund) if beat_aligned else 1.0
-	_dodge_cooldown_timer = dodge_cooldown * share
+	var share: float = (1.0 - tuning.beat_aligned_cooldown_refund) if beat_aligned else 1.0
+	_dodge_cooldown_timer = tuning.dodge_cooldown * share
 
 ## K8 (D17): the dash/roll i-frames -- invincible AND passing through enemy bodies; both
 ## end together (normal exit, the roll i-frame end, any early exit). The respawn grace
@@ -259,7 +247,7 @@ func set_dodge_iframes(active: bool) -> void:
 		health_component.is_invincible = active
 	set_collision_mask_value(ENEMY_BODY_LAYER, not active)
 
-## Reward-only: true if a dash/roll begins within beat_align_window of a primary-layer beat
+## Reward-only: true if a dash/roll begins within tuning.beat_align_window of a primary-layer beat
 ## edge -- the caller then refunds part of its cooldown (start_dodge_cooldown(true)). K3: the
 ## meter reward pays at most once per BEAT_DODGE_METER_EVERY_BEATS beats; every aligned
 ## dodge flashes the cyan rim and emits SignalBus.beat_dodge_landed. Returns false (no
@@ -268,7 +256,7 @@ func try_beat_aligned_dodge_reward() -> bool:
 	var conductor = get_node_or_null("/root/Conductor")
 	if not conductor:
 		return false
-	if conductor.seconds_to_nearest_beat("primary") > beat_align_window:
+	if conductor.seconds_to_nearest_beat("primary") > tuning.beat_align_window:
 		return false
 	var beat: int = conductor.nearest_beat_index("primary")
 	var gap: int = beat - _last_meter_beat
@@ -342,7 +330,7 @@ func _detonate_bass_drop() -> void:
 	SignalBus.ability_meter_changed.emit(ability_meter, MAX_ABILITY_METER)
 
 	var dmg_info := DamageInfo.new()
-	dmg_info.amount = bass_drop_damage
+	dmg_info.amount = tuning.bass_drop_damage
 	dmg_info.knockback = bass_drop_knockback
 	dmg_info.stun = bass_drop_stun
 	dmg_info.is_shield_breaker = true
@@ -353,7 +341,7 @@ func _detonate_bass_drop() -> void:
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
-		if global_position.distance_to(hurtbox.global_position) <= bass_drop_radius:
+		if global_position.distance_to(hurtbox.global_position) <= tuning.bass_drop_radius:
 			hurtbox.receive_hit(dmg_info)
 
 	SignalBus.camera_shake_requested.emit(0.3, 0.4)
@@ -369,7 +357,7 @@ func _detonate_bass_drop() -> void:
 func _spawn_bass_drop_ring() -> MeshInstance3D:
 	if not is_inside_tree():
 		return null
-	return ShockRingScript.spawn(get_parent(), global_position - Vector3(0.0, FEET_OFFSET, 0.0), bass_drop_radius, BASS_DROP_RING_COLOR, BASS_DROP_RING_SECONDS, "BassDropRing")
+	return ShockRingScript.spawn(get_parent(), global_position - Vector3(0.0, FEET_OFFSET, 0.0), tuning.bass_drop_radius, BASS_DROP_RING_COLOR, BASS_DROP_RING_SECONDS, "BassDropRing")
 
 ## H3: a checkpoint respawn hands Nick back in a clean state -- Idle, idle clip, no stale
 ## buffers, no armed Bass Drop, no dodge cooldown, at rest. GameManager has already
@@ -377,8 +365,8 @@ func _spawn_bass_drop_ring() -> MeshInstance3D:
 ## state exit() only clears its own i-frames, so it cannot cancel the grace).
 func _on_player_respawned() -> void:
 	# State first: a dodge state exit() starts the cooldown.
-	if state_machine and state_machine.has_method("_on_transition_requested"):
-		state_machine._on_transition_requested("StateIdle")
+	if state_machine:
+		state_machine.transition_to("StateIdle")
 	pending_hurt = null
 	input_locked = false # K11: the death beat is over
 	set_dodge_iframes(false) # K8: never respawn with the enemy-pass mask
@@ -408,7 +396,7 @@ func _on_died() -> void:
 	pending_attack_heavy = false
 	pending_hurt = null
 	if state_machine and state_machine.get_node_or_null("StateDead"):
-		state_machine.call_deferred("_on_transition_requested", "StateDead")
+		state_machine.transition_to.call_deferred("StateDead")
 	elif animation_controller:
 		animation_controller.play_once("death")
 
@@ -456,7 +444,7 @@ func _enter_hurt(info: DamageInfo) -> void:
 	if state_machine.current_state == hurt:
 		hurt.enter()
 	else:
-		state_machine._on_transition_requested("StateHurt")
+		state_machine.transition_to("StateHurt")
 
 ## F6: below LOW_HP_FRACTION the rim pulses toward magenta on every primary beat.
 func _on_beat(layer: String, _beat_index: int) -> void:
@@ -602,7 +590,7 @@ func _physics_process(delta: float) -> void:
 	if global_position.y < FALL_KILL_Y:
 		fall_back_to_safe_ground()
 
-## J4: the fall contract -- back to the last safe ground for fall_damage. The cost ignores
+## J4: the fall contract -- back to the last safe ground for tuning.fall_damage. The cost ignores
 ## dash/roll i-frames (DamageInfo.ignores_iframes: a dash off the edge still pays) but not
 ## the respawn grace, so a respawn-fall loop cannot double-charge. A survivable fall shows
 ## the SIGNAL LOST cue and grants a short grace; a fall that costs a life leaves the grace to
@@ -616,15 +604,15 @@ func fall_back_to_safe_ground() -> void:
 	if health_component.grace_invincible:
 		return # still inside a grace: no charge, and the running grace is not shortened
 	var fall_hit := DamageInfo.new()
-	fall_hit.amount = fall_damage
+	fall_hit.amount = tuning.fall_damage
 	fall_hit.source = self
 	fall_hit.ignores_iframes = true
 	health_component.take_damage(fall_hit)
-	SignalBus.banner_requested.emit(FALL_BANNER % int(fall_damage), FALL_BANNER_HOLD)
+	SignalBus.banner_requested.emit(FALL_BANNER % int(tuning.fall_damage), FALL_BANNER_HOLD)
 	if health_component.current_health > 0.0:
 		var gm = get_node_or_null("/root/GameManager")
 		if gm:
-			gm.grant_respawn_grace(health_component, FALL_GRACE)
+			gm.grant_respawn_grace(health_component, tuning.fall_grace)
 
 ## K10 (D21): the ground ring shows only while Nick is off-rail (top-down). Called by the
 ## current_path setter too, so it may run before the ring child exists.
@@ -651,6 +639,20 @@ static func is_unsafe_floor(body: Node) -> bool:
 	if body.is_in_group(UNSAFE_FLOOR_GROUP):
 		return true
 	return body is StaticBody3D and body.get_parent() is EscapeCollapsingHazard
+
+## Q3: whether Nick has the Double Jump. GameManager decides when it can (a demo run grants
+## it without touching the profile); otherwise the profile's unlock.
+func is_double_jump_available() -> bool:
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("double_jump_available"):
+		return gm.double_jump_available()
+	var sm = get_node_or_null("/root/SaveManager")
+	return sm != null and sm.profile != null and sm.profile.double_jump_unlocked
+
+## K11 (D20) / Q2: the death beat length from the tuning resource (GameManager can read it
+## via has_method; its DEATH_BEAT_SECONDS stays the fallback).
+func death_beat_seconds() -> float:
+	return tuning.death_beat_seconds
 
 func apply_gravity(delta: float) -> void:
 	if not is_on_floor():

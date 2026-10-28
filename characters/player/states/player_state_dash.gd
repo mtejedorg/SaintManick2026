@@ -39,8 +39,8 @@ func physics_update(delta: float) -> void:
 	dash_timer -= delta
 
 	var path_dir = player.get_path_direction(dash_direction)
-	player.velocity.x = path_dir.x * player.dash_speed
-	player.velocity.z = path_dir.z * player.dash_speed
+	player.velocity.x = path_dir.x * player.tuning.dash_speed
+	player.velocity.z = path_dir.z * player.tuning.dash_speed
 
 	player.move_and_slide()
 

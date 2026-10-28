@@ -7,6 +7,12 @@ signal stun_started()
 @export var friction: float = 15.0 # Floor horizontal decay friction
 @export var normal_hit_y_pop: float = 3.0
 @export var launcher_hit_y_pop: float = 8.0
+## Q4: knockback share of a chain opener (DamageInfo.is_chain_opener) -- a flinch, so the
+## finisher of the chain still reaches the target.
+@export var opener_knockback_scale: float = 0.4
+## Q4: horizontal decay (m/s^2) while a hit has the enemy airborne -- the Launcher pops a
+## grunt high but carries it ~4 m, not across the arena.
+@export var air_friction: float = 18.0
 
 ## Hit reaction (F3): a short white-hot rim flash plus a squash on every non-absorbed hit.
 const HIT_FLASH_STRENGTH := 5.0
@@ -17,6 +23,8 @@ const HIT_PULSE_SECONDS := 0.06
 const DEATH_SECONDS := 0.25
 
 var stun_timer: float = 0.0
+## Q4: a hit popped the enemy into the air; cleared when it lands (air_friction applies).
+var _in_hit_flight: bool = false
 ## True once play_death_and_free() ran: the enemy no longer reacts to hits.
 var is_dying: bool = false
 
@@ -46,6 +54,15 @@ func _physics_process(delta: float) -> void:
 			enemy.velocity.x = move_toward(enemy.velocity.x, 0.0, friction * delta)
 			enemy.velocity.z = move_toward(enemy.velocity.z, 0.0, friction * delta)
 
+	# Q4: cap the airborne drift of a hit (stunned, or still in the flight a hit started).
+	if enemy.is_on_floor():
+		_in_hit_flight = false
+	elif _in_hit_flight or stun_timer > 0.0:
+		var horizontal := Vector2(enemy.velocity.x, enemy.velocity.z)
+		horizontal = horizontal.move_toward(Vector2.ZERO, air_friction * delta)
+		enemy.velocity.x = horizontal.x
+		enemy.velocity.z = horizontal.y
+
 func _on_hit_received(damage_info: DamageInfo) -> void:
 	var enemy = get_parent() as CharacterBody3D
 	if not enemy or is_dying:
@@ -65,9 +82,9 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 		_flash_hit(enemy)
 		return
 
-	# J8: an environmental tick (toxic pit: no knockback, no stun) only flashes -- it must not
-	# cancel a running stun or zero the knockback slide.
-	if damage_info.knockback == 0.0 and damage_info.stun == 0.0:
+	# J8/Q5: an environmental tick (toxic pit, kill wall) only flashes -- it must not cancel a
+	# running stun or zero the knockback slide. A player hit with no knockback/stun still pops.
+	if damage_info.is_environmental:
 		_flash_hit(enemy)
 		return
 
@@ -84,7 +101,9 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 		knockback_dir = Vector3.RIGHT
 		
 	# Apply knockback velocities
-	var force = damage_info.knockback
+	var force: float = damage_info.knockback
+	if damage_info.is_chain_opener:
+		force *= opener_knockback_scale
 	enemy.velocity.x = knockback_dir.x * force
 	enemy.velocity.z = knockback_dir.z * force
 	
@@ -93,6 +112,7 @@ func _on_hit_received(damage_info: DamageInfo) -> void:
 		enemy.velocity.y = launcher_hit_y_pop
 	else:
 		enemy.velocity.y = normal_hit_y_pop
+	_in_hit_flight = true
 		
 	# J8: a weaker stun never shortens the running one.
 	stun_timer = maxf(stun_timer, damage_info.stun)

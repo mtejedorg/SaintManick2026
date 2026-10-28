@@ -1,0 +1,44 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://vfx/dash_streak.gd" id="1_script"]
+
+[sub_resource type="Gradient" id="Gradient_streak"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_streak"]
+gradient = SubResource("Gradient_streak")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_streak"]
+particle_flag_align_y = true
+emission_shape = 3
+emission_box_extents = Vector3(0.1, 0.5, 0.35)
+direction = Vector3(1, 0, 0)
+spread = 6.0
+initial_velocity_min = 5.0
+initial_velocity_max = 9.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_streak")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_streak"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0, 1.92, 2, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_streak"]
+material = SubResource("StandardMaterial3D_streak")
+size = Vector2(0.04, 0.8)
+
+[node name="DashStreak" type="GPUParticles3D"]
+emitting = false
+amount = 10
+lifetime = 0.2
+one_shot = true
+explosiveness = 0.9
+visibility_aabb = AABB(-4, -4, -4, 8, 8, 8)
+local_coords = false
+process_material = SubResource("ParticleProcessMaterial_streak")
+draw_pass_1 = SubResource("QuadMesh_streak")
+script = ExtResource("1_script")

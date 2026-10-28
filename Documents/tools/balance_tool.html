@@ -159,13 +159,13 @@
 
     <div class="panel" style="margin-top:14px">
       <h2>Threat model — MODELLED, not measured</h2>
-      <div class="row"><label>Nick sustained DPS</label><input type="number" id="s_dps" value="20"></div>
+      <div class="row"><label>Nick sustained DPS <span class="tag">playtest</span></label><input type="number" id="s_dps" value="30" title="Named-route DPS (~50, tests/cases/test_batch_k.gd K1) x 0.6 uptime. PLAYTEST: replace with a measured value."></div>
       <div class="row"><label>Max simultaneous attackers</label><input type="number" id="s_cap" value="3"></div>
       <div class="row"><label>Resting tempo (BPM)</label><input type="number" id="s_bpm" value="128"></div>
       <div class="row"><label>Exposure factor</label><input type="number" id="s_expo" value="0.13" step="0.01"></div>
       <div class="row"><label>Sweeper DPS gain %</label><input type="number" id="s_swe" value="0"></div>
       <div class="row"><label>Battery Ram DPS gain %</label><input type="number" id="s_ram" value="0"></div>
-      <div class="note">Per enemy group: threat = min(cap,n)/n · Σ(dmg ÷ cycle s) · Σ(effHP ÷ DPS), then × exposure factor. Cycle = beats × 60 / BPM. <b>Exposure 0.13</b> is calibrated so the Enforcer/Headliner at shipped HP land near the old tool's mini-boss/boss rows (55 / 110). DPS (≈ Tri-Cut 33 dps × ~60 % uptime), Enforcer/Headliner cycles and the exposure factor are <b>placeholders for the playtest gauntlet (HANDOFF H6)</b>. Combo DPS gains are unmeasured (D3) and default to 0. Hazards (pistons, bomb grid, kill wall, doors) are not in the threat.</div>
+      <div class="note">Per enemy group: threat = min(cap,n)/n · Σ(dmg ÷ cycle s) · Σ(effHP ÷ DPS), then × exposure factor. Cycle = beats × 60 / BPM. <b>Exposure 0.13</b> is calibrated so the Enforcer/Headliner at shipped HP land near the old tool's mini-boss/boss rows (55 / 110). DPS 30 (≈ named-route DPS ~50, test_batch_k K1, × ~60 % uptime — <b>playtest</b>), Enforcer/Headliner cycles and the exposure factor are <b>placeholders for the playtest gauntlet (HANDOFF H6)</b>. Combo DPS gains are unmeasured (D3) and default to 0. Hazards (pistons, bomb grid, kill wall, doors) are not in the threat.</div>
     </div>
 
     <div class="panel" style="margin-top:14px">
@@ -207,7 +207,7 @@
         <thead><tr><th>#</th><th class="l">Zone</th><th>Cam</th><th class="l">Waves (R runner · B bruiser · S sniper · E enforcer · H headliner)</th><th>Enemies</th><th>Eff HP</th><th>Threat</th><th>Scrap</th><th>Cells</th><th>Cores</th></tr></thead>
         <tbody></tbody>
       </table>
-      <div class="note">Counts: WaveDef sub-resources and scene-placed enemies in levels/slice/vertical_slice.tscn (Z1 :65-75, Z3 :77-83, Z4 :174-186, Z5 :191-201, Z6 :85-87 + :206-208, Z9 :127-133; scene-placed Z2 :753-762, Z7 :1357-1376, Z8 :1402-1408, Headliner :1703). Threat is at 0 % avoided. Cells: Enforcer stats cells = 15, Z8 escape_sequence.gd:12 = 10, Z9 elevator_encounter.gd:20 = 10. Core: headliner.gd:207. Scrap shown before any booster.</div>
+      <div class="note">Counts: WaveDef sub-resources and scene-placed enemies in levels/slice/vertical_slice.tscn (Z1 :65-75, Z3 :81-86 (4R, then 3R), Z4 :177-178 (one wave 3R+1B+2S), Z5 :186-187 (3R+1B), Z6 :85-87 + :206-208, Z9 :127-133; scene-placed Z2 :753-762, Z7 :1357-1376, Z8 :1402-1408, Headliner :1703). Threat is at 0 % avoided. Cells: Enforcer stats cells = 15, Z8 escape_sequence.gd:12 = 10, Z9 elevator_encounter.gd:20 = 10. Core: headliner.gd:207. Scrap shown before any booster.</div>
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="alt" id="s_pD2">Apply D2: growth ×1.5</button>
         <button class="alt" id="s_pD4">Apply D4: Sweeper 15 / Ram 20</button>
@@ -463,10 +463,10 @@ const ARCH_KEYS=["runner","bruiser","sniper","enforcer","headliner"];
 const ARCH_TAG={runner:"R",bruiser:"B",sniper:"S",enforcer:"E",headliner:"H"};
 const ARCH_DEF={
   runner:   {name:"Runner",              hp:30,   shield:0,  dmg:8,  beats:3, scrap:8,    cells:0,  cores:0, src:"runner/runner_stats.tres; 3-beat telegraph/active/recovery (runner.gd _on_beat)"},
-  bruiser:  {name:"Bruiser",             hp:90,   shield:50, dmg:20, beats:4, scrap:50,   cells:0,  cores:0, src:"bruiser/bruiser_stats.tres; downbeat-gated, 1 attack per measure (bruiser.gd)"},
+  bruiser:  {name:"Bruiser",             hp:90,   shield:80, dmg:20, beats:4, scrap:50,   cells:0,  cores:0, src:"bruiser/bruiser_stats.tres; downbeat-gated, 1 attack per measure (bruiser.gd)"},
   sniper:   {name:"Sniper",              hp:24,   shield:0,  dmg:18, beats:4, scrap:25,   cells:0,  cores:0, src:"sniper/sniper_stats.tres; 4-beat aim/lock/fire (sniper.gd)"},
-  enforcer: {name:"Enforcer (mini-boss)",hp:600,  shield:0,  dmg:22, beats:4, scrap:300,  cells:15, cores:0, src:"enforcer/enforcer_stats.tres; cycle = PLACEHOLDER"},
-  headliner:{name:"Headliner (boss)",    hp:1500, shield:0,  dmg:25, beats:4, scrap:1000, cells:0,  cores:1, src:"headliner/headliner_stats.tres; Core is headliner.gd:207, not in .tres; cycle = PLACEHOLDER"}
+  enforcer: {name:"Enforcer (mini-boss)",hp:900,  shield:0,  dmg:22, beats:4, scrap:300,  cells:15, cores:0, src:"enforcer/enforcer_stats.tres; cycle = PLACEHOLDER"},
+  headliner:{name:"Headliner (boss)",    hp:2400, shield:0,  dmg:25, beats:4, scrap:1000, cells:0,  cores:1, src:"headliner/headliner_stats.tres; Core is headliner.gd:207, not in .tres; cycle = PLACEHOLDER"}
 };
 let arch=structuredClone(ARCH_DEF);
 
@@ -475,9 +475,9 @@ let arch=structuredClone(ARCH_DEF);
 const ZONES=[
   {n:1, name:"SECTOR 01 — STREET ENTRANCE", cam:"side",     g:[{runner:1},{runner:1},{runner:1}], bC:0,  bK:0},
   {n:2, name:"SECTOR 02 — PISTON GAUNTLET", cam:"side",     g:[{runner:1},{runner:1},{runner:1}], bC:0,  bK:0},
-  {n:3, name:"SECTOR 03 — SECURITY LOCK",   cam:"top-down", g:[{runner:4},{bruiser:1}],           bC:0,  bK:0},
-  {n:4, name:"SECTOR 04 — SCAFFOLDING",     cam:"side",     g:[{runner:3,bruiser:1},{runner:2,sniper:2},{runner:2,bruiser:2}], bC:0, bK:0},
-  {n:5, name:"SECTOR 05 — NEON MARKET",     cam:"side",     g:[{runner:3,bruiser:1},{runner:3,bruiser:1},{runner:2,bruiser:1}], bC:0, bK:0},
+  {n:3, name:"SECTOR 03 — SECURITY LOCK",   cam:"top-down", g:[{runner:4},{runner:3}],            bC:0,  bK:0},
+  {n:4, name:"SECTOR 04 — SCAFFOLDING",     cam:"side",     g:[{runner:3,bruiser:1,sniper:2}],    bC:0,  bK:0},
+  {n:5, name:"SECTOR 05 — NEON MARKET",     cam:"side",     g:[{runner:3,bruiser:1}],             bC:0,  bK:0},
   {n:6, name:"SECTOR 06 — PLAZA BRAWL",     cam:"top-down", g:[{runner:8,bruiser:2},{sniper:3}],  bC:0,  bK:0},
   {n:7, name:"SECTOR 07 — ENFORCER",        cam:"side",     g:[{runner:3},{enforcer:1}],          bC:0,  bK:0},
   {n:8, name:"SECTOR 08 — ESCAPE",          cam:"side",     g:[{runner:1},{runner:1}],            bC:10, bK:0},
@@ -501,7 +501,7 @@ let shop=structuredClone(SHOP_DEF);
 const shopItem=k=>shop.find(x=>x.key===k);
 const shopName=k=>{ const it=shop.find(x=>x.key===k); return it?it.name:k; };
 
-const DEFAULTS={s_hp:120,s_hpStep:20,s_sh:40,s_shStep:10,s_lives:3,s_dps:20,s_cap:3,s_bpm:128,s_expo:0.13,
+const DEFAULTS={s_hp:120,s_hpStep:20,s_sh:40,s_shStep:10,s_lives:3,s_dps:30,s_cap:3,s_bpm:128,s_expo:0.13,
   s_swe:0,s_ram:0,s_growth:1,s_capBuys:0,s_keep:100,s_fatal:40};
 
 let scopeN=10;

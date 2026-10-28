@@ -24,3 +24,9 @@ var is_ability_hit: bool = false
 ## J4: applied through the owner's dash/roll i-frames (the fall cost). The respawn grace
 ## (HealthComponent.grace_invincible) still blocks it.
 var ignores_iframes: bool = false
+## Q5: a hazard tick (toxic pit, kill wall, ...) rather than an attack: an enemy it hits only
+## flashes -- no pop, no knockback, no stun reset (EnemyCombatComponent).
+var is_environmental: bool = false
+## Q4: a player chain hit that can still be followed up (not the finisher). The target only
+## flinches (EnemyCombatComponent.opener_knockback_scale) so the finisher stays in reach.
+var is_chain_opener: bool = false

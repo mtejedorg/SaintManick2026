@@ -8,12 +8,15 @@ extends Control
 ## arrives while it is on screen — a respawn teleports Nick into the re-armed checkpoint
 ## trigger 1-2 frames after the life-lost banner. A zone already announced is dropped; a new
 ## zone is queued and plays as soon as the priority card has finished.
+## Q5: an optional eyebrow line rides above the card (the boss card's "LIVE ON AIR"); every
+## card without one hides it.
 
 const SLIDE_IN_TIME  := 0.4
 const HOLD_TIME      := 2.0
 const SLIDE_OUT_TIME := 0.4
 
 @onready var label: Label = $Label
+@onready var eyebrow_label: Label = $Eyebrow
 
 var _tween: Tween
 ## True while a priority card is on screen (cleared when its slide-out finishes). Tied to
@@ -46,11 +49,17 @@ func _on_banner_requested(text: String, hold: float) -> void:
 
 ## Plays the banner with arbitrary text. `hold` is the seconds the card rests on screen
 ## between the slide-in and the slide-out. A `priority` card holds off zone_entered cards
-## until it has finished (see the header).
-func show_text(text: String, hold: float = HOLD_TIME, priority: bool = false) -> void:
+## until it has finished (see the header). `eyebrow` is the small line above the card.
+func show_text(text: String, hold: float = HOLD_TIME, priority: bool = false, eyebrow: String = "") -> void:
 	label.text = text
+	eyebrow_label.text = eyebrow
+	eyebrow_label.visible = eyebrow != ""
 	_priority_active = priority
 	_play_card(hold)
+
+## Seconds from show_text() until the card starts sliding out.
+static func time_until_slide_out(hold: float) -> float:
+	return SLIDE_IN_TIME + hold
 
 func _play_card(hold: float) -> void:
 	if _tween:

@@ -2,9 +2,11 @@ extends CanvasLayer
 
 ## Boot screen. Batch O: START DEMO opens the demo loadout (the public demo is the slice with
 ## no shop -- GameManager.demo_mode); START RUN stands in for Level One until it exists and
-## goes to Karen's Shop (booster pick, then the slice) exactly as before. The logo pulses
+## goes to Karen's Shop (booster pick, then the slice) exactly as before -- its sub-label
+## just says "LEVEL ONE — IN PRODUCTION" (Q1). The logo pulses
 ## subtly on the Conductor's primary beat.
 
+const SceneTransition = preload("res://ui/transition/scene_transition.gd")
 const SHOP_SCENE := "res://ui/shop/karens_shop.tscn"
 const SLICE_SCENE := "res://levels/slice/vertical_slice.tscn"
 ## D32 export smoke: release templates refuse a scene path on the command line, so the
@@ -59,7 +61,7 @@ func _autostart_run() -> void:
 	change_scene.call(SLICE_SCENE)
 
 func _change_scene_to(path: String) -> void:
-	get_tree().change_scene_to_file(path)
+	SceneTransition.go(get_tree(), path)
 
 ## The four buttons in column order (the START RUN sub-label is not focusable).
 func menu_buttons() -> Array[Button]:

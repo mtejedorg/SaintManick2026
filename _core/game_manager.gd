@@ -21,18 +21,29 @@ var current_lives: int = 3
 var current_hp: float = 120.0
 var current_shield: float = 40.0
 
-## GDD §5.3 "Overshield": Tempo Shield raises max shield by 50% for the run.
-const TEMPO_SHIELD_MULTIPLIER: float = 1.5
-## GDD §5.3 Adrenaline: run-wide movement speed multiplier.
-const ADRENALINE_SPEED_MULTIPLIER: float = 1.2
-## GDD §5.3 Scrap Magnet: scrap pickup multiplier.
-const SCRAP_MAGNET_MULTIPLIER: int = 2
+## Batch Q2: the GDD §5.3 Run Booster catalog -- one RunBooster resource per booster (values
+## live in the .tres, not here). Catalog order is the shop's cycle order. Preloaded by path
+## (RunBoosterRes) so this autoload parses before the editor has registered the class_name.
+const RunBoosterRes = preload("res://_core/persistence/run_booster.gd")
+const RUN_BOOSTERS: Array[RunBoosterRes] = [
+	preload("res://_core/persistence/run_boosters/tempo_shield.tres"),
+	preload("res://_core/persistence/run_boosters/adrenaline.tres"),
+	preload("res://_core/persistence/run_boosters/scrap_magnet.tres"),
+]
+## Q7: every GameManager scene change goes through the fade + threaded-load helper.
+const SceneTransition = preload("res://ui/transition/scene_transition.gd")
 
 # Run booster modifiers — reset each run in start_new_run()
 var run_speed_multiplier: float = 1.0
 var scrap_multiplier: int = 1
 var enemies_defeated: int = 0
 var zones_cleared: int = 0
+## Q3: run stats for the results screen, reset by start_new_run(). run_time counts (scaled)
+## seconds while the run is live and the tree is not paused; max_combo is the best
+## combo_increased value; lives_lost counts player_life_lost emissions.
+var run_time: float = 0.0
+var max_combo: int = 0
+var lives_lost: int = 0
 # Zone names already counted this run — a checkpoint respawn re-enters earlier zones
 # and must not count them twice.
 var _zones_seen: Dictionary = {}
@@ -85,6 +96,10 @@ var is_test: bool = false
 var demo_mode: bool = false
 ## The demo loadout's run boosters ("None" is never stored). Read only when demo_mode is on.
 var demo_boosters: Array[String] = []
+## Q6: onboarding flags a demo run sets in memory only (a demo never saves). They OR with the
+## profile's seen_controls / seen_hints for the rest of the session.
+var _session_seen_controls: bool = false
+var _session_seen_hints: int = 0
 
 const TITLE_SCENE := "res://ui/menus/title_screen.tscn"
 const SHOP_SCENE := "res://ui/shop/karens_shop.tscn"
@@ -99,6 +114,17 @@ func _ready() -> void:
 		start_new_run()
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.zone_entered.connect(_on_zone_entered)
+	SignalBus.combo_increased.connect(_on_combo_increased)
+	SignalBus.player_life_lost.connect(_on_player_life_lost)
+
+## Q3: the run clock. GameManager pauses with the tree, so a paused game never counts.
+func _process(delta: float) -> void:
+	if is_run_active() and not get_tree().paused:
+		run_time += delta
+
+## A run is live from start_new_run() until it ends (full clear, game over, abandon).
+func is_run_active() -> bool:
+	return not run_ended
 
 func start_new_run(demo: bool = false) -> void:
 	demo_mode = demo
@@ -115,14 +141,10 @@ func start_new_run(demo: bool = false) -> void:
 	# the profile upgrades (before the volatile pools are filled from the maxima).
 	run_speed_multiplier = 1.0
 	scrap_multiplier = 1
-	for booster in run_boosters():
-		match booster:
-			"Tempo Shield":
-				max_shield = round(max_shield * TEMPO_SHIELD_MULTIPLIER)
-			"Adrenaline":
-				run_speed_multiplier = ADRENALINE_SPEED_MULTIPLIER
-			"Scrap Magnet":
-				scrap_multiplier = SCRAP_MAGNET_MULTIPLIER
+	for booster_name in run_boosters():
+		var booster := find_run_booster(booster_name)
+		if booster:
+			_apply_run_booster(booster)
 
 	scrap = 0
 	cells = 0
@@ -133,6 +155,9 @@ func start_new_run(demo: bool = false) -> void:
 
 	enemies_defeated = 0
 	zones_cleared = 0
+	run_time = 0.0
+	max_combo = 0
+	lives_lost = 0
 	last_killer = ""
 	_zones_seen.clear()
 	run_ended = false
@@ -162,6 +187,78 @@ func run_boosters() -> Array[String]:
 	elif SaveManager and SaveManager.profile:
 		result = SaveManager.profile.get_active_run_boosters()
 	return result
+
+## Q2: the catalog entry whose display_name (what the profile stores) or id matches; null for
+## "None", "" or an unknown name.
+static func find_run_booster(booster_name: String) -> RunBoosterRes:
+	for booster in RUN_BOOSTERS:
+		if booster.display_name == booster_name or booster.id == booster_name:
+			return booster
+	return null
+
+func _apply_run_booster(booster: RunBoosterRes) -> void:
+	match booster.effect:
+		RunBoosterRes.Effect.SHIELD_MULT:
+			max_shield = round(max_shield * booster.value)
+		RunBoosterRes.Effect.SPEED_MULT:
+			run_speed_multiplier = booster.value
+		RunBoosterRes.Effect.SCRAP_MULT:
+			scrap_multiplier = int(booster.value)
+
+## Q1: combo-tree gating. A demo run plays every route (it has no shop); otherwise the
+## profile's purchased routes. The attack state should ask this instead of the profile.
+func is_combo_unlocked(seq: String) -> bool:
+	if demo_mode:
+		return true
+	return SaveManager != null and SaveManager.profile != null and SaveManager.profile.unlocked_combos.has(seq)
+
+## Q1: the Double Jump -- always available in a demo run, otherwise the profile's unlock.
+func double_jump_available() -> bool:
+	if demo_mode:
+		return true
+	return SaveManager != null and SaveManager.profile != null and SaveManager.profile.double_jump_unlocked
+
+## Q4 accessibility options (PlayerProfile, set in the options menu). The camera shake, the VCR
+## overlay and the hit flashes read these getters.
+func shake_multiplier() -> float:
+	return SaveManager.profile.screen_shake if SaveManager and SaveManager.profile else 1.0
+
+func vcr_enabled() -> bool:
+	return SaveManager.profile.vcr_effects if SaveManager and SaveManager.profile else true
+
+func reduce_flashes() -> bool:
+	return SaveManager.profile.reduce_flashes if SaveManager and SaveManager.profile else false
+
+## Q6: the HUD hint strip has run its course (profile, or this session for a demo).
+func controls_seen() -> bool:
+	if _session_seen_controls:
+		return true
+	return SaveManager != null and SaveManager.profile != null and SaveManager.profile.seen_controls
+
+## Q6: marks the controls as seen. A demo run keeps it in memory only -- nothing is saved.
+func mark_controls_seen() -> void:
+	if controls_seen():
+		return
+	if demo_mode or SaveManager == null or SaveManager.profile == null:
+		_session_seen_controls = true
+		return
+	SaveManager.profile.seen_controls = true
+	SaveManager.save_profile()
+
+## Q6: one-shot gameplay hints (OnboardingPrompts), a bitmask of `bit`s already shown.
+func hint_seen(bit: int) -> bool:
+	if (_session_seen_hints & bit) != 0:
+		return true
+	return SaveManager != null and SaveManager.profile != null and (SaveManager.profile.seen_hints & bit) != 0
+
+func mark_hint_seen(bit: int) -> void:
+	if hint_seen(bit):
+		return
+	if demo_mode or SaveManager == null or SaveManager.profile == null:
+		_session_seen_hints |= bit
+		return
+	SaveManager.profile.seen_hints |= bit
+	SaveManager.save_profile()
 
 ## Batch O: where every post-run screen (results, game over, pause ABANDON RUN) goes --
 ## the title after a demo run, Karen's Shop after a full run.
@@ -285,7 +382,7 @@ func complete_run() -> void:
 ## boss victory timer) must not leak `paused = true` into the next screen.
 func _change_scene(path: String) -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file(path)
+	SceneTransition.go(get_tree(), path)
 
 ## Pause menu "ABANDON RUN": banks the run's scrap/cells/cores exactly like a game
 ## over, then clears the volatile run currencies. Does NOT change scene — the caller does.
@@ -449,6 +546,12 @@ func _find_drone_camera() -> DroneCamera:
 
 func _on_enemy_died(_position: Vector3) -> void:
 	enemies_defeated += 1
+
+func _on_combo_increased(current_combo: int) -> void:
+	max_combo = maxi(max_combo, current_combo)
+
+func _on_player_life_lost(_current_lives: int) -> void:
+	lives_lost += 1
 
 func _on_zone_entered(zone_name: String) -> void:
 	# T3: every zone entry is a checkpoint — store where Nick was when he crossed in.

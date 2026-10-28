@@ -20,9 +20,12 @@ extends Resource
 ## GDD §5.3: Nick starts with 1 Run Booster slot; the shop's cores-unique upgrade grants +1.
 @export var booster_slots: int = 1
 
-## L6 (D34): set the first time the player reaches Zone 2 in any run; from then on the
-## Zone 1 control prompts are skipped.
+## Q6: set once every chip of the HUD hint strip (ui/hud/hud_hints.gd) has fired; from then
+## on the strip is skipped. (Was L6: the first Zone 2 entry; the Zone 1 cards are gone.) A demo
+## run never saves it -- GameManager.mark_controls_seen() keeps it in memory there.
 @export var seen_controls: bool = false
+## Q6: bitmask of the one-shot gameplay hints already shown (OnboardingPrompts.HINT_* bits).
+@export var seen_hints: int = 0
 
 ## L8 (D25) options. Volumes are linear 0..1 on top of each bus's default_bus_layout level
 ## (SaveManager.apply_settings); fullscreen toggles the window mode.
@@ -30,6 +33,12 @@ extends Resource
 @export var music_volume: float = 1.0
 @export var sfx_volume: float = 1.0
 @export var fullscreen: bool = false
+## Q4 accessibility: camera shake scale (0 / 0.5 / 1.0), the VCR drone-feed overlay on/off, and
+## reduced flashes (no low-HP vignette pulse, no full-screen flashes). Read via GameManager's
+## shake_multiplier() / vcr_enabled() / reduce_flashes().
+@export var screen_shake: float = 1.0
+@export var vcr_effects: bool = true
+@export var reduce_flashes: bool = false
 
 ## The boosters a run actually applies: distinct, non-empty, non-"None" entries in slot
 ## order, trimmed to booster_slots.

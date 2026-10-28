@@ -2,8 +2,9 @@ extends "res://tests/framework/test_case.gd"
 
 # Batch M (D11 option B): the HUD cluster is rebuilt from Controls styled by the theme's Hud*
 # type variations. Battery = 12 themed cells + HP readout, shield = pale strip under it, lives =
-# up to 4 diamond glyphs + xN + LAST LIFE, ability meter = 10-cell strip with ticks and a 0..100
-# scale. No raster art from res://ui/hud/art/ is referenced. The life-lost banner names the killer.
+# up to 4 diamond glyphs + xN + LAST LIFE, ability meter = 10 themed cells + a BASS DROP caption
+# (Q8). No raster art from res://ui/hud/art/ is referenced. The killer is named by GameManager's
+# death-beat card (Q4b).
 
 const HUD_SCENE := preload("res://ui/hud/hud.tscn")
 const THEME_PATH := "res://ui/theme/neon_theme.tres"
@@ -41,7 +42,7 @@ func _visible_glyphs() -> int:
 	return count
 
 func _ability_bar() -> Control:
-	return hud.get_node("MarginContainer/VBoxContainer/LowerRow/AbilityBar")
+	return hud.get_node("SafeArea/MarginContainer/VBoxContainer/LowerRow/AbilityBar")
 
 # --- Battery ----------------------------------------------------------------------------
 
@@ -75,8 +76,8 @@ func test_a_sliver_of_hp_still_lights_one_cell() -> void:
 	assert_eq(hud.lit_battery_segments(), 0, "Dead -> empty")
 
 func test_hp_readout_is_a_20px_numeral_right_of_the_bar() -> void:
-	assert_true(hud.hp_label.get_theme_font_size("font_size") >= 20, "HP readout reads at 20 px or more")
-	var row: Node = hud.get_node("MarginContainer/VBoxContainer/StatusContainer")
+	assert_eq(hud.hp_label.get_theme_font_size("font_size"), 26, "Q8: the HP readout reads at 26 px")
+	var row: Node = hud.get_node("SafeArea/MarginContainer/VBoxContainer/StatusContainer")
 	assert_true(hud.hp_label.get_index() > row.get_node("BatteryContainer").get_index(), "Readout sits right of the battery")
 
 func test_low_hp_pulse_still_tweens_the_whole_bar() -> void:
@@ -130,30 +131,40 @@ func test_zero_spare_lives_shows_only_last_life() -> void:
 func test_half_meter_lights_five_segments() -> void:
 	var bar := _ability_bar()
 	SignalBus.ability_meter_changed.emit(50.0, 100.0)
-	await get_tree().create_timer(0.2).timeout
 	assert_eq(bar.lit_segments(), 5, "50/100 -> 5 of 10 cells")
-	assert_almost_eq(bar.meter_bar.value / bar.meter_bar.max_value, 0.5, 0.001)
+	var lit := 0
+	for cell in bar.segments.get_children():
+		if cell.theme_type_variation == &"HudSegment":
+			lit += 1
+	assert_eq(lit, 5, "...five cells drawn lit")
 
 func test_meter_strip_has_ten_cells_ticks_and_scale() -> void:
 	var bar := _ability_bar()
-	assert_eq(bar.get_node("Gaps").get_child_count(), 9, "9 separators -> 10 cells")
-	assert_eq(bar.get_node("Ticks").get_child_count(), 6, "A tick every 2 cells, ends included")
-	var marks: Array = []
-	for label in bar.get_node("Scale").get_children():
-		marks.append(label.text)
-		assert_eq(label.get_theme_font_size("font_size"), 14, "Scale digits at 14 px")
-	assert_eq(marks, ["0", "20", "40", "60", "80", "100"])
-	assert_eq(bar.get_node("Track").theme_type_variation, &"HudPanel")
+	assert_true(bar.get_node("Frame/Segments") is HBoxContainer, "Q8: the meter is an HBoxContainer of cells")
+	assert_eq(bar.get_node("Frame/Segments").get_child_count(), 10, "10 cells")
+	for cell in bar.get_node("Frame/Segments").get_children():
+		assert_true(String(cell.theme_type_variation).begins_with("HudSegment"), "%s is a HudSegment cell" % cell.name)
+	assert_null(bar.get_node_or_null("Scale"), "The 0..100 digit row is gone")
+	var caption: Label = bar.get_node("Caption")
+	assert_eq(caption.text, "BASS DROP", "...replaced by one caption")
+	assert_eq(caption.get_theme_font_size("font_size"), 18, "...at 18 px")
+	assert_eq(bar.get_node("Frame").theme_type_variation, &"HudPanel")
 
 func test_meter_fill_rests_cyan_and_holds_white_when_armed() -> void:
 	var bar := _ability_bar()
-	assert_eq(bar.meter_bar.tint_progress, bar.FILL_CYAN, "Resting fill is cyan")
 	SignalBus.ability_meter_changed.emit(100.0, 100.0)
+	assert_eq(bar.segments.get_child(0).theme_type_variation, &"HudSegment", "Resting fill is cyan")
+	assert_false(bar.caption_lit(), "BASS DROP caption dim until armed")
 	SignalBus.bass_drop_armed.emit(true)
-	assert_eq(bar.meter_bar.tint_progress, bar.FILL_WHITE, "Armed -> white hold")
+	for cell in bar.segments.get_children():
+		assert_eq(cell.theme_type_variation, &"HudSegmentHot", "Armed -> white hold (%s)" % cell.name)
+	assert_true(bar.caption_lit(), "...and the caption lights")
 	SignalBus.bass_drop_armed.emit(false)
 	SignalBus.ability_meter_changed.emit(0.0, 100.0)
-	assert_eq(bar.meter_bar.tint_progress, bar.FILL_CYAN, "Spent -> cyan again")
+	assert_eq(bar.segments.get_child(0).theme_type_variation, &"HudSegmentEmpty", "Spent -> empty")
+	SignalBus.ability_meter_changed.emit(30.0, 100.0)
+	assert_eq(bar.segments.get_child(0).theme_type_variation, &"HudSegment", "...then cyan again")
+	assert_false(bar.caption_lit(), "...caption dim")
 
 # --- Theme + no raster art --------------------------------------------------------------
 
@@ -191,12 +202,13 @@ func _collect_art_refs(scene: PackedScene, offenders: Array) -> void:
 
 # --- Banner -----------------------------------------------------------------------------
 
+## Q4b: the killer is named by GameManager's death-beat card, the respawn card follows; the
+## HUD adds nothing of its own.
 func test_life_lost_banner_names_the_killer() -> void:
-	GameManager.last_killer = "RUNNER"
+	SignalBus.banner_requested.emit(GameManager.death_banner_text("RUNNER"), GameManager.DEATH_BEAT_SECONDS)
+	assert_eq(hud.zone_title_card.label.text, "DESTROYED BY RUNNER", "The death beat names the killer")
 	SignalBus.player_life_lost.emit(2)
-	assert_eq(hud.zone_title_card.label.text, "LIFE LOST — 2 LEFT · DESTROYED BY RUNNER")
-	SignalBus.player_life_lost.emit(0)
-	assert_eq(hud.zone_title_card.label.text, "LAST LIFE · DESTROYED BY RUNNER", "The last-life banner names it too")
-	GameManager.last_killer = ""
-	SignalBus.player_life_lost.emit(1)
-	assert_eq(hud.zone_title_card.label.text, "LIFE LOST — 1 LEFT", "No killer -> no cause suffix")
+	assert_eq(hud.zone_title_card.label.text, "DESTROYED BY RUNNER", "player_life_lost alone changes nothing on the HUD")
+	SignalBus.banner_requested.emit(GameManager.respawn_banner_text(2, "SECTOR 05 — NEON MARKET"), GameManager.RESPAWN_BANNER_HOLD)
+	assert_eq(hud.zone_title_card.label.text, "LIFE LOST — 2 LEFT — RESUMING SECTOR 05", "...the respawn card is GameManager's")
+	assert_false(hud.zone_title_card.eyebrow_label.visible, "No eyebrow on a banner")

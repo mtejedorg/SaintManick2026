@@ -85,7 +85,9 @@ animation_map = {
 "attack_heavy": "attack_heavy",
 "attack_combo": "attack_combo",
 "hit_react": "hit_react",
-"death": "death"
+"death": "death",
+"land": "land",
+"run_stop": "run_stop"
 }
 
 [node name="HealthComponent" type="Node" parent="."]

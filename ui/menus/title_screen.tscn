@@ -80,7 +80,7 @@ text = "START RUN"
 layout_mode = 2
 theme_type_variation = &"DimLabel"
 theme_override_font_sizes/font_size = 17
-text = "LEVEL ONE — IN PRODUCTION · plays the slice via Karen's Shop"
+text = "LEVEL ONE — IN PRODUCTION"
 horizontal_alignment = 1
 
 [node name="OptionsButton" type="Button" parent="Root/ButtonContainer"]
@@ -107,7 +107,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
 theme_override_font_sizes/font_size = 20
-text = "DRONE FEED // KAREN-SURVEILLANCE v0.1 — VERTICAL SLICE"
+text = "DRONE FEED // KAREN-SURVEILLANCE — DEMO BUILD"
 horizontal_alignment = 1
 vertical_alignment = 1
 

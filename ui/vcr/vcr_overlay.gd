@@ -16,6 +16,8 @@ var _burst_timer: float = 0.0
 ## from it so every burst fades linearly to 0 over its own duration.
 var _burst_peak: float = 0.0
 var _burst_total: float = 0.0
+## Q5: burst_strength as authored, restored when the VCR option is switched back on.
+var _authored_burst_strength: float = 0.0
 
 func _ready() -> void:
 	# load() caches and shares .tres resources across every instance — duplicate so each
@@ -26,6 +28,26 @@ func _ready() -> void:
 	overlay_rect.material = _material
 	SignalBus.player_damaged.connect(_on_player_damaged)
 	SignalBus.camera_shift_requested.connect(_on_camera_shift_requested)
+	_authored_burst_strength = burst_strength
+	apply_accessibility()
+
+## Q5 (accessibility): with GameManager.vcr_enabled() false the feed is clean -- no burst
+## strength and the overlay hidden. Re-run it when the option changes.
+func apply_accessibility() -> void:
+	var gm := get_node_or_null("/root/GameManager")
+	var enabled: bool = true
+	if gm and gm.has_method("vcr_enabled"):
+		enabled = bool(gm.vcr_enabled())
+	if not enabled:
+		burst_strength = 0.0
+		if _material:
+			_material.set_shader_parameter("aberration_strength", 0.0)
+		_burst_timer = 0.0
+	else:
+		burst_strength = _authored_burst_strength
+	visible = enabled
+	if overlay_rect:
+		overlay_rect.visible = enabled
 
 func _process(delta: float) -> void:
 	if not _material:
@@ -40,9 +62,11 @@ func _process(delta: float) -> void:
 		_material.set_shader_parameter("aberration_strength", decayed)
 
 func _on_player_damaged(_damage_info: DamageInfo) -> void:
+	apply_accessibility() # Q5: an option changed mid-run applies from the next burst on
 	trigger_burst(burst_strength, burst_duration)
 
 func _on_camera_shift_requested(_top_down: bool, _target_path: Path3D, _transition_time: float) -> void:
+	apply_accessibility()
 	trigger_burst(burst_strength, burst_duration)
 
 ## Spikes chromatic aberration to `strength`, then lets _process() decay it back to 0

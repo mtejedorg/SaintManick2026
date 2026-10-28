@@ -25,6 +25,10 @@ var _bus_base_db: Dictionary = {}
 func _ready() -> void:
 	_capture_bus_baselines()
 	load_profile()
+	# Q5: the saved options apply at boot whatever scene runs first (the title's call is an
+	# idempotent re-apply). The window mode waits a frame -- the window is not up yet.
+	apply_settings(false)
+	apply_fullscreen.call_deferred(profile.fullscreen if profile else false)
 
 func load_profile() -> void:
 	var existed := ResourceLoader.exists(save_path) or FileAccess.file_exists(save_path)
@@ -123,15 +127,16 @@ func save_profile() -> void:
 		if err != OK:
 			push_error("SaveManager: Failed to move the saved profile into place. Error: " + str(err))
 
-## L8: applies the profile's options (bus volumes + window mode). Called by the title screen
-## at boot, after the profile has loaded.
-func apply_settings() -> void:
+## L8: applies the profile's options (bus volumes + window mode). Q5: runs at the end of
+## _ready() (the window mode deferred); the title screen's call re-applies idempotently.
+func apply_settings(include_window_mode: bool = true) -> void:
 	if not profile:
 		return
 	set_bus_volume_linear(BUS_MASTER, profile.master_volume)
 	set_bus_volume_linear(BUS_MUSIC, profile.music_volume)
 	set_bus_volume_linear(BUS_SFX, profile.sfx_volume)
-	apply_fullscreen(profile.fullscreen)
+	if include_window_mode:
+		apply_fullscreen(profile.fullscreen)
 
 ## L8: linear 0..1 volume for a bus, relative to its authored level. Unknown bus = no-op.
 func set_bus_volume_linear(bus: StringName, value: float) -> void:

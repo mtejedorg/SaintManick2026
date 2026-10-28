@@ -1,39 +1,10 @@
 extends "res://tests/framework/test_case.gd"
 
-var original_max_hp_upgrades: int
-var original_max_lives_upgrades: int
-var original_shield_upgrades: int
-var original_scrap: int
-var original_cells: int
-var original_cores: int
-var original_boosters: Array[String] = []
-
 func before_each() -> void:
-	# Backup original profile state if it exists
-	if SaveManager and SaveManager.profile:
-		original_max_hp_upgrades = SaveManager.profile.max_hp_upgrades
-		original_max_lives_upgrades = SaveManager.profile.max_lives_upgrades
-		original_shield_upgrades = SaveManager.profile.shield_upgrades
-		original_scrap = SaveManager.profile.scrap
-		original_cells = SaveManager.profile.cells
-		original_cores = SaveManager.profile.cores
-		original_boosters = SaveManager.profile.equipped_run_boosters.duplicate()
-		# Isolate from whatever boosters the local save has equipped.
-		SaveManager.profile.equipped_run_boosters.clear()
-
+	# Q1: the runner hands every test a fresh profile on a temp path (no backup needed).
 	GameManager.is_test = true
 
 func after_each() -> void:
-	# Restore original profile state
-	if SaveManager and SaveManager.profile:
-		SaveManager.profile.max_hp_upgrades = original_max_hp_upgrades
-		SaveManager.profile.max_lives_upgrades = original_max_lives_upgrades
-		SaveManager.profile.shield_upgrades = original_shield_upgrades
-		SaveManager.profile.scrap = original_scrap
-		SaveManager.profile.cells = original_cells
-		SaveManager.profile.cores = original_cores
-		SaveManager.profile.equipped_run_boosters = original_boosters
-		SaveManager.save_profile()
 	GameManager.start_new_run() # don't leak booster modifiers into later tests
 
 func test_start_new_run_resets_and_applies_upgrades() -> void:

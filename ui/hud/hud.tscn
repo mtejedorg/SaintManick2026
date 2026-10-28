@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://ui/hud/zone_title_card.tscn" id="3_ztc"]
 [ext_resource type="PackedScene" path="res://ui/hud/ability_bar.tscn" id="4_ability_bar"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud_hints.tscn" id="5_hints"]
+[ext_resource type="Shader" path="res://ui/hud/low_hp_vignette.gdshader" id="6_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_beat"]
 bg_color = Color(0.08, 0.08, 0.1, 0.8)
@@ -36,37 +38,61 @@ corner_radius_bottom_left = 2
 shadow_color = Color(1, 0, 0.667, 0.4)
 shadow_size = 8
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = ExtResource("6_vignette")
+shader_parameter/intensity = 0.0
+shader_parameter/pulse = 0.0
+shader_parameter/flash = 0.0
+
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-anchors_preset = 1
-anchor_left = 1.0
+[node name="LowHpVignette" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = -440.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 140.0
-grow_horizontal = 0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="SafeArea" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="MarginContainer" type="MarginContainer" parent="SafeArea"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+mouse_filter = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SafeArea/MarginContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="StatusContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="StatusContainer" type="HBoxContainer" parent="SafeArea/MarginContainer/VBoxContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 2
 
-[node name="BatteryContainer" type="Control" parent="MarginContainer/VBoxContainer/StatusContainer"]
-custom_minimum_size = Vector2(265, 30)
+[node name="BatteryContainer" type="Control" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(360, 30)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BatteryBar" type="PanelContainer" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+[node name="BatteryBar" type="PanelContainer" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -75,84 +101,84 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_type_variation = &"HudPanel"
 
-[node name="Segments" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar"]
+[node name="Segments" type="HBoxContainer" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="Cell01" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell01" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell02" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell02" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell03" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell03" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell04" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell04" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell05" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell05" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell06" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell06" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell07" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell07" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell08" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell08" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell09" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell09" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell10" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell10" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell11" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell11" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="Cell12" type="Panel" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
+[node name="Cell12" type="Panel" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer/BatteryBar/Segments"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_type_variation = &"HudSegment"
 
-[node name="ShieldBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
+[node name="ShieldBar" type="ProgressBar" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer/BatteryContainer"]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -164,77 +190,77 @@ theme_type_variation = &"HudStrip"
 value = 100.0
 show_percentage = false
 
-[node name="HpLabel" type="Label" parent="MarginContainer/VBoxContainer/StatusContainer"]
-custom_minimum_size = Vector2(140, 22)
+[node name="HpLabel" type="Label" parent="SafeArea/MarginContainer/VBoxContainer/StatusContainer"]
+custom_minimum_size = Vector2(160, 30)
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"HudNumeral"
 text = "HP 120/120"
 vertical_alignment = 1
 
-[node name="LowerRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="LowerRow" type="HBoxContainer" parent="SafeArea/MarginContainer/VBoxContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 2
 
-[node name="AbilityBar" parent="MarginContainer/VBoxContainer/LowerRow" instance=ExtResource("4_ability_bar")]
+[node name="AbilityBar" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow" instance=ExtResource("4_ability_bar")]
 layout_mode = 2
 
-[node name="LivesBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/LowerRow"]
-custom_minimum_size = Vector2(140, 0)
+[node name="LivesBox" type="VBoxContainer" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow"]
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_vertical = 0
 mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="LivesRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
+[node name="LivesRow" type="HBoxContainer" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox"]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Life1" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+[node name="Life1" type="Control" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 custom_minimum_size = Vector2(18, 24)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life1"]
+[node name="Diamond" type="Polygon2D" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life1"]
 color = Color(0, 0.961, 1, 1)
 antialiased = true
 polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
 
-[node name="Life2" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+[node name="Life2" type="Control" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 custom_minimum_size = Vector2(18, 24)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life2"]
+[node name="Diamond" type="Polygon2D" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life2"]
 color = Color(0, 0.961, 1, 1)
 antialiased = true
 polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
 
-[node name="Life3" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+[node name="Life3" type="Control" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 custom_minimum_size = Vector2(18, 24)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life3"]
+[node name="Diamond" type="Polygon2D" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life3"]
 color = Color(0, 0.961, 1, 1)
 antialiased = true
 polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
 
-[node name="Life4" type="Control" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+[node name="Life4" type="Control" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 custom_minimum_size = Vector2(18, 24)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Diamond" type="Polygon2D" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life4"]
+[node name="Diamond" type="Polygon2D" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow/Life4"]
 color = Color(0, 0.961, 1, 1)
 antialiased = true
 polygon = PackedVector2Array(9, 1, 17, 12, 9, 23, 1, 12)
 
-[node name="LivesCountLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
+[node name="LivesCountLabel" type="Label" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox/LivesRow"]
 visible = false
 layout_mode = 2
 mouse_filter = 2
@@ -242,7 +268,7 @@ theme_type_variation = &"HudNumeral"
 text = "x5"
 vertical_alignment = 1
 
-[node name="LastLifeLabel" type="Label" parent="MarginContainer/VBoxContainer/LowerRow/LivesBox"]
+[node name="LastLifeLabel" type="Label" parent="SafeArea/MarginContainer/VBoxContainer/LowerRow/LivesBox"]
 visible = false
 layout_mode = 2
 mouse_filter = 2
@@ -252,25 +278,72 @@ theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 22
 text = "LAST LIFE"
 
-[node name="BossBarContainer" type="PanelContainer" parent="."]
+[node name="Currencies" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="ScrapLabel" type="Label" parent="SafeArea/Currencies"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0, 0.949, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 22
+text = "SCRAP  0"
+
+[node name="CellsLabel" type="Label" parent="SafeArea/Currencies"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0, 0.667, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 22
+text = "CELLS  0"
+
+[node name="CoresLabel" type="Label" parent="SafeArea/Currencies"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 22
+text = "CORES  0"
+
+[node name="HudZoneTag" type="Label" parent="SafeArea/Currencies"]
 visible = false
-anchors_preset = -1
-anchor_left = 0.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = -100.0
-offset_right = -60.0
-offset_bottom = -20.0
-grow_vertical = 0
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"DimLabel"
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 18
+text = "SECTOR 01 / 10"
+
+[node name="BossBarMargin" type="MarginContainer" parent="SafeArea"]
+layout_mode = 2
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_right = 40
+
+[node name="BossBarContainer" type="PanelContainer" parent="SafeArea/BossBarMargin"]
+visible = false
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_boss_panel")
 
-[node name="BossBarVBox" type="VBoxContainer" parent="BossBarContainer"]
+[node name="BossBarVBox" type="VBoxContainer" parent="SafeArea/BossBarMargin/BossBarContainer"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="BossNameLabel" type="Label" parent="BossBarContainer/BossBarVBox"]
+[node name="BossNameLabel" type="Label" parent="SafeArea/BossBarMargin/BossBarContainer/BossBarVBox"]
 layout_mode = 2
 theme_type_variation = &"HeadingLabel"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -281,14 +354,14 @@ theme_override_font_sizes/font_size = 22
 text = ""
 horizontal_alignment = 1
 
-[node name="BossHealthBar" type="ProgressBar" parent="BossBarContainer/BossBarVBox"]
+[node name="BossHealthBar" type="ProgressBar" parent="SafeArea/BossBarMargin/BossBarContainer/BossBarVBox"]
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 theme_type_variation = &"BossBar"
 value = 100.0
 show_percentage = false
 
-[node name="BossShieldStrip" type="TextureProgressBar" parent="BossBarContainer/BossBarVBox/BossHealthBar"]
+[node name="BossShieldStrip" type="TextureProgressBar" parent="SafeArea/BossBarMargin/BossBarContainer/BossBarVBox/BossHealthBar"]
 visible = false
 modulate = Color(0, 0.961, 1, 0.85)
 layout_mode = 1
@@ -298,6 +371,11 @@ offset_bottom = 4.0
 grow_horizontal = 2
 mouse_filter = 2
 value = 100.0
+
+[node name="HudHints" parent="SafeArea" instance=ExtResource("5_hints")]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
 
 [node name="ComboLabel" type="Label" parent="."]
 theme_type_variation = &"HudCombo"
@@ -326,56 +404,5 @@ offset_right = 20.0
 offset_bottom = 60.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_beat")
-
-[node name="ScrapLabel" type="Label" parent="."]
-anchors_preset = 0
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 200.0
-offset_bottom = 52.0
-text = "SCRAP  0"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0, 0.949, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-
-[node name="CellsLabel" type="Label" parent="."]
-anchors_preset = 0
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 20.0
-offset_top = 54.0
-offset_right = 200.0
-offset_bottom = 86.0
-text = "CELLS  0"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 0, 0.667, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-
-[node name="CoresLabel" type="Label" parent="."]
-anchors_preset = 0
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 20.0
-offset_top = 88.0
-offset_right = 200.0
-offset_bottom = 120.0
-text = "CORES  0"
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 
 [node name="ZoneTitleCard" parent="." instance=ExtResource("3_ztc")]

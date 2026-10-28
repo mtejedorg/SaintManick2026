@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="PlayerTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://characters/player/player_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+dash_speed = 18.0
+roll_speed = 11.0
+dodge_cooldown = 0.3
+beat_align_window = 0.06
+beat_aligned_cooldown_refund = 0.5
+attack_durations = Array[float]([0.3, 0.3, 0.6])
+heavy_attack_durations = Array[float]([0.45, 0.45, 0.75])
+free_cancel_recovery_fraction = 0.4
+attack_step_in = Array[float]([3.0, 3.0, 4.0])
+attack_step_in_seconds = 0.1
+bass_drop_radius = 10.0
+bass_drop_damage = 90.0
+death_beat_seconds = 0.9
+fall_damage = 20.0
+fall_grace = 0.5

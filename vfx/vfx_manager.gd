@@ -12,6 +12,10 @@ const SHIELD_BREAK_SHAKE_DURATION := 0.15
 
 const HIT_SPARK_SCENE := preload("res://vfx/hit_spark.tscn")
 const ENEMY_DEATH_SCENE := preload("res://vfx/enemy_death.tscn")
+## Batch U: the motion layer. Both are plain nodes this manager owns (no per-use instancing):
+## Nick's katana trail / dash streak / landing dust, and the neon trim flicker.
+const PlayerMotionFxScript := preload("res://vfx/player_motion_fx.gd")
+const NeonFlickerScript := preload("res://vfx/neon_flicker.gd")
 
 ## Neon palette
 const COLOR_CYAN    := Color(0.0,   0.961, 1.0,   1.0)  # #00F5FF  light attack
@@ -23,6 +27,8 @@ var _spark_pool: Array[GPUParticles3D] = []
 var _death_pool: Array[GPUParticles3D] = []
 var _spark_busy: Array[bool] = []
 var _death_busy: Array[bool] = []
+var motion_fx: Node = null
+var neon_flicker: Node = null
 
 func _ready() -> void:
 	_build_pool(HIT_SPARK_SCENE, _spark_pool, _spark_busy, POOL_SIZE_SPARK)
@@ -32,6 +38,13 @@ func _ready() -> void:
 	SignalBus.hit_blocked.connect(_on_hit_blocked)
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.shield_broken.connect(_on_shield_broken)
+
+	motion_fx = PlayerMotionFxScript.new()
+	motion_fx.name = "PlayerMotionFx"
+	add_child(motion_fx)
+	neon_flicker = NeonFlickerScript.new()
+	neon_flicker.name = "NeonFlicker"
+	add_child(neon_flicker)
 
 func _build_pool(scene: PackedScene, pool: Array[GPUParticles3D], busy: Array[bool], count: int) -> void:
 	for i in count:

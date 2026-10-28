@@ -57,6 +57,7 @@ func _make_damage() -> DamageInfo:
 	var damage_info := DamageInfo.new()
 	damage_info.amount = damage_per_beat
 	damage_info.source = self
+	damage_info.is_environmental = true # Q5: a tick, not an attack
 	return damage_info
 
 func _on_beat(layer: String, _beat_index: int) -> void:

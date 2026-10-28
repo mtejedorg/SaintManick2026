@@ -28,6 +28,7 @@ SaveManager="*res://_core/persistence/save_manager.gd"
 GameManager="*res://_core/game_manager.gd"
 HitStop="*res://_core/juice/hit_stop.gd"
 AudioManager="*res://_core/audio_manager.gd"
+SiteCapture="*res://_core/dev/site_capture.gd"
 
 [audio]
 

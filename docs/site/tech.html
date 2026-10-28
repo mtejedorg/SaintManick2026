@@ -26,11 +26,11 @@
 
   <h2>Stack</h2>
   <!-- Sources: project.godot (Godot 4.6, Forward Plus); Documents/GDD.md section 1.2; Documents/CodeArchitecture.md section 8; Documents/HANDOFF.md H4 (audio files are synthetic tones). -->
-  <p>Godot 4.6.3 (Forward+), GDScript only. It is a 3D project: characters are <code>CharacterBody3D</code>, hit areas are <code>Area3D</code>, and the 2.5D look comes from a 3D world filmed by a constrained camera. The audio files are placeholder tones, wired through <code>AudioManager</code>.</p>
+  <p>Godot 4.6.3 (Forward+), GDScript only. It is a 3D project: characters are <code>CharacterBody3D</code>, hit areas are <code>Area3D</code>, and the 2.5D look comes from a 3D world filmed by a constrained camera. The audio files are placeholder tones. <code>AudioManager</code> loads clips by name, and some sound effects are not wired up yet.</p>
 
   <h2>Architecture</h2>
   <!-- Sources: project.godot [autoload]; Documents/CodeArchitecture.md sections 5, 7 and 11; .claude/CLAUDE.md (AudioManager no-ops on missing files). -->
-  <p>Six autoloads:</p>
+  <p>Six game autoloads, plus a debug-only capture helper (F12 saves a screenshot; it does nothing in release builds):</p>
   <div class="table-scroll">
     <table>
       <thead><tr><th>Autoload</th><th>Role</th></tr></thead>

@@ -116,7 +116,7 @@ code, kbd { font-family: var(--mono); font-size: 0.9em; color: var(--cyan); }
    pages, scroll hints on wide tables, 44px touch targets. Wider screens are unchanged. */
 .section-chips { display: none; }
 @media (max-width: 45rem) {
-  html { scroll-padding-top: 4.25rem; }
+  html { scroll-padding-top: 4.75rem; }
   body { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom)); }
   .site-header .wrap { padding-top: 0.75rem; padding-bottom: 0.75rem; }
   .site-nav {
@@ -148,7 +148,9 @@ code, kbd { font-family: var(--mono); font-size: 0.9em; color: var(--cyan); }
   .section-chips a.is-active { border-color: var(--cyan); color: var(--cyan); }
 
   .button { display: inline-flex; align-items: center; min-height: 2.75rem; }
-  .site-footer a { display: inline-block; padding: 0.6rem 0; }
+  .site-footer a { display: inline-block; padding: 0.7rem 0; }
+  .brand { display: inline-block; padding: 0.8rem 0; }
+  .site-header .wrap { padding-top: 0; padding-bottom: 0; }
 
   .table-scroll.more-right { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
   .table-scroll.more-left { -webkit-mask-image: linear-gradient(to left, #000 82%, transparent); mask-image: linear-gradient(to left, #000 82%, transparent); }

@@ -111,3 +111,46 @@ code, kbd { font-family: var(--mono); font-size: 0.9em; color: var(--cyan); }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Phone layout (<= 45rem): page tabs at the bottom for thumb reach, sticky section chips on the long
+   pages, scroll hints on wide tables, 44px touch targets. Wider screens are unchanged. */
+.section-chips { display: none; }
+@media (max-width: 45rem) {
+  html { scroll-padding-top: 4.25rem; }
+  body { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom)); }
+  .site-header .wrap { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .site-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: rgba(7, 7, 15, 0.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+  }
+  .site-nav a {
+    display: flex; align-items: center; justify-content: center; min-height: 3.5rem; padding: 0;
+    border-bottom: 0; border-top: 2px solid transparent; font-weight: 600; font-size: 0.95rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .site-nav a[aria-current="page"] { color: var(--cyan); border-top-color: var(--cyan); }
+  .site-nav a:hover, .site-nav a:focus-visible { border-bottom-color: transparent; }
+
+  .section-chips {
+    position: sticky; top: 0; z-index: 40; display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none;
+    margin: 1rem -1rem 1.25rem; padding: 0.6rem 1rem;
+    background: rgba(7, 7, 15, 0.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .section-chips::-webkit-scrollbar { display: none; }
+  .section-chips a {
+    flex: 0 0 auto; white-space: nowrap; display: inline-flex; align-items: center; min-height: 2.75rem;
+    padding: 0 0.9rem; border: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 0.9rem;
+  }
+  .section-chips a.is-active { border-color: var(--cyan); color: var(--cyan); }
+
+  .button { display: inline-flex; align-items: center; min-height: 2.75rem; }
+  .site-footer a { display: inline-block; padding: 0.6rem 0; }
+
+  .table-scroll.more-right { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+  .table-scroll.more-left { -webkit-mask-image: linear-gradient(to left, #000 82%, transparent); mask-image: linear-gradient(to left, #000 82%, transparent); }
+  .table-scroll.more-left.more-right { -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); }
+}
